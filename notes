@@ -1,0 +1,78 @@
+Create the virtual environment:cd backend
+python -m venv venv 
+
+Activate the environment:
+venv\Scripts\activate
+ 
+install FastAPI, the server web server (Uvicorn), database drivers, and the necessary AI/NLP data libraries:
+pip install fastapi uvicorn mysql-connector-python spacy scikit-learn pydantic python-multipart
+
+
+Download the NLP Model inside the environment:
+python -m spacy download en_core_web_sm
+
+Open frontend folder in another cmd:
+For frontend library :  
+npm create vite@latest . -- --template react
+
+Install frontend dependencies locally:
+npm install
+
+Install Plotly & Router packages:
+These will power your interactive dashboard charts and page routing locally:
+npm install react-router-dom plotly.js-basic-dist react-plotly.js lucide-react
+
+
+career-intelligence-platform/
+├── backend/
+│   ├── venv/             <-- Isolated Python environments & packages
+│   └── (Your future python code files will go here)
+└── frontend/
+    ├── node_modules/     <-- Isolated Javascript libraries
+    ├── src/
+    ├── package.json
+    └── index.html
+
+
+for frontend: inside frontend folder
+mkdir src\components src\pages src\context src\mockData
+
+src/
+├── components/   <-- Reusable UI parts like Navbar, Sidebar, Layout wrappers
+├── context/      <-- Global application state (simulating a login session)
+├── mockData/     <-- Hardcoded JSON files representing database responses
+├── pages/        <-- The actual pages matching your UI design image
+├── App.jsx
+└── main.jsx
+
+Create the Global Mock Data StoreTo make your frontend feel interactive and realistic, we will create a mock data file. 
+It provides fallback values for charts, skills, and roadmaps.
+Create a new file named src/mockData/careerData.js in VS Code
+
+
+Establish the Global Shared Shell Layout (Sidebar Navigation)According to views 4 through 15 in your UI sheet, your app features a consistent left-hand Sidebar Navigation Menu. Let's build that structural component.Create a file named src/components/Sidebar.jsx
+
+Configure the Routing Registry EngineLet's assemble the dynamic core inside src/App.jsx to tie everything together. For this step, we will use mock placeholders for your main dashboard pages so that routing works immediately.
+
+Verify the ArchitectureLet's ensure your layout framework behaves correctly. 
+In your VS Code Frontend Terminal Tab, run your dev script:   npm run dev
+
+
+Create the Dashboard Page ComponentCreate a new file named src/pages/Dashboard.jsx
+
+Create the Resume Analysis PageCreate a new file named src/pages/ResumeAnalysis.jsx
+
+Since you are building out the core AI decision-support logic, our next perfect target is View 9 (Skill Gap Analysis) coupled with View 12 (The What-If Career Simulation Panel).By grouping these two together on one clean page, your users can review their current skill deficiencies and instantly simulate how adding new skills shifts their alignment.
+Create the Skill Gap & Simulator Page ComponentCreate a new file named src/pages/GapAnalysis.jsx in VS Code
+
+
+Create View 11 — The Career Roadmap PageThis page generates a structural, step-by-step timeline using nodes. Each node represents a skill gap, and clicking on it dynamically displays external tutorial resources (Requirements 14 & 16).Create a new file named src/pages/Roadmap.jsx
+
+Create View 13 — The Job Market Intelligence PageThis dashboard uses Plotly charts to analyze live job market patterns, tracking which skills are in high demand across the industry (Requirement 17).Create a new file named src/pages/MarketIntelligence.jsx
+Vite stores a compilation map inside your node_modules directory that can sometimes lock up. Let's run a clean boot by executing this exact command in the VS Code CMD Terminal:cmdnpm run dev -- --force
+Use code with caution.(The -- --force flag commands Vite to completely delete its internal build caches and rebuild the workspace freshly from scratch).
+
+
+Create the Career Recommendations Page FileCreate a new file named src/pages/Recommendations.jsx
+
+Create the Profile Page FileCreate a new file named src/pages/Profile.jsx
