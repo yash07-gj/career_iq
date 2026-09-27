@@ -8,7 +8,7 @@ from passlib.context import CryptContext
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
-@router.post("/register", response_model=UserResponse)
+@router.post("/register", response_model=TokenResponse)
 def register(user_in: UserRegister, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == user_in.email).first()
     if existing:
@@ -35,7 +35,12 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
 
     db.commit()
     db.refresh(new_user)
-    return new_user
+    
+    return TokenResponse(
+        access_token=f"demo_token_user_{new_user.user_id}",
+        token_type="bearer",
+        user=UserResponse.model_validate(new_user)
+    )
 
 @router.post("/login", response_model=TokenResponse)
 def login(login_data: UserLogin, db: Session = Depends(get_db)):

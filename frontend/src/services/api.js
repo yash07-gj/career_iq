@@ -46,7 +46,7 @@ export const api = {
   getCurrentUser: () => fetchApi('/auth/me'),
 
   // Dashboard
-  getDashboard: () => fetchApi('/dashboard'),
+  getDashboard: (userId) => fetchApi(`/dashboard${userId ? `?user_id=${userId}` : ''}`),
 
   // Skills & Career Roles
   getSkills: () => fetchApi('/skills'),

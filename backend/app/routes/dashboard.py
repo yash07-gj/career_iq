@@ -10,10 +10,14 @@ from app.schemas import DashboardResponse, MetricOverview, CareerRecommendationR
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
 @router.get("", response_model=DashboardResponse)
-def get_dashboard_data(db: Session = Depends(get_db)):
-    # 1. Fetch default active user & profile (John Doe, user_id=1)
-    user = db.query(User).filter(User.user_id == 1).first()
-    profile = db.query(CandidateProfile).filter(CandidateProfile.user_id == 1).first()
+def get_dashboard_data(user_id: int = 1, db: Session = Depends(get_db)):
+    # 1. Fetch active user & profile
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        user = db.query(User).filter(User.user_id == 1).first()
+        
+    actual_user_id = user.user_id if user else 1
+    profile = db.query(CandidateProfile).filter(CandidateProfile.user_id == actual_user_id).first()
     profile_id = profile.profile_id if profile else 1
 
     # 2. Get latest analysis run
@@ -24,6 +28,12 @@ def get_dashboard_data(db: Session = Depends(get_db)):
     recs = db.query(CareerRecommendation, CareerRole).join(
         CareerRole, CareerRecommendation.career_role_id == CareerRole.career_role_id
     ).filter(CareerRecommendation.analysis_id == analysis_id).order_by(CareerRecommendation.recommendation_rank.asc()).all()
+
+    # If no recommendations yet for this profile, fallback to default seed recommendations
+    if not recs:
+        recs = db.query(CareerRecommendation, CareerRole).join(
+            CareerRole, CareerRecommendation.career_role_id == CareerRole.career_role_id
+        ).filter(CareerRecommendation.analysis_id == 1).order_by(CareerRecommendation.recommendation_rank.asc()).all()
 
     rec_responses = [
         CareerRecommendationResponse(
@@ -40,6 +50,8 @@ def get_dashboard_data(db: Session = Depends(get_db)):
 
     # 4. Fetch readiness score
     readiness = db.query(ReadinessScore).filter(ReadinessScore.analysis_id == analysis_id).first()
+    if not readiness:
+        readiness = db.query(ReadinessScore).filter(ReadinessScore.analysis_id == 1).first()
     overall_readiness = float(readiness.overall_score) if readiness else 78.0
 
     # 5. Counts
@@ -53,8 +65,8 @@ def get_dashboard_data(db: Session = Depends(get_db)):
         career_readiness=overall_readiness,
         top_career_match=top_role_name,
         top_match_percentage=top_match_pct,
-        total_skills=total_skills if total_skills > 0 else 12,
-        missing_skills=missing_skills if missing_skills > 0 else 5
+        total_skills=total_skills if total_skills > 0 else 7,
+        missing_skills=missing_skills if missing_skills > 0 else 2
     )
 
     # 6. Skill demand distribution
@@ -70,5 +82,5 @@ def get_dashboard_data(db: Session = Depends(get_db)):
         metrics=metrics,
         recommendations=rec_responses,
         market_skills=market_skills,
-        user_name=user.full_name if user else "John Doe"
+        user_name=user.full_name if user else "Candidate"
     )

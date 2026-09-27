@@ -16,6 +16,7 @@ import {
   Users,
   BarChart3,
 } from 'lucide-react';
+import auth from '../utils/auth';
 
 const Sidebar = ({ admin = false }) => {
   const navigate = useNavigate();
@@ -81,7 +82,10 @@ const Sidebar = ({ admin = false }) => {
 
         <button
           type="button"
-          onClick={() => navigate('/login')}
+          onClick={() => {
+            auth.logout();
+            navigate('/login');
+          }}
           className="sidebar-bottom-btn logout-btn"
         >
           <LogOut size={18} className="bottom-icon logout-icon" />

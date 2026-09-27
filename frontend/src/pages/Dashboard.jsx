@@ -4,8 +4,10 @@ import { mockCareerRecommendations, mockMarketSkills } from '../mockData/careerD
 import { Layout, Page } from '../components/Layout';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import auth from '../utils/auth';
 
 export default function Dashboard() {
+  const currentUser = auth.getUser();
   const [data, setData] = useState({
     metrics: {
       career_readiness: 78,
@@ -16,16 +18,19 @@ export default function Dashboard() {
     },
     recommendations: mockCareerRecommendations,
     market_skills: mockMarketSkills,
-    user_name: 'John Doe',
+    user_name: currentUser?.full_name || 'Student',
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const res = await api.getDashboard();
+        const res = await api.getDashboard(currentUser?.user_id);
         if (res && res.metrics) {
-          setData(res);
+          setData({
+            ...res,
+            user_name: currentUser?.full_name || res.user_name || 'Student',
+          });
         }
       } catch (err) {
         console.warn('Using local fallback data:', err);
@@ -34,7 +39,7 @@ export default function Dashboard() {
       }
     }
     loadDashboard();
-  }, []);
+  }, [currentUser?.user_id, currentUser?.full_name]);
 
   const metrics = data.metrics;
   const recommendations = data.recommendations || mockCareerRecommendations;
@@ -43,7 +48,7 @@ export default function Dashboard() {
   return (
     <Layout>
       <Page 
-        title={`Welcome back, ${data.user_name}`} 
+        title={`Welcome back, ${currentUser?.full_name || data.user_name}`} 
         subtitle="Live synchronization with MySQL career intelligence database"
         action={
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#ecfdf5', padding: '6px 14px', borderRadius: 20, border: '1px solid #a7f3d0' }}>
