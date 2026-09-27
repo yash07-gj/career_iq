@@ -49,13 +49,7 @@ export default function Dashboard() {
     <Layout>
       <Page 
         title={`Welcome back, ${currentUser?.full_name || data.user_name}`} 
-        subtitle="Live synchronization with MySQL career intelligence database"
-        action={
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#ecfdf5', padding: '6px 14px', borderRadius: 20, border: '1px solid #a7f3d0' }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#065f46' }}>MySQL Database Connected</span>
-          </div>
-        }
+        subtitle="AI-driven career path analysis, skill gap assessment, and tailored milestones"
       >
         {/* TOP METRIC CARDS */}
         <div className="grid grid-4" style={{ marginBottom: 24 }}>
