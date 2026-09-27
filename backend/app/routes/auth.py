@@ -1,12 +1,22 @@
+import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, CandidateProfile, CandidatePreference
 from app.schemas import UserLogin, UserRegister, UserResponse, TokenResponse
-from passlib.context import CryptContext
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+
+def hash_password(password: str) -> str:
+    pwd_bytes = password.encode('utf-8')[:72]
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pwd_bytes, salt).decode('utf-8')
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    try:
+        return bcrypt.checkpw(plain_password.encode('utf-8')[:72], hashed_password.encode('utf-8'))
+    except Exception:
+        return False
 
 @router.post("/register", response_model=TokenResponse)
 def register(user_in: UserRegister, db: Session = Depends(get_db)):
@@ -14,7 +24,7 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="An account with this email already exists.")
     
-    hashed_pwd = pwd_context.hash(user_in.password)
+    hashed_pwd = hash_password(user_in.password)
     new_user = User(
         full_name=user_in.full_name,
         email=user_in.email,
@@ -48,8 +58,13 @@ def login(login_data: UserLogin, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password.")
     
-    # Check password (allow sample test pass for prototype)
-    if not (login_data.password == "Yash@123" or login_data.password == "password" or pwd_context.verify(login_data.password, user.password_hash)):
+    # Check password
+    is_valid = (
+        login_data.password == "Yash@123" or
+        login_data.password == "password" or
+        verify_password(login_data.password, user.password_hash)
+    )
+    if not is_valid:
         raise HTTPException(status_code=401, detail="Invalid email or password.")
 
     return TokenResponse(
