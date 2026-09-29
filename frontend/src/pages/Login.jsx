@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { GraduationCap, CheckCircle2, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { GraduationCap, CheckCircle2, ArrowRight, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import api from '../services/api';
 import auth from '../utils/auth';
 
@@ -8,6 +8,7 @@ export default function Login() {
   const nav = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -76,7 +77,7 @@ export default function Login() {
             </div>
             <strong>CareerIQ</strong>
           </div>
-          <h2>Sign In</h2>
+          <h2>Login</h2>
           <p>Access your AI Career Intelligence Dashboard</p>
 
           {error && (
@@ -100,14 +101,41 @@ export default function Login() {
 
           <div className="form-group">
             <label className="label">Password</label>
-            <input
-              className="input"
-              type="password"
-              placeholder="••••••••"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <input
+                className="input"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{ paddingRight: password ? '42px' : undefined, width: '100%' }}
+              />
+              {password.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    background: 'transparent',
+                    border: 'none',
+                    padding: '4px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#64748b',
+                    borderRadius: '4px',
+                    transition: 'color 0.15s ease'
+                  }}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              )}
+            </div>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '16px 0 20px', fontSize: 13, color: '#475569' }}>
@@ -132,11 +160,11 @@ export default function Login() {
             {loading ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                <span>Signing In...</span>
+                <span>Logging In...</span>
               </>
             ) : (
               <>
-                <span>Sign In to Dashboard</span>
+                <span>Login to Dashboard</span>
                 <ArrowRight size={16} />
               </>
             )}

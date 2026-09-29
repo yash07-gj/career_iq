@@ -78,11 +78,11 @@ export default function Profile() {
             <div className="form-row">
               <div className="form-group">
                 <label className="label">Full Name</label>
-                <div style={{ position: 'relative' }}>
-                  <User size={13} style={{ position: 'absolute', left: 9, top: 10, color: '#93a4b8' }} />
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <User size={15} style={{ position: 'absolute', left: 12, color: '#94a3b8', pointerEvents: 'none' }} />
                   <input
                     className="input"
-                    style={{ paddingLeft: 28 }}
+                    style={{ paddingLeft: 36, width: '100%' }}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                   />
@@ -90,11 +90,11 @@ export default function Profile() {
               </div>
               <div className="form-group">
                 <label className="label">Email</label>
-                <div style={{ position: 'relative' }}>
-                  <Mail size={13} style={{ position: 'absolute', left: 9, top: 10, color: '#93a4b8' }} />
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <Mail size={15} style={{ position: 'absolute', left: 12, color: '#94a3b8', pointerEvents: 'none' }} />
                   <input
                     className="input"
-                    style={{ paddingLeft: 28 }}
+                    style={{ paddingLeft: 36, width: '100%' }}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />

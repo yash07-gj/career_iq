@@ -73,7 +73,7 @@ const Sidebar = ({ admin = false }) => {
       {/* BOTTOM ACTION BUTTONS (SETTINGS & LOGOUT) */}
       <div className="sidebar-bottom">
         <NavLink
-          to={admin ? '/admin/settings' : '/profile'}
+          to={admin ? '/admin/settings' : '/settings'}
           className="sidebar-bottom-btn settings-btn"
         >
           <Settings size={18} className="bottom-icon settings-icon" />
