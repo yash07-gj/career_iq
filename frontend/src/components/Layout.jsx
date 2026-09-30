@@ -7,10 +7,10 @@ import auth from '../utils/auth';
 export const Layout = ({ children, admin = false }) => {
   const nav = useNavigate();
   const user = auth.getUser();
-  const displayName = user?.full_name || 'Naiya Patel';
-  const initial = displayName.charAt(0).toUpperCase() || 'N';
-  const role = user?.target_role || 'Data Analyst';
-  const email = user?.email || 'nai@example.com';
+  const displayName = user?.full_name || 'Student';
+  const initial = displayName.charAt(0).toUpperCase() || 'S';
+  const role = user?.target_role || 'Candidate';
+  const email = user?.email || 'student@example.com';
 
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef(null);
