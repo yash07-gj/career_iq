@@ -25,6 +25,17 @@ class User(Base):
     profile = relationship("CandidateProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
 
+class EmailVerification(Base):
+    __tablename__ = "email_verifications"
+
+    verification_id = Column(BigInteger, primary_key=True, autoincrement=True)
+    email = Column(String(255), nullable=False, index=True)
+    otp_code = Column(String(10), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    is_used = Column(SmallInteger, nullable=False, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class CandidateProfile(Base):
     __tablename__ = "candidate_profiles"
 

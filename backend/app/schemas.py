@@ -12,6 +12,25 @@ class UserRegister(BaseModel):
     email: EmailStr
     password: str
 
+class SendOtpRequest(BaseModel):
+    email: EmailStr
+    full_name: Optional[str] = "Student"
+
+class VerifyOtpRequest(BaseModel):
+    email: EmailStr
+    otp_code: str
+
+class UserRegisterWithOtp(BaseModel):
+    full_name: str
+    email: EmailStr
+    password: str
+    otp_code: str
+
+class OtpResponse(BaseModel):
+    success: bool
+    message: str
+    dev_otp: Optional[str] = None
+
 class UserResponse(BaseModel):
     user_id: int
     full_name: str

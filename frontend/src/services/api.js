@@ -43,6 +43,29 @@ export const api = {
       body: JSON.stringify({ full_name: fullName, email, password }),
     }),
 
+  sendOtp: (email, fullName = 'Student') =>
+    fetchApi('/auth/send-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, full_name: fullName }),
+    }),
+
+  verifyOtp: (email, otpCode) =>
+    fetchApi('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp_code: otpCode }),
+    }),
+
+  registerWithOtp: (fullName, email, password, otpCode) =>
+    fetchApi('/auth/register-with-otp', {
+      method: 'POST',
+      body: JSON.stringify({
+        full_name: fullName,
+        email,
+        password,
+        otp_code: otpCode,
+      }),
+    }),
+
   getCurrentUser: () => fetchApi('/auth/me'),
 
   // Dashboard
