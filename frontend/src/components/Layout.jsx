@@ -3,10 +3,11 @@ import { GraduationCap, Bell, User as UserIcon, FileText, Settings, LogOut } fro
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import auth from '../utils/auth';
+import api from '../services/api';
 
 export const Layout = ({ children, admin = false }) => {
   const nav = useNavigate();
-  const user = auth.getUser();
+  const [user, setUser] = useState(auth.getUser());
   const displayName = user?.full_name || 'Student';
   const initial = displayName.charAt(0).toUpperCase() || 'S';
   const role = user?.target_role || 'Candidate';
@@ -14,6 +15,29 @@ export const Layout = ({ children, admin = false }) => {
 
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // Validate active session against MySQL database on mount
+  useEffect(() => {
+    async function checkSession() {
+      const stored = auth.getUser();
+      if (!stored) {
+        return;
+      }
+      try {
+        const liveUser = await api.getCurrentUser(stored.user_id);
+        if (liveUser && liveUser.user_id) {
+          setUser(liveUser);
+          auth.setUser({ ...stored, ...liveUser });
+        }
+      } catch (err) {
+        console.warn('Session expired or user deleted from database. Logging out...', err);
+        auth.logout();
+        setUser(null);
+        nav('/login');
+      }
+    }
+    checkSession();
+  }, [nav]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -32,6 +56,7 @@ export const Layout = ({ children, admin = false }) => {
   const handleLogout = () => {
     setProfileOpen(false);
     auth.logout();
+    setUser(null);
     nav('/login');
   };
 

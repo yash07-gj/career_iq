@@ -66,7 +66,8 @@ export const api = {
       }),
     }),
 
-  getCurrentUser: () => fetchApi('/auth/me'),
+  getCurrentUser: (userId) =>
+    fetchApi(`/auth/me${userId ? `?user_id=${userId}` : ''}`),
 
   // Dashboard
   getDashboard: (userId) => fetchApi(`/dashboard${userId ? `?user_id=${userId}` : ''}`),

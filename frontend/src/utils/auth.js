@@ -15,12 +15,7 @@ export const auth = {
     } catch (e) {
       console.warn('Failed to parse user from localStorage', e);
     }
-    return {
-      user_id: 1,
-      full_name: 'Yash',
-      email: 'yash@example.com',
-      account_role: 'candidate',
-    };
+    return null;
   },
 
   setUser: (userData, token = null) => {
@@ -45,6 +40,23 @@ export const auth = {
 
   isAuthenticated: () => {
     return !!localStorage.getItem(USER_KEY);
+  },
+
+  validateWithBackend: async (api) => {
+    const user = auth.getUser();
+    if (!user || !user.user_id) return null;
+
+    try {
+      const validUser = await api.getCurrentUser(user.user_id);
+      if (validUser && validUser.user_id) {
+        auth.setUser({ ...user, ...validUser });
+        return validUser;
+      }
+    } catch (err) {
+      console.warn('User session invalid or deleted from database:', err.message);
+      auth.logout();
+      return null;
+    }
   },
 };
 
