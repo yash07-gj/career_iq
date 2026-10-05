@@ -24,12 +24,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function loadDashboard() {
+      if (!currentUser?.user_id) return;
       try {
-        const res = await api.getDashboard(currentUser?.user_id);
+        const res = await api.getDashboard(currentUser.user_id);
         if (res && res.metrics) {
           setData({
             ...res,
-            user_name: currentUser?.full_name || res.user_name || 'Student',
+            user_name: currentUser.full_name || res.user_name,
           });
         }
       } catch (err) {

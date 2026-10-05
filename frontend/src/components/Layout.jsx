@@ -16,13 +16,14 @@ export const Layout = ({ children, admin = false }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Validate active session against MySQL database on mount
+  // Protect workspace: If not logged in or deleted from database, redirect to /login
   useEffect(() => {
+    const stored = auth.getUser();
+    if (!stored || !stored.user_id) {
+      nav('/login');
+      return;
+    }
     async function checkSession() {
-      const stored = auth.getUser();
-      if (!stored) {
-        return;
-      }
       try {
         const liveUser = await api.getCurrentUser(stored.user_id);
         if (liveUser && liveUser.user_id) {
