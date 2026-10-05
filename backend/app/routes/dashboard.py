@@ -10,13 +10,13 @@ from app.schemas import DashboardResponse, MetricOverview, CareerRecommendationR
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
 @router.get("", response_model=DashboardResponse)
-def get_dashboard_data(user_id: int = 1, db: Session = Depends(get_db)):
+def get_dashboard_data(user_id: int, db: Session = Depends(get_db)):
     # 1. Fetch active user & profile
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
-        user = db.query(User).filter(User.user_id == 1).first()
+        raise HTTPException(status_code=404, detail="User not found in database.")
         
-    actual_user_id = user.user_id if user else 1
+    actual_user_id = user.user_id
     profile = db.query(CandidateProfile).filter(CandidateProfile.user_id == actual_user_id).first()
     profile_id = profile.profile_id if profile else 1
 

@@ -22,25 +22,13 @@ export default function Login() {
       const res = await api.login(email, password);
       if (res && res.user) {
         auth.setUser(res.user, res.access_token);
+        nav('/dashboard');
       } else {
-        auth.setUser({
-          user_id: 1,
-          full_name: email.split('@')[0] || 'User',
-          email: email,
-          account_role: 'candidate',
-        });
+        setError('Login failed. Please check your credentials.');
       }
-      nav('/dashboard');
     } catch (err) {
-      console.warn('Login attempt with fallback:', err);
-      // If user exists locally or backend unreachable, fallback safely
-      auth.setUser({
-        user_id: 1,
-        full_name: email.split('@')[0] || 'User',
-        email: email,
-        account_role: 'candidate',
-      });
-      nav('/dashboard');
+      console.error('Login error:', err);
+      setError(err.message || 'Invalid email or password.');
     } finally {
       setLoading(false);
     }

@@ -229,12 +229,14 @@ def login(login_data: UserLogin, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=UserResponse)
 def get_current_user(user_id: int = None, email: str = None, db: Session = Depends(get_db)):
+    if not user_id and not email:
+        raise HTTPException(status_code=400, detail="user_id or email parameter is required.")
+        
+    query = db.query(User)
     if user_id:
-        user = db.query(User).filter(User.user_id == user_id).first()
-    elif email:
-        user = db.query(User).filter(User.email == email).first()
+        user = query.filter(User.user_id == user_id).first()
     else:
-        user = db.query(User).first()
+        user = query.filter(User.email == email.strip().lower()).first()
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found in database.")
