@@ -46,6 +46,27 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user: UserResponse
 
+# --- Profile Schemas ---
+class ProfileUpdateRequest(BaseModel):
+    full_name: str
+    email: EmailStr
+    target_role_id: Optional[int] = None
+    target_role_name: Optional[str] = None
+    education: Optional[str] = None
+    experience: Optional[str] = None
+    skills: List[str] = []
+
+class ProfileResponse(BaseModel):
+    user_id: int
+    full_name: str
+    email: str
+    profile_picture_url: Optional[str] = None
+    target_role_id: Optional[int] = None
+    target_role_name: Optional[str] = None
+    education: Optional[str] = None
+    experience: Optional[str] = None
+    skills: List[str] = []
+
 # --- Skills Schemas ---
 class SkillBase(BaseModel):
     skill_id: int
@@ -111,6 +132,25 @@ class DashboardResponse(BaseModel):
     recommendations: List[CareerRecommendationResponse]
     market_skills: List[dict]
     user_name: str
+    has_resume: bool = False
+    resume_filename: Optional[str] = None
+
+class ResumeUploadResponse(BaseModel):
+    success: bool
+    resume_id: int
+    file_name: str
+    skills_extracted: List[str]
+    total_skills: int
+    overall_readiness: float
+    top_career_match: str
+    top_match_percentage: float
+    analysis_id: int
+    candidate_name: Optional[str] = None
+    candidate_email: Optional[str] = None
+    education: Optional[str] = None
+    experience: Optional[str] = None
+    message: str
+
 
 # --- Skill Gap ---
 class SkillGapItem(BaseModel):

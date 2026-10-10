@@ -450,13 +450,14 @@ export default function Settings() {
           <div style={{ paddingBottom: '16px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
             <div>
               <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '2px' }}>Resume Data</div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>Manage information extracted from your uploaded resume</div>
+              <div style={{ fontSize: '12px', color: '#64748b' }}>Manage and upload information extracted from your resume</div>
             </div>
-            <button type="button" className="btn outline" style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '8px 16px' }} onClick={() => setResumeModal(true)}>
+            <Link to="/resume-analysis" className="btn outline" style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '8px 16px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               <Database size={14} />
               Manage Resume Data
-            </button>
+            </Link>
           </div>
+
 
           {/* Download */}
           <div style={{ paddingBottom: '16px', borderBottom: '1px solid #f1f5f9', paddingTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>

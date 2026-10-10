@@ -41,6 +41,7 @@ class CandidateProfile(Base):
 
     profile_id = Column(BigInteger, primary_key=True, autoincrement=True)
     user_id = Column(BigInteger, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, unique=True)
+    profile_picture_url = Column(String(500), nullable=True)
     phone = Column(String(20), nullable=True)
     city = Column(String(100), nullable=True)
     linkedin_url = Column(String(500), nullable=True)

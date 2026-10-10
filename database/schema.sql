@@ -438,3 +438,9 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- =============================================================================
 -- Schema Creation Completed: 25 Tables Defined Successfully
 -- =============================================================================
+
+SHOW DATABASES;
+
+use careeriq;
+
+show tables;

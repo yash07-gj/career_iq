@@ -32,7 +32,9 @@ export default function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/resume-analysis" element={<ResumeAnalysis />} />
+        <Route path="/resume" element={<ResumeAnalysis />} />
         <Route path="/recommendations" element={<Recommendations />} />
+
         <Route path="/career-details/:careerId" element={<CareerDetails />} />
         <Route path="/job-matching" element={<JobMatching />} />
         <Route path="/job-details/:jobId" element={<JobDetails />} />

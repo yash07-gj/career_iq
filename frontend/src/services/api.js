@@ -80,12 +80,56 @@ export const api = {
   getJobs: () => fetchApi('/jobs'),
 
   // Analysis & Recommendations
-  getRecommendations: () => fetchApi('/analysis/recommendations'),
-  getGapAnalysis: (roleId = 1) => fetchApi(`/analysis/gap-analysis?role_id=${roleId}`),
+  getRecommendations: (userId) =>
+    fetchApi(`/analysis/recommendations${userId ? `?user_id=${userId}` : ''}`),
+  getGapAnalysis: (roleId = 1, userId) =>
+    fetchApi(`/analysis/gap-analysis?role_id=${roleId}${userId ? `&user_id=${userId}` : ''}`),
   runAnalysis: (profileId = 1) => fetchApi(`/analysis/run/${profileId}`, { method: 'POST' }),
 
+  // Resume Upload & Status
+  uploadResume: async (file, userId) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('user_id', userId);
+
+    const res = await fetch(`${API_BASE_URL}/resume/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Upload failed with status ${res.status}`);
+    }
+
+    return await res.json();
+  },
+
+  getResumeStatus: (userId) => fetchApi(`/resume/status/${userId}`),
+
+  // Profile
+  getProfile: (userId) => fetchApi(`/profile/${userId}`),
+  updateProfile: (userId, data) =>
+    fetchApi(`/profile/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  uploadProfilePhoto: async (userId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${API_BASE_URL}/profile/${userId}/photo`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Upload failed with status ${res.status}`);
+    }
+    return await res.json();
+  },
+
   // Learning Roadmap
-  getRoadmap: () => fetchApi('/roadmap'),
+  getRoadmap: (userId) => fetchApi(`/roadmap${userId ? `?user_id=${userId}` : ''}`),
   updateRoadmapStep: (stepId, status) =>
     fetchApi(`/roadmap/step/${stepId}/status?status=${status}`, { method: 'PUT' }),
 
@@ -99,5 +143,6 @@ export const api = {
       }),
     }),
 };
+
 
 export default api;

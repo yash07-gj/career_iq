@@ -1,20 +1,39 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from typing import Optional
 from app.database import get_db
-from app.models import LearningRoadmap, RoadmapStep, Skill, LearningResource, CareerRole
+from app.models import LearningRoadmap, RoadmapStep, Skill, LearningResource, CareerRole, CandidateProfile, AnalysisRun
 from app.schemas import RoadmapResponse, RoadmapStepResponse
 
 router = APIRouter(prefix="/api/roadmap", tags=["Learning Roadmap"])
 
 @router.get("", response_model=RoadmapResponse)
-def get_current_roadmap(db: Session = Depends(get_db)):
-    roadmap = db.query(LearningRoadmap).order_by(LearningRoadmap.roadmap_id.desc()).first()
+def get_current_roadmap(user_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
+    roadmap = None
+    if user_id:
+        profile = db.query(CandidateProfile).filter(CandidateProfile.user_id == user_id).first()
+        if profile:
+            latest_run = db.query(AnalysisRun).filter(AnalysisRun.profile_id == profile.profile_id).order_by(AnalysisRun.analysis_id.desc()).first()
+            if latest_run:
+                roadmap = db.query(LearningRoadmap).filter(LearningRoadmap.analysis_id == latest_run.analysis_id).first()
+            else:
+                return RoadmapResponse(
+                    roadmap_id=0,
+                    title="Upload Resume to Generate Roadmap",
+                    target_role="None",
+                    status="not_started",
+                    steps=[]
+                )
+
+    if not roadmap:
+        roadmap = db.query(LearningRoadmap).order_by(LearningRoadmap.roadmap_id.desc()).first()
+
     if not roadmap:
         return RoadmapResponse(
-            roadmap_id=1,
-            title="30-Day Accelerated Data Analyst Career Roadmap",
-            target_role="Data Analyst",
-            status="in_progress",
+            roadmap_id=0,
+            title="Upload Resume to Generate Roadmap",
+            target_role="None",
+            status="not_started",
             steps=[]
         )
 
@@ -46,10 +65,11 @@ def get_current_roadmap(db: Session = Depends(get_db)):
     return RoadmapResponse(
         roadmap_id=roadmap.roadmap_id,
         title=roadmap.roadmap_title,
-        target_role=role.role_name if role else "Data Analyst",
+        target_role=role.role_name if role else "General Tech",
         status=roadmap.status,
         steps=steps_out
     )
+
 
 @router.put("/step/{step_id}/status")
 def update_step_status(step_id: int, status: str, db: Session = Depends(get_db)):

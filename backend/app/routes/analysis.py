@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from app.database import get_db
 from app.models import (
     AnalysisRun, CareerRecommendation, CareerRole, SkillGap, Skill,
-    CandidateProfile, CandidateSkill, ReadinessScore
+    CandidateProfile, CandidateSkill, ReadinessScore, User
 )
 from app.schemas import GapAnalysisResponse, SkillGapItem, CareerRecommendationResponse
 from app.services.matching_engine import evaluate_candidate_profile
@@ -17,9 +17,21 @@ def trigger_analysis(profile_id: int, db: Session = Depends(get_db)):
     return {"message": "Analysis evaluated successfully", "analysis_id": analysis_id}
 
 @router.get("/recommendations", response_model=List[CareerRecommendationResponse])
-def get_recommendations(db: Session = Depends(get_db)):
-    latest_run = db.query(AnalysisRun).order_by(AnalysisRun.analysis_id.desc()).first()
-    analysis_id = latest_run.analysis_id if latest_run else 1
+def get_recommendations(user_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
+    analysis_id = None
+    if user_id:
+        profile = db.query(CandidateProfile).filter(CandidateProfile.user_id == user_id).first()
+        if profile:
+            latest_run = db.query(AnalysisRun).filter(AnalysisRun.profile_id == profile.profile_id).order_by(AnalysisRun.analysis_id.desc()).first()
+            if latest_run:
+                analysis_id = latest_run.analysis_id
+            else:
+                # User has not uploaded a resume yet
+                return []
+
+    if not analysis_id:
+        latest_run = db.query(AnalysisRun).order_by(AnalysisRun.analysis_id.desc()).first()
+        analysis_id = latest_run.analysis_id if latest_run else 1
 
     recs = db.query(CareerRecommendation, CareerRole).join(
         CareerRole, CareerRecommendation.career_role_id == CareerRole.career_role_id
@@ -39,18 +51,39 @@ def get_recommendations(db: Session = Depends(get_db)):
     ]
 
 @router.get("/gap-analysis", response_model=GapAnalysisResponse)
-def get_gap_analysis(role_id: int = 1, db: Session = Depends(get_db)):
+def get_gap_analysis(role_id: int = 1, user_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
     role = db.query(CareerRole).filter(CareerRole.career_role_id == role_id).first()
     if not role:
         role = db.query(CareerRole).first()
 
-    latest_run = db.query(AnalysisRun).order_by(AnalysisRun.analysis_id.desc()).first()
-    analysis_id = latest_run.analysis_id if latest_run else 1
+    profile_id = 1
+    analysis_id = None
+
+    if user_id:
+        profile = db.query(CandidateProfile).filter(CandidateProfile.user_id == user_id).first()
+        if profile:
+            profile_id = profile.profile_id
+            latest_run = db.query(AnalysisRun).filter(AnalysisRun.profile_id == profile_id).order_by(AnalysisRun.analysis_id.desc()).first()
+            if latest_run:
+                analysis_id = latest_run.analysis_id
+
+    if not analysis_id:
+        if user_id:
+            # User with no resume uploaded yet
+            return GapAnalysisResponse(
+                target_role=role.role_name if role else "Data Analyst",
+                target_role_id=role.career_role_id if role else 1,
+                readiness_score=0.0,
+                matched_skills=[],
+                missing_skills=[]
+            )
+        latest_run = db.query(AnalysisRun).order_by(AnalysisRun.analysis_id.desc()).first()
+        analysis_id = latest_run.analysis_id if latest_run else 1
 
     # Fetch candidate matched skills
     cand_skills = db.query(CandidateSkill, Skill).join(
         Skill, CandidateSkill.skill_id == Skill.skill_id
-    ).filter(CandidateSkill.profile_id == 1).all()
+    ).filter(CandidateSkill.profile_id == profile_id).all()
     matched_names = [s.Skill.skill_name for s in cand_skills]
 
     # Fetch missing skills / gaps
@@ -78,14 +111,6 @@ def get_gap_analysis(role_id: int = 1, db: Session = Depends(get_db)):
             )
         )
 
-    # Fallback sample if empty
-    if not gap_items:
-        gap_items = [
-            SkillGapItem(skill_gap_id=1, skill_id=3, name="Power BI", current_level=0, required_level=3, priority="High", priority_score=85.0, status="missing"),
-            SkillGapItem(skill_gap_id=2, skill_id=13, name="Data Visualization", current_level=1, required_level=3, priority="Medium", priority_score=60.0, status="weak"),
-            SkillGapItem(skill_gap_id=3, skill_id=9, name="Statistics", current_level=1, required_level=4, priority="High", priority_score=75.0, status="weak")
-        ]
-
     readiness = db.query(ReadinessScore).filter(
         ReadinessScore.analysis_id == analysis_id,
         ReadinessScore.career_role_id == (role.career_role_id if role else 1)
@@ -94,7 +119,8 @@ def get_gap_analysis(role_id: int = 1, db: Session = Depends(get_db)):
     return GapAnalysisResponse(
         target_role=role.role_name if role else "Data Analyst",
         target_role_id=role.career_role_id if role else 1,
-        readiness_score=float(readiness.overall_score) if readiness else 78.0,
-        matched_skills=matched_names if matched_names else ["Python", "SQL", "Excel", "Pandas", "Communication"],
+        readiness_score=float(readiness.overall_score) if readiness else 0.0,
+        matched_skills=matched_names,
         missing_skills=gap_items
     )
+

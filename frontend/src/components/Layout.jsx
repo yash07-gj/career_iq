@@ -15,6 +15,8 @@ export const Layout = ({ children, admin = false }) => {
 
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef(null);
+  
+  const photoUrl = user?.profile_picture_url ? `http://127.0.0.1:8000${user.profile_picture_url}` : null;
 
   // Protect workspace: If not logged in or deleted from database, redirect to /login
   useEffect(() => {
@@ -27,8 +29,17 @@ export const Layout = ({ children, admin = false }) => {
       try {
         const liveUser = await api.getCurrentUser(stored.user_id);
         if (liveUser && liveUser.user_id) {
-          setUser(liveUser);
-          auth.setUser({ ...stored, ...liveUser });
+          // get profile data as well to fetch picture
+          const liveProfile = await api.getProfile(stored.user_id);
+          const updatedUser = { 
+            ...stored, 
+            ...liveUser, 
+            profile_picture_url: liveProfile.profile_picture_url,
+            target_role_id: liveProfile.target_role_id,
+            target_role: liveProfile.target_role_name || stored.target_role 
+          };
+          setUser(updatedUser);
+          auth.setUser(updatedUser);
         }
       } catch (err) {
         console.warn('Session expired or user deleted from database. Logging out...', err);
@@ -39,6 +50,15 @@ export const Layout = ({ children, admin = false }) => {
     }
     checkSession();
   }, [nav]);
+  
+  // Listen for custom authChange event (fired by profile updates)
+  useEffect(() => {
+    const handleAuthChange = () => {
+      setUser(auth.getUser());
+    };
+    window.addEventListener('authChange', handleAuthChange);
+    return () => window.removeEventListener('authChange', handleAuthChange);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -78,10 +98,17 @@ export const Layout = ({ children, admin = false }) => {
             <div 
               className="avatar" 
               onClick={() => setProfileOpen(!profileOpen)}
-              style={{ cursor: 'pointer', userSelect: 'none' }}
+              style={{ 
+                cursor: 'pointer', 
+                userSelect: 'none',
+                backgroundImage: photoUrl ? `url(${photoUrl})` : 'none',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                color: photoUrl ? 'transparent' : undefined
+              }}
               title="Profile menu"
             >
-              {initial}
+              {!photoUrl && initial}
             </div>
 
             {profileOpen && (
@@ -112,10 +139,13 @@ export const Layout = ({ children, admin = false }) => {
                       placeItems: 'center', 
                       fontSize: '15px', 
                       fontWeight: 800,
-                      flexShrink: 0
+                      flexShrink: 0,
+                      backgroundImage: photoUrl ? `url(${photoUrl})` : 'none',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
                     }}
                   >
-                    {initial}
+                    {!photoUrl && initial}
                   </div>
                   <div style={{ overflow: 'hidden', lineHeight: 1.3 }}>
                     <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--navy, #0f172a)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>

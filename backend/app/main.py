@@ -1,12 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import auth, dashboard, skills, jobs, analysis, roadmap, simulation
+from fastapi.staticfiles import StaticFiles
+from app.routes import auth, dashboard, skills, jobs, analysis, roadmap, simulation, resume, profile
 
 app = FastAPI(
     title="CareerIQ — AI Career Intelligence API",
     description="Backend API connecting MySQL (careeriq_db) with React Frontend for MCA AI Career Intelligence Prototype",
     version="1.0.0"
 )
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Enable CORS for frontend development and local servers
 app.add_middleware(
@@ -30,6 +33,9 @@ app.include_router(jobs.router)
 app.include_router(analysis.router)
 app.include_router(roadmap.router)
 app.include_router(simulation.router)
+app.include_router(resume.router)
+app.include_router(profile.router)
+
 
 @app.get("/")
 def root():
