@@ -32,6 +32,182 @@
   --font-main: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+/* ============================================================
+   THEME STYLES (DARK / SYSTEM)
+============================================================ */
+
+[data-theme="dark"] {
+  --navy: #f8fafc;
+  --navy-dark: #ffffff;
+  --bg: #0b0f19;
+  --bg-card: #131b2e;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --text-light: #64748b;
+  --line: #1e293b;
+  --blue-light: #172554;
+  --blue-border: #1e3a8a;
+  --shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.5), 0 2px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 20px 40px -10px rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+[data-theme="dark"] .app,
+[data-theme="dark"] .main {
+  background: var(--bg) !important;
+}
+
+[data-theme="dark"] .sidebar,
+[data-theme="dark"] .sidebar-bottom,
+[data-theme="dark"] .topbar {
+  background: var(--bg-card) !important;
+  border-color: var(--line) !important;
+}
+
+[data-theme="dark"] .brand {
+  border-color: var(--line) !important;
+}
+
+[data-theme="dark"] .sidebar-nav-item,
+[data-theme="dark"] .nav a,
+[data-theme="dark"] .sidebar-bottom-btn {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .sidebar-nav-item:hover,
+[data-theme="dark"] .nav a:hover,
+[data-theme="dark"] .sidebar-bottom-btn:hover {
+  background: #1e293b !important;
+  color: #60a5fa !important;
+}
+
+[data-theme="dark"] .sidebar-nav-item.active,
+[data-theme="dark"] .nav a.active {
+  background: #1e293b !important;
+  color: #60a5fa !important;
+  border-left-color: #3b82f6 !important;
+}
+
+[data-theme="dark"] .card {
+  background: var(--bg-card) !important;
+  border-color: var(--line) !important;
+  color: var(--text) !important;
+}
+
+[data-theme="dark"] .card-title,
+[data-theme="dark"] .page h1,
+[data-theme="dark"] .brand-title,
+[data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3, [data-theme="dark"] h4 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .hello,
+[data-theme="dark"] .page-head p {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .input,
+[data-theme="dark"] .select,
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: #1a233a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .tag,
+[data-theme="dark"] .mini-pill {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .btn.outline {
+  border-color: #334155 !important;
+  color: #93c5fd !important;
+  background: transparent !important;
+}
+
+[data-theme="dark"] .btn.outline:hover {
+  background: #1e293b !important;
+}
+
+[data-theme="dark"] .settings-card-bg {
+  background: var(--bg-card) !important;
+  border-color: var(--line) !important;
+}
+
+/* ============================================================
+   COMPACT MODE STYLES
+============================================================ */
+
+[data-compact="true"],
+.compact-mode {
+  --compact-scale: 0.88;
+}
+
+[data-compact="true"] .page,
+.compact-mode .page {
+  padding: 16px 24px 28px !important;
+}
+
+[data-compact="true"] .page-head,
+.compact-mode .page-head {
+  margin-bottom: 14px !important;
+}
+
+[data-compact="true"] .page h1,
+.compact-mode .page h1 {
+  font-size: 22px !important;
+  margin: 2px 0 4px !important;
+}
+
+[data-compact="true"] .card,
+.compact-mode .card {
+  margin-bottom: 14px !important;
+}
+
+[data-compact="true"] .card-pad,
+.compact-mode .card-pad {
+  padding: 14px 18px !important;
+}
+
+[data-compact="true"] .grid,
+.compact-mode .grid {
+  gap: 12px !important;
+}
+
+[data-compact="true"] .metric,
+.compact-mode .metric {
+  padding: 12px 16px !important;
+  gap: 12px !important;
+}
+
+[data-compact="true"] .sidebar-nav-item,
+[data-compact="true"] .nav a,
+.compact-mode .sidebar-nav-item,
+.compact-mode .nav a {
+  padding: 7px 12px !important;
+  font-size: 12.5px !important;
+}
+
+[data-compact="true"] .topbar,
+.compact-mode .topbar {
+  height: 54px !important;
+  padding: 0 20px !important;
+}
+
+[data-compact="true"] .brand,
+.compact-mode .brand {
+  height: 56px !important;
+  padding: 10px 16px !important;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

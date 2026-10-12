@@ -19,6 +19,7 @@ import {
   RefreshCw,
   Eye,
   EyeOff,
+  FileText,
 } from 'lucide-react';
 import { Layout, Page } from '../components/Layout';
 import { Link, useNavigate } from 'react-router-dom';
@@ -50,17 +51,18 @@ const writeLS = (key, value) => {
 /** Section card wrapper */
 const SettingsCard = ({ icon: Icon, iconColor = '#2563eb', iconBg = '#eff6ff', title, subtitle, children, danger = false }) => (
   <div style={{
-    background: danger ? '#fff5f5' : '#ffffff',
-    border: `1px solid ${danger ? '#fecaca' : '#e2e8f0'}`,
+    background: danger ? (document.documentElement.getAttribute('data-theme') === 'dark' ? '#2c0b0e' : '#fff5f5') : 'var(--bg-card, #ffffff)',
+    border: `1px solid ${danger ? '#ef4444' : 'var(--line, #e2e8f0)'}`,
     borderRadius: '14px',
-    boxShadow: '0 4px 16px -2px rgba(15,23,42,0.08), 0 2px 6px -1px rgba(15,23,42,0.04)',
+    boxShadow: 'var(--shadow)',
     marginBottom: '24px',
     overflow: 'hidden',
+    transition: 'background 0.2s ease, border-color 0.2s ease',
   }}>
     {/* Card header */}
     <div style={{
       padding: '20px 28px',
-      borderBottom: `1px solid ${danger ? '#fecaca' : '#f1f5f9'}`,
+      borderBottom: `1px solid ${danger ? '#ef4444' : 'var(--line, #f1f5f9)'}`,
       display: 'flex',
       alignItems: 'center',
       gap: '14px',
@@ -69,7 +71,7 @@ const SettingsCard = ({ icon: Icon, iconColor = '#2563eb', iconBg = '#eff6ff', t
         width: '40px',
         height: '40px',
         borderRadius: '10px',
-        background: danger ? '#fee2e2' : iconBg,
+        background: danger ? '#fee2e2' : (document.documentElement.getAttribute('data-theme') === 'dark' ? '#1e293b' : iconBg),
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -78,8 +80,8 @@ const SettingsCard = ({ icon: Icon, iconColor = '#2563eb', iconBg = '#eff6ff', t
         <Icon size={20} color={danger ? '#ef4444' : iconColor} />
       </div>
       <div>
-        <div style={{ fontSize: '16px', fontWeight: 800, color: danger ? '#991b1b' : '#0f172a', lineHeight: 1.2 }}>{title}</div>
-        {subtitle && <div style={{ fontSize: '13px', color: '#64748b', marginTop: '3px' }}>{subtitle}</div>}
+        <div style={{ fontSize: '16px', fontWeight: 800, color: danger ? '#ef4444' : 'var(--navy, #0f172a)', lineHeight: 1.2 }}>{title}</div>
+        {subtitle && <div style={{ fontSize: '13px', color: 'var(--text-muted, #64748b)', marginTop: '3px' }}>{subtitle}</div>}
       </div>
     </div>
     {/* Card body */}
@@ -95,11 +97,11 @@ const SettingsRow = ({ label, description, children, noBorder = false }) => (
     justifyContent: 'space-between',
     gap: '24px',
     padding: '14px 0',
-    borderBottom: noBorder ? 'none' : '1px solid #f1f5f9',
+    borderBottom: noBorder ? 'none' : '1px solid var(--line, #f1f5f9)',
   }}>
     <div style={{ flex: 1 }}>
-      <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '2px' }}>{label}</div>
-      {description && <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.5 }}>{description}</div>}
+      <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '2px' }}>{label}</div>
+      {description && <div style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)', lineHeight: 1.5 }}>{description}</div>}
     </div>
     <div style={{ flexShrink: 0 }}>{children}</div>
   </div>
@@ -117,7 +119,7 @@ const Toggle = ({ checked, onChange }) => (
       height: '24px',
       borderRadius: '12px',
       border: 'none',
-      background: checked ? '#2563eb' : '#cbd5e1',
+      background: checked ? '#2563eb' : (document.documentElement.getAttribute('data-theme') === 'dark' ? '#334155' : '#cbd5e1'),
       cursor: 'pointer',
       position: 'relative',
       transition: 'background 0.2s ease',
@@ -147,7 +149,8 @@ const Modal = ({ show, onClose, title, children }) => {
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'rgba(15,23,42,0.5)',
+        background: 'rgba(15,23,42,0.6)',
+        backdropFilter: 'blur(4px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: '20px',
       }}
@@ -155,15 +158,18 @@ const Modal = ({ show, onClose, title, children }) => {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: '#ffffff', borderRadius: '14px',
+          background: 'var(--bg-card, #ffffff)',
+          border: '1px solid var(--line, #e2e8f0)',
+          borderRadius: '14px',
           width: '100%', maxWidth: '480px',
-          boxShadow: '0 20px 50px rgba(15,23,42,0.2)',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
           overflow: 'hidden',
+          color: 'var(--text, #1e293b)',
         }}
       >
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>{title}</span>
-          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', lineHeight: 1 }}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--line, #f1f5f9)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--navy, #0f172a)' }}>{title}</span>
+          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted, #64748b)', lineHeight: 1 }}>
             <X size={20} />
           </button>
         </div>
@@ -204,12 +210,13 @@ export default function Settings() {
     learningRecs: true,
   }));
 
-  // sync status toast
+  // sync status toast (only for non-theme updates)
   const [syncStatus, setSyncStatus] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
 
   // modals
   const [downloadModal, setDownloadModal] = useState(false);
+  const [downloadLoading, setDownloadLoading] = useState(false);
   const [recDataModal, setRecDataModal]   = useState(false);
   const [pwModal, setPwModal]             = useState(false);
   const [deleteModal, setDeleteModal]     = useState(false);
@@ -246,8 +253,34 @@ export default function Settings() {
     }
   }, []);
 
-  // apply theme on mount
-  useEffect(() => { applyTheme(theme); }, []); // eslint-disable-line
+  // ── compact mode application ───────────────────────────────────────────────
+  const applyCompact = useCallback((isCompact) => {
+    const root = document.documentElement;
+    root.setAttribute('data-compact', isCompact ? 'true' : 'false');
+    if (isCompact) {
+      root.classList.add('compact-mode');
+      document.body.classList.add('compact-mode');
+    } else {
+      root.classList.remove('compact-mode');
+      document.body.classList.remove('compact-mode');
+    }
+  }, []);
+
+  // apply theme & compact on mount
+  useEffect(() => {
+    applyTheme(theme);
+    applyCompact(compactMode);
+
+    // If system theme, listen for system theme changes dynamically
+    if (theme === 'system') {
+      const mql = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleSystemChange = (e) => {
+        document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+      };
+      mql.addEventListener('change', handleSystemChange);
+      return () => mql.removeEventListener('change', handleSystemChange);
+    }
+  }, [theme, compactMode, applyTheme, applyCompact]);
 
   // ── fetch settings from backend on mount ───────────────────────────────────
   useEffect(() => {
@@ -264,6 +297,7 @@ export default function Settings() {
           if (data.compact_mode !== undefined) {
             setCompactMode(data.compact_mode);
             writeLS(LS_COMPACT, data.compact_mode);
+            applyCompact(data.compact_mode);
           }
           if (data.notifications) {
             setNotifications(data.notifications);
@@ -283,12 +317,12 @@ export default function Settings() {
       }
     }
     loadSettings();
-  }, [userId, applyTheme]);
+  }, [userId, applyTheme, applyCompact]);
 
   // ── backend sync handler ────────────────────────────────────────────────────
-  const syncSettingsToBackend = useCallback(async (overrides = {}) => {
+  const syncSettingsToBackend = useCallback(async (overrides = {}, showToast = false) => {
     if (!userId) return;
-    setIsSyncing(true);
+    if (showToast) setIsSyncing(true);
     try {
       const payload = {
         theme: overrides.theme !== undefined ? overrides.theme : theme,
@@ -299,57 +333,65 @@ export default function Settings() {
       };
 
       await api.updateSettings(userId, payload);
-      setSyncStatus('Settings synced to MySQL database ✓');
-      setTimeout(() => setSyncStatus(''), 3000);
+      if (showToast) {
+        setSyncStatus('Preferences saved to MySQL database ✓');
+        setTimeout(() => setSyncStatus(''), 2500);
+      }
     } catch (err) {
       console.error('[Settings] Sync error:', err);
-      setSyncStatus('Saved locally (network error)');
-      setTimeout(() => setSyncStatus(''), 3000);
+      if (showToast) {
+        setSyncStatus('Saved locally');
+        setTimeout(() => setSyncStatus(''), 2000);
+      }
     } finally {
-      setIsSyncing(false);
+      if (showToast) setIsSyncing(false);
     }
   }, [userId, theme, compactMode, notifications, preferences, aiSettings]);
 
-  // ── state triggers ──────────────────────────────────────────────────────────
+  // ── Theme Selection Trigger (SILENT SYNC, NO TOAST MSG) ─────────────────────
   const handleThemeChange = (newTheme) => {
     setTheme(newTheme);
     writeLS(LS_THEME, newTheme);
     applyTheme(newTheme);
-    syncSettingsToBackend({ theme: newTheme });
+    // Silent sync to backend without showing toast message
+    syncSettingsToBackend({ theme: newTheme }, false);
   };
 
+  // ── Compact Mode Selection Trigger (SILENT SYNC, NO TOAST MSG) ──────────────
   const handleCompactChange = (val) => {
     setCompactMode(val);
     writeLS(LS_COMPACT, val);
-    syncSettingsToBackend({ compactMode: val });
+    applyCompact(val);
+    // Silent sync to backend without showing toast message
+    syncSettingsToBackend({ compactMode: val }, false);
   };
 
   const toggleNotif = (key) => {
     const updated = { ...notifications, [key]: !notifications[key] };
     setNotifications(updated);
     writeLS(LS_NOTIFICATIONS, updated);
-    syncSettingsToBackend({ notifications: updated });
+    syncSettingsToBackend({ notifications: updated }, true);
   };
 
   const toggleAI = (key) => {
     const updated = { ...aiSettings, [key]: !aiSettings[key] };
     setAiSettings(updated);
     writeLS(LS_AI_SETTINGS, updated);
-    syncSettingsToBackend({ aiSettings: updated });
+    syncSettingsToBackend({ aiSettings: updated }, true);
   };
 
   const handleWorkTypeChange = (val) => {
     const updated = { ...preferences, workType: val };
     setPreferences(updated);
     writeLS(LS_PREFERENCES, updated);
-    syncSettingsToBackend({ preferences: updated });
+    syncSettingsToBackend({ preferences: updated }, true);
   };
 
   const handleLocationChange = (val) => {
     const updated = { ...preferences, location: val };
     setPreferences(updated);
     writeLS(LS_PREFERENCES, updated);
-    syncSettingsToBackend({ preferences: updated });
+    syncSettingsToBackend({ preferences: updated }, true);
   };
 
   const toggleInterest = (interest) => {
@@ -360,14 +402,14 @@ export default function Settings() {
     const updated = { ...preferences, interests: updatedInterests };
     setPreferences(updated);
     writeLS(LS_PREFERENCES, updated);
-    syncSettingsToBackend({ preferences: updated });
+    syncSettingsToBackend({ preferences: updated }, true);
   };
 
   const handleRemoteChange = (val) => {
     const updated = { ...preferences, remoteOk: val };
     setPreferences(updated);
     writeLS(LS_PREFERENCES, updated);
-    syncSettingsToBackend({ preferences: updated });
+    syncSettingsToBackend({ preferences: updated }, true);
   };
 
   // ── Password Change Action ──────────────────────────────────────────────────
@@ -428,23 +470,29 @@ export default function Settings() {
     }
   };
 
-  // ── Download Data Action ────────────────────────────────────────────────────
-  const handleDownloadData = async () => {
+  // ── Download Data as PDF Action ─────────────────────────────────────────────
+  const handleDownloadPdf = async () => {
+    setDownloadLoading(true);
     try {
-      const data = await api.exportUserData(userId);
-      const jsonStr = JSON.stringify(data, null, 2);
-      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const res = await fetch(`http://127.0.0.1:8000/api/profile/${userId}/export-pdf`);
+      if (!res.ok) {
+        throw new Error('Failed to generate PDF document');
+      }
+      const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `CareerIQ_UserData_${user?.full_name?.replace(/\s+/g, '_') || 'Candidate'}.json`;
+      const cleanName = (user?.full_name || 'Candidate').replace(/\s+/g, '_');
+      link.download = `CareerIQ_Profile_${cleanName}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       setDownloadModal(false);
     } catch (err) {
-      alert('Failed to export data: ' + err.message);
+      alert('Failed to download PDF: ' + err.message);
+    } finally {
+      setDownloadLoading(false);
     }
   };
 
@@ -497,7 +545,7 @@ export default function Settings() {
     <Layout>
       <Page
         title="Settings"
-        subtitle="Manage your application preferences, account security, and cloud data"
+        subtitle="Manage your application preferences, appearance, and account security"
         action={
           syncStatus ? (
             <div style={{
@@ -527,7 +575,7 @@ export default function Settings() {
               color: '#2563eb',
             }}>
               <RefreshCw size={13} className="spin" />
-              Syncing...
+              Saving...
             </div>
           ) : null
         }
@@ -537,11 +585,11 @@ export default function Settings() {
         <SettingsCard
           icon={Sun}
           title="Appearance"
-          subtitle="Customize how CareerIQ looks for you"
+          subtitle="Customize the theme and display density of CareerIQ"
         >
           {/* Theme selector */}
-          <div style={{ paddingBottom: '16px', borderBottom: '1px solid #f1f5f9' }}>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '12px' }}>Theme</div>
+          <div style={{ paddingBottom: '16px', borderBottom: '1px solid var(--line, #f1f5f9)' }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '12px' }}>Theme</div>
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               {themeOptions.map(({ id, label, icon: Icon }) => {
                 const active = theme === id;
@@ -556,14 +604,14 @@ export default function Settings() {
                       gap: '8px',
                       padding: '10px 18px',
                       borderRadius: '9px',
-                      border: active ? '2px solid #2563eb' : '1.5px solid #e2e8f0',
-                      background: active ? '#eff6ff' : '#ffffff',
-                      color: active ? '#2563eb' : '#64748b',
+                      border: active ? '2px solid #2563eb' : '1.5px solid var(--line, #e2e8f0)',
+                      background: active ? '#2563eb' : 'var(--bg-card, #ffffff)',
+                      color: active ? '#ffffff' : 'var(--text-muted, #64748b)',
                       fontSize: '13px',
                       fontWeight: active ? 700 : 600,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
-                      boxShadow: active ? '0 0 0 3px rgba(37,99,235,0.12)' : 'none',
+                      boxShadow: active ? '0 0 0 3px rgba(37,99,235,0.25)' : 'none',
                     }}
                   >
                     <Icon size={16} />
@@ -573,17 +621,17 @@ export default function Settings() {
                 );
               })}
             </div>
-            <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '10px' }}>
-              {theme === 'system' ? "CareerIQ follows your operating system's color preference." :
-               theme === 'dark'   ? 'Dark mode is active. Darker backgrounds and surfaces are applied.' :
-                                    'Light mode is active. Standard CareerIQ interface.'}
+            <div style={{ fontSize: '12px', color: 'var(--text-muted, #94a3b8)', marginTop: '10px' }}>
+              {theme === 'system' ? "CareerIQ dynamically matches your device operating system's color scheme." :
+               theme === 'dark'   ? 'Dark mode is active. Dark surfaces and high contrast text are applied.' :
+                                    'Light mode is active. Clean standard CareerIQ interface.'}
             </div>
           </div>
 
           {/* Compact mode */}
           <SettingsRow
             label="Compact Mode"
-            description="Reduce spacing and card sizes for a denser layout"
+            description="Reduce layout padding, header sizes, and card spacing for a denser view"
             noBorder
           >
             <Toggle checked={compactMode} onChange={handleCompactChange} />
@@ -617,41 +665,41 @@ export default function Settings() {
           subtitle="Set preferences synced with MySQL database and recommendation algorithms"
         >
           {/* Work type */}
-          <div style={{ paddingBottom: '16px', borderBottom: '1px solid #f1f5f9' }}>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '8px' }}>Preferred Work Type</div>
+          <div style={{ paddingBottom: '16px', borderBottom: '1px solid var(--line, #f1f5f9)' }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '8px' }}>Preferred Work Type</div>
             <div style={{ position: 'relative', maxWidth: '280px' }}>
               <select
                 className="select"
                 value={preferences.workType}
                 onChange={e => handleWorkTypeChange(e.target.value)}
-                style={{ appearance: 'none', paddingRight: '36px', cursor: 'pointer' }}
+                style={{ appearance: 'none', paddingRight: '36px', cursor: 'pointer', width: '100%' }}
               >
                 {workTypes.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
-              <ChevronDown size={16} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
+              <ChevronDown size={16} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted, #64748b)', pointerEvents: 'none' }} />
             </div>
           </div>
 
           {/* Location */}
-          <div style={{ paddingBottom: '16px', borderBottom: '1px solid #f1f5f9', paddingTop: '16px' }}>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '8px' }}>Preferred Location</div>
+          <div style={{ paddingBottom: '16px', borderBottom: '1px solid var(--line, #f1f5f9)', paddingTop: '16px' }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '8px' }}>Preferred Location</div>
             <div style={{ position: 'relative', maxWidth: '280px' }}>
               <select
                 className="select"
                 value={preferences.location}
                 onChange={e => handleLocationChange(e.target.value)}
-                style={{ appearance: 'none', paddingRight: '36px', cursor: 'pointer' }}
+                style={{ appearance: 'none', paddingRight: '36px', cursor: 'pointer', width: '100%' }}
               >
                 {locations.map(l => <option key={l} value={l}>{l}</option>)}
               </select>
-              <ChevronDown size={16} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
+              <ChevronDown size={16} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted, #64748b)', pointerEvents: 'none' }} />
             </div>
           </div>
 
           {/* Career interests */}
-          <div style={{ paddingBottom: '16px', borderBottom: '1px solid #f1f5f9', paddingTop: '16px' }}>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '4px' }}>Career Interests</div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>Select all that apply</div>
+          <div style={{ paddingBottom: '16px', borderBottom: '1px solid var(--line, #f1f5f9)', paddingTop: '16px' }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '4px' }}>Career Interests</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)', marginBottom: '12px' }}>Select all that apply</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {interestOptions.map(interest => {
                 const selected = preferences.interests.includes(interest);
@@ -663,9 +711,9 @@ export default function Settings() {
                     style={{
                       padding: '7px 14px',
                       borderRadius: '20px',
-                      border: selected ? '1.5px solid #2563eb' : '1.5px solid #e2e8f0',
-                      background: selected ? '#eff6ff' : '#ffffff',
-                      color: selected ? '#2563eb' : '#475569',
+                      border: selected ? '1.5px solid #2563eb' : '1.5px solid var(--line, #e2e8f0)',
+                      background: selected ? '#2563eb' : 'var(--bg-card, #ffffff)',
+                      color: selected ? '#ffffff' : 'var(--text-muted, #475569)',
                       fontSize: '13px',
                       fontWeight: selected ? 700 : 600,
                       cursor: 'pointer',
@@ -696,16 +744,16 @@ export default function Settings() {
           subtitle="Control how CareerIQ uses your profile for personalised recommendations"
         >
           <div style={{
-            background: '#f0f9ff',
-            border: '1px solid #bae6fd',
+            background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#0f2744' : '#f0f9ff',
+            border: '1px solid #0284c7',
             borderRadius: '10px',
             padding: '12px 16px',
             marginBottom: '16px',
             fontSize: '12px',
-            color: '#0369a1',
+            color: '#38bdf8',
             lineHeight: 1.6,
           }}>
-            <strong>Live AI Engine:</strong> Your preferences are stored in the backend and directly tune the recommendation and matching algorithms.
+            <strong>Live AI Engine:</strong> Preferences are stored directly in MySQL and tune the matching and recommendation algorithms.
           </div>
 
           <SettingsRow label="Personalised Recommendations" description="Use my profile and skills to generate career recommendations">
@@ -723,13 +771,13 @@ export default function Settings() {
         <SettingsCard
           icon={Shield}
           title="Privacy & Data"
-          subtitle="Manage your CareerIQ data, resume information, and cloud exports"
+          subtitle="Manage your CareerIQ data, resume information, and PDF exports"
         >
           {/* Resume data */}
-          <div style={{ paddingBottom: '16px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
+          <div style={{ paddingBottom: '16px', borderBottom: '1px solid var(--line, #f1f5f9)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
             <div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '2px' }}>Resume Data</div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>Manage and upload information extracted from your resume</div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '2px' }}>Resume Data</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)' }}>Manage and upload information extracted from your resume</div>
             </div>
             <Link to="/resume-analysis" className="btn outline" style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '8px 16px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               <Database size={14} />
@@ -737,23 +785,23 @@ export default function Settings() {
             </Link>
           </div>
 
-          {/* Download */}
-          <div style={{ paddingBottom: '16px', borderBottom: '1px solid #f1f5f9', paddingTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
+          {/* Download Data as PDF */}
+          <div style={{ paddingBottom: '16px', borderBottom: '1px solid var(--line, #f1f5f9)', paddingTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
             <div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '2px' }}>Download My Data</div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>Export a complete JSON archive of your CareerIQ account data</div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '2px' }}>Download My Data</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)' }}>Export an official PDF report of your candidate profile, skills, and intelligence data</div>
             </div>
             <button type="button" className="btn outline" style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '8px 16px' }} onClick={() => setDownloadModal(true)}>
               <Download size={14} />
-              Download Data
+              Download PDF
             </button>
           </div>
 
           {/* Recommendation data */}
           <div style={{ paddingTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
             <div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '2px' }}>Recommendation Data</div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>View details and manage recommendations stored in MySQL</div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '2px' }}>Recommendation Data</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)' }}>View details and manage recommendations stored in MySQL</div>
             </div>
             <button type="button" className="btn outline" style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '8px 16px' }} onClick={handleOpenRecModal}>
               <Database size={14} />
@@ -769,18 +817,18 @@ export default function Settings() {
           subtitle="Your account details and security settings"
         >
           {/* Email */}
-          <div style={{ paddingBottom: '16px', borderBottom: '1px solid #f1f5f9' }}>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Email Address</div>
-            <div style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a' }}>
-              {userEmail || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>No email found — please log in again</span>}
+          <div style={{ paddingBottom: '16px', borderBottom: '1px solid var(--line, #f1f5f9)' }}>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted, #64748b)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Email Address</div>
+            <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--navy, #0f172a)' }}>
+              {userEmail || <span style={{ color: 'var(--text-muted, #94a3b8)', fontStyle: 'italic' }}>No email found — please log in again</span>}
             </div>
           </div>
 
           {/* Change password */}
           <div style={{ paddingTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
             <div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '2px' }}>Change Password</div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>Update your account password stored securely in MySQL</div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '2px' }}>Change Password</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)' }}>Update your account password stored securely in MySQL</div>
             </div>
             <button type="button" className="btn outline" style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '8px 16px' }} onClick={() => setPwModal(true)}>
               <Key size={14} />
@@ -798,8 +846,8 @@ export default function Settings() {
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
             <div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#991b1b', marginBottom: '2px' }}>Delete Account</div>
-              <div style={{ fontSize: '12px', color: '#b91c1c' }}>Permanently delete your CareerIQ account, resume, and MySQL records</div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: '#ef4444', marginBottom: '2px' }}>Delete Account</div>
+              <div style={{ fontSize: '12px', color: '#f87171' }}>Permanently delete your CareerIQ account, resume, and MySQL records</div>
             </div>
             <button
               type="button"
@@ -830,15 +878,33 @@ export default function Settings() {
             MODALS
         ════════════════════════════════════════════════════════════════ */}
 
-        {/* Download Data modal */}
-        <Modal show={downloadModal} onClose={() => setDownloadModal(false)} title="Download My Data">
-          <div style={{ fontSize: '14px', color: '#475569', lineHeight: 1.7, marginBottom: '20px' }}>
-            Export a complete JSON copy of your CareerIQ account, including your registered profile, skill matrix, candidate preferences, uploaded resume metadata, and AI career recommendations.
+        {/* Download Data as PDF modal */}
+        <Modal show={downloadModal} onClose={() => setDownloadModal(false)} title="Download My Data (PDF Report)">
+          <div style={{ textAlign: 'center', padding: '10px 0 16px' }}>
+            <div style={{
+              width: '54px', height: '54px', borderRadius: '14px',
+              background: '#eff6ff', color: '#2563eb', margin: '0 auto 14px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <FileText size={28} />
+            </div>
+            <h4 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--navy, #0f172a)', margin: '0 0 8px' }}>
+              Candidate Intelligence Report (PDF)
+            </h4>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted, #64748b)', lineHeight: 1.6, margin: 0 }}>
+              Export an official formatted PDF document containing your complete account details, verified skills catalog, career preferences, and AI career recommendations.
+            </p>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button type="button" className="btn outline" onClick={() => setDownloadModal(false)} style={{ flex: 1 }}>Cancel</button>
-            <button type="button" className="btn" onClick={handleDownloadData} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              <Download size={14} /> Export JSON File
+            <button
+              type="button"
+              className="btn"
+              onClick={handleDownloadPdf}
+              disabled={downloadLoading}
+              style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+            >
+              <Download size={14} /> {downloadLoading ? 'Generating PDF...' : 'Download PDF'}
             </button>
           </div>
         </Modal>
@@ -846,7 +912,7 @@ export default function Settings() {
         {/* Recommendation Data modal */}
         <Modal show={recDataModal} onClose={() => setRecDataModal(false)} title="Recommendation Data">
           {recLoading ? (
-            <div style={{ textAlign: 'center', padding: '24px 0', color: '#64748b' }}>
+            <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted, #64748b)' }}>
               <RefreshCw size={24} className="spin" style={{ margin: '0 auto 10px' }} />
               <div>Loading recommendation records...</div>
             </div>
@@ -857,15 +923,15 @@ export default function Settings() {
                   {recActionMsg}
                 </div>
               )}
-              <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '14px' }}>
+              <div style={{ fontSize: '13px', color: 'var(--text-muted, #64748b)', marginBottom: '14px' }}>
                 Latest Analysis Run: <strong>#{recDetails.analysis_id}</strong> ({new Date(recDetails.analysis_date).toLocaleDateString()})
               </div>
               <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
                 {recDetails.recommendations.map(r => (
-                  <div key={r.role} style={{ padding: '10px 14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div key={r.role} style={{ padding: '10px 14px', background: 'var(--bg, #f8fafc)', borderRadius: '8px', border: '1px solid var(--line, #e2e8f0)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>#{r.rank} {r.role}</div>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>{r.summary || 'AI role recommendation'}</div>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy, #0f172a)' }}>#{r.rank} {r.role}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)' }}>{r.summary || 'AI role recommendation'}</div>
                     </div>
                     <span className="pill blue" style={{ fontSize: '12px' }}>{r.match}% match</span>
                   </div>
@@ -880,7 +946,7 @@ export default function Settings() {
             </div>
           ) : (
             <div>
-              <div style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginBottom: '20px' }}>
+              <div style={{ fontSize: '14px', color: 'var(--text-muted, #64748b)', lineHeight: 1.6, marginBottom: '20px' }}>
                 {recActionMsg || 'No recommendation data found in the database. Upload a resume to generate fresh AI recommendations.'}
               </div>
               <button type="button" className="btn" onClick={() => setRecDataModal(false)} style={{ width: '100%' }}>Got it</button>
@@ -903,7 +969,7 @@ export default function Settings() {
             )}
 
             <div style={{ marginBottom: 14 }}>
-              <label className="label" style={{ display: 'block', marginBottom: 6, fontSize: 13 }}>Current Password</label>
+              <label className="label" style={{ display: 'block', marginBottom: 6, fontSize: 13, color: 'var(--text, #1e293b)' }}>Current Password</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPw ? 'text' : 'password'}
@@ -917,7 +983,7 @@ export default function Settings() {
                 <button
                   type="button"
                   onClick={() => setShowPw(!showPw)}
-                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}
+                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted, #64748b)' }}
                 >
                   {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -925,7 +991,7 @@ export default function Settings() {
             </div>
 
             <div style={{ marginBottom: 14 }}>
-              <label className="label" style={{ display: 'block', marginBottom: 6, fontSize: 13 }}>New Password</label>
+              <label className="label" style={{ display: 'block', marginBottom: 6, fontSize: 13, color: 'var(--text, #1e293b)' }}>New Password</label>
               <input
                 type={showPw ? 'text' : 'password'}
                 className="input"
@@ -938,7 +1004,7 @@ export default function Settings() {
             </div>
 
             <div style={{ marginBottom: 20 }}>
-              <label className="label" style={{ display: 'block', marginBottom: 6, fontSize: 13 }}>Confirm New Password</label>
+              <label className="label" style={{ display: 'block', marginBottom: 6, fontSize: 13, color: 'var(--text, #1e293b)' }}>Confirm New Password</label>
               <input
                 type={showPw ? 'text' : 'password'}
                 className="input"
@@ -962,7 +1028,7 @@ export default function Settings() {
         {/* Delete Account confirmation modal */}
         <Modal show={deleteModal} onClose={() => { setDeleteModal(false); setDeleteError(''); }} title="Delete Account?">
           <form onSubmit={handleDeleteAccountSubmit}>
-            <div style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, marginBottom: '8px' }}>
+            <div style={{ fontSize: '14px', color: 'var(--text-muted, #475569)', lineHeight: 1.6, marginBottom: '8px' }}>
               Are you sure you want to delete your account? All your profiles, uploaded resumes, and roadmap records will be permanently erased from MySQL.
             </div>
             <div style={{ fontSize: '13px', color: '#ef4444', fontWeight: 600, marginBottom: '16px' }}>
@@ -976,7 +1042,7 @@ export default function Settings() {
             )}
 
             <div style={{ marginBottom: 20 }}>
-              <label className="label" style={{ display: 'block', marginBottom: 6, fontSize: 13 }}>Enter Password to Confirm</label>
+              <label className="label" style={{ display: 'block', marginBottom: 6, fontSize: 13, color: 'var(--text, #1e293b)' }}>Enter Password to Confirm</label>
               <input
                 type="password"
                 className="input"

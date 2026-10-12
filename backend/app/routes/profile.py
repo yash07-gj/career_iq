@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import (
@@ -6,6 +7,7 @@ from app.models import (
     Education, Experience, Project, Certification, Resume, AnalysisRun, CareerRecommendation, LearningRoadmap
 )
 from app.schemas import ProfileResponse, ProfileUpdateRequest, SettingsPayload
+from app.services.pdf_generator import generate_user_data_pdf
 import os
 import json
 import shutil
@@ -301,4 +303,17 @@ def clear_recommendation_data(user_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"success": True, "message": "Recommendation data reset successfully."}
+
+@router.get("/{user_id}/export-pdf")
+def export_user_data_pdf(user_id: int, db: Session = Depends(get_db)):
+    data = export_user_data(user_id, db)
+    pdf_buffer = generate_user_data_pdf(data)
+    user_name = data.get("account", {}).get("full_name", f"User_{user_id}").replace(" ", "_")
+    filename = f"CareerIQ_Profile_{user_name}.pdf"
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
 

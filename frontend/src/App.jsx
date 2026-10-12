@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
 import Register from './pages/Register';
@@ -22,6 +22,30 @@ import Settings from './pages/Settings';
 import './App.css';
 
 export default function App() {
+  useEffect(() => {
+    // Initialize Theme globally
+    try {
+      const savedTheme = JSON.parse(localStorage.getItem('careerIQ_theme') || '"light"');
+      const root = document.documentElement;
+      if (savedTheme === 'dark') {
+        root.setAttribute('data-theme', 'dark');
+      } else if (savedTheme === 'system') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+      } else {
+        root.setAttribute('data-theme', 'light');
+      }
+
+      // Initialize Compact Mode globally
+      const savedCompact = JSON.parse(localStorage.getItem('careerIQ_compactMode') || 'false');
+      root.setAttribute('data-compact', savedCompact ? 'true' : 'false');
+      if (savedCompact) {
+        root.classList.add('compact-mode');
+      } else {
+        root.classList.remove('compact-mode');
+      }
+    } catch {}
+  }, []);
   return (
     <Router>
       <Routes>
