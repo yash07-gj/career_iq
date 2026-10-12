@@ -18,6 +18,7 @@ import {
   Check,
 } from 'lucide-react';
 import { Layout, Page } from '../components/Layout';
+import { Link } from 'react-router-dom';
 import auth from '../utils/auth';
 
 // ─── localStorage keys ────────────────────────────────────────────────────────
