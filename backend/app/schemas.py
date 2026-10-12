@@ -46,6 +46,22 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user: UserResponse
 
+# --- Account Settings Schemas ---
+class ChangePasswordRequest(BaseModel):
+    user_id: int
+    current_password: str
+    new_password: str
+
+class DeleteAccountRequest(BaseModel):
+    password: str
+
+class SettingsPayload(BaseModel):
+    theme: Optional[str] = "light"
+    compact_mode: Optional[bool] = False
+    notifications: Optional[dict] = None
+    preferences: Optional[dict] = None
+    ai_settings: Optional[dict] = None
+
 # --- Profile Schemas ---
 class ProfileUpdateRequest(BaseModel):
     full_name: str

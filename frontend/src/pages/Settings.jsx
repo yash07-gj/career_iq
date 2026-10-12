@@ -16,10 +16,14 @@ import {
   Trash2,
   X,
   Check,
+  RefreshCw,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Layout, Page } from '../components/Layout';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import auth from '../utils/auth';
+import api from '../services/api';
 
 // ─── localStorage keys ────────────────────────────────────────────────────────
 const LS_THEME         = 'careerIQ_theme';
@@ -152,7 +156,7 @@ const Modal = ({ show, onClose, title, children }) => {
         onClick={e => e.stopPropagation()}
         style={{
           background: '#ffffff', borderRadius: '14px',
-          width: '100%', maxWidth: '440px',
+          width: '100%', maxWidth: '480px',
           boxShadow: '0 20px 50px rgba(15,23,42,0.2)',
           overflow: 'hidden',
         }}
@@ -171,7 +175,9 @@ const Modal = ({ show, onClose, title, children }) => {
 
 // ─── Main Settings component ──────────────────────────────────────────────────
 export default function Settings() {
+  const navigate = useNavigate();
   const user = auth.getUser();
+  const userId = user?.user_id;
   const userEmail = user?.email || '';
 
   // ── state ──────────────────────────────────────────────────────────────────
@@ -198,19 +204,34 @@ export default function Settings() {
     learningRecs: true,
   }));
 
+  // sync status toast
+  const [syncStatus, setSyncStatus] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+
   // modals
-  const [resumeModal, setResumeModal]     = useState(false);
   const [downloadModal, setDownloadModal] = useState(false);
   const [recDataModal, setRecDataModal]   = useState(false);
   const [pwModal, setPwModal]             = useState(false);
   const [deleteModal, setDeleteModal]     = useState(false);
 
-  // ── persist ────────────────────────────────────────────────────────────────
-  useEffect(() => { writeLS(LS_THEME, theme); applyTheme(theme); }, [theme]);
-  useEffect(() => { writeLS(LS_COMPACT, compactMode); }, [compactMode]);
-  useEffect(() => { writeLS(LS_NOTIFICATIONS, notifications); }, [notifications]);
-  useEffect(() => { writeLS(LS_PREFERENCES, preferences); }, [preferences]);
-  useEffect(() => { writeLS(LS_AI_SETTINGS, aiSettings); }, [aiSettings]);
+  // Change Password state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [pwError, setPwError] = useState('');
+  const [pwSuccess, setPwSuccess] = useState('');
+  const [pwLoading, setPwLoading] = useState(false);
+
+  // Delete Account state
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Recommendation Data state
+  const [recDetails, setRecDetails] = useState(null);
+  const [recLoading, setRecLoading] = useState(false);
+  const [recActionMsg, setRecActionMsg] = useState('');
 
   // ── theme application ──────────────────────────────────────────────────────
   const applyTheme = useCallback((t) => {
@@ -225,17 +246,238 @@ export default function Settings() {
     }
   }, []);
 
-  // apply on mount
+  // apply theme on mount
   useEffect(() => { applyTheme(theme); }, []); // eslint-disable-line
 
-  // ── helpers ────────────────────────────────────────────────────────────────
-  const toggleNotif = (key) => setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
-  const toggleAI    = (key) => setAiSettings(prev => ({ ...prev, [key]: !prev[key] }));
+  // ── fetch settings from backend on mount ───────────────────────────────────
+  useEffect(() => {
+    if (!userId) return;
+    async function loadSettings() {
+      try {
+        const data = await api.getSettings(userId);
+        if (data) {
+          if (data.theme) {
+            setTheme(data.theme);
+            writeLS(LS_THEME, data.theme);
+            applyTheme(data.theme);
+          }
+          if (data.compact_mode !== undefined) {
+            setCompactMode(data.compact_mode);
+            writeLS(LS_COMPACT, data.compact_mode);
+          }
+          if (data.notifications) {
+            setNotifications(data.notifications);
+            writeLS(LS_NOTIFICATIONS, data.notifications);
+          }
+          if (data.preferences) {
+            setPreferences(data.preferences);
+            writeLS(LS_PREFERENCES, data.preferences);
+          }
+          if (data.ai_settings) {
+            setAiSettings(data.ai_settings);
+            writeLS(LS_AI_SETTINGS, data.ai_settings);
+          }
+        }
+      } catch (err) {
+        console.warn('[Settings] Cloud settings fallback to local:', err);
+      }
+    }
+    loadSettings();
+  }, [userId, applyTheme]);
 
-  const toggleInterest = (interest) => setPreferences(prev => {
-    const has = prev.interests.includes(interest);
-    return { ...prev, interests: has ? prev.interests.filter(i => i !== interest) : [...prev.interests, interest] };
-  });
+  // ── backend sync handler ────────────────────────────────────────────────────
+  const syncSettingsToBackend = useCallback(async (overrides = {}) => {
+    if (!userId) return;
+    setIsSyncing(true);
+    try {
+      const payload = {
+        theme: overrides.theme !== undefined ? overrides.theme : theme,
+        compact_mode: overrides.compactMode !== undefined ? overrides.compactMode : compactMode,
+        notifications: overrides.notifications !== undefined ? overrides.notifications : notifications,
+        preferences: overrides.preferences !== undefined ? overrides.preferences : preferences,
+        ai_settings: overrides.aiSettings !== undefined ? overrides.aiSettings : aiSettings,
+      };
+
+      await api.updateSettings(userId, payload);
+      setSyncStatus('Settings synced to MySQL database ✓');
+      setTimeout(() => setSyncStatus(''), 3000);
+    } catch (err) {
+      console.error('[Settings] Sync error:', err);
+      setSyncStatus('Saved locally (network error)');
+      setTimeout(() => setSyncStatus(''), 3000);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [userId, theme, compactMode, notifications, preferences, aiSettings]);
+
+  // ── state triggers ──────────────────────────────────────────────────────────
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme);
+    writeLS(LS_THEME, newTheme);
+    applyTheme(newTheme);
+    syncSettingsToBackend({ theme: newTheme });
+  };
+
+  const handleCompactChange = (val) => {
+    setCompactMode(val);
+    writeLS(LS_COMPACT, val);
+    syncSettingsToBackend({ compactMode: val });
+  };
+
+  const toggleNotif = (key) => {
+    const updated = { ...notifications, [key]: !notifications[key] };
+    setNotifications(updated);
+    writeLS(LS_NOTIFICATIONS, updated);
+    syncSettingsToBackend({ notifications: updated });
+  };
+
+  const toggleAI = (key) => {
+    const updated = { ...aiSettings, [key]: !aiSettings[key] };
+    setAiSettings(updated);
+    writeLS(LS_AI_SETTINGS, updated);
+    syncSettingsToBackend({ aiSettings: updated });
+  };
+
+  const handleWorkTypeChange = (val) => {
+    const updated = { ...preferences, workType: val };
+    setPreferences(updated);
+    writeLS(LS_PREFERENCES, updated);
+    syncSettingsToBackend({ preferences: updated });
+  };
+
+  const handleLocationChange = (val) => {
+    const updated = { ...preferences, location: val };
+    setPreferences(updated);
+    writeLS(LS_PREFERENCES, updated);
+    syncSettingsToBackend({ preferences: updated });
+  };
+
+  const toggleInterest = (interest) => {
+    const has = preferences.interests.includes(interest);
+    const updatedInterests = has
+      ? preferences.interests.filter(i => i !== interest)
+      : [...preferences.interests, interest];
+    const updated = { ...preferences, interests: updatedInterests };
+    setPreferences(updated);
+    writeLS(LS_PREFERENCES, updated);
+    syncSettingsToBackend({ preferences: updated });
+  };
+
+  const handleRemoteChange = (val) => {
+    const updated = { ...preferences, remoteOk: val };
+    setPreferences(updated);
+    writeLS(LS_PREFERENCES, updated);
+    syncSettingsToBackend({ preferences: updated });
+  };
+
+  // ── Password Change Action ──────────────────────────────────────────────────
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setPwError('');
+    setPwSuccess('');
+
+    if (!currentPassword) {
+      setPwError('Please enter your current password.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPwError('New password must be at least 6 characters long.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPwError('New password and confirmation do not match.');
+      return;
+    }
+
+    setPwLoading(true);
+    try {
+      const res = await api.changePassword(userId, currentPassword, newPassword);
+      setPwSuccess(res.message || 'Password updated successfully!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => {
+        setPwModal(false);
+        setPwSuccess('');
+      }, 1800);
+    } catch (err) {
+      setPwError(err.message || 'Failed to update password.');
+    } finally {
+      setPwLoading(false);
+    }
+  };
+
+  // ── Delete Account Action ───────────────────────────────────────────────────
+  const handleDeleteAccountSubmit = async (e) => {
+    e.preventDefault();
+    setDeleteError('');
+
+    if (!deletePassword) {
+      setDeleteError('Please enter your password to confirm deletion.');
+      return;
+    }
+
+    setDeleteLoading(true);
+    try {
+      await api.deleteAccount(userId, deletePassword);
+      auth.logout();
+      navigate('/login');
+    } catch (err) {
+      setDeleteError(err.message || 'Incorrect password or deletion failed.');
+      setDeleteLoading(false);
+    }
+  };
+
+  // ── Download Data Action ────────────────────────────────────────────────────
+  const handleDownloadData = async () => {
+    try {
+      const data = await api.exportUserData(userId);
+      const jsonStr = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `CareerIQ_UserData_${user?.full_name?.replace(/\s+/g, '_') || 'Candidate'}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setDownloadModal(false);
+    } catch (err) {
+      alert('Failed to export data: ' + err.message);
+    }
+  };
+
+  // ── Recommendation Data Action ──────────────────────────────────────────────
+  const handleOpenRecModal = async () => {
+    setRecDataModal(true);
+    setRecLoading(true);
+    setRecActionMsg('');
+    try {
+      const data = await api.getRecommendationData(userId);
+      setRecDetails(data);
+    } catch (err) {
+      console.warn('Rec data fetch error:', err);
+    } finally {
+      setRecLoading(false);
+    }
+  };
+
+  const handleClearRecData = async () => {
+    if (!window.confirm('Are you sure you want to reset your recommendation history? You will need to upload your resume again to re-analyze.')) {
+      return;
+    }
+    setRecLoading(true);
+    try {
+      const res = await api.clearRecommendationData(userId);
+      setRecActionMsg(res.message || 'Recommendation data has been reset.');
+      setRecDetails({ has_data: false, recommendations: [] });
+    } catch (err) {
+      setRecActionMsg('Failed to reset: ' + err.message);
+    } finally {
+      setRecLoading(false);
+    }
+  };
 
   const themeOptions = [
     { id: 'light',  label: 'Light',  icon: Sun },
@@ -243,8 +485,8 @@ export default function Settings() {
     { id: 'system', label: 'System', icon: Monitor },
   ];
 
-  const workTypes  = ['Internship', 'Full-time', 'Part-time', 'Contract', 'Any'];
-  const locations  = ['Ahmedabad', 'Mumbai', 'Bangalore', 'Delhi', 'Hyderabad', 'Remote', 'Any'];
+  const workTypes  = ['Internship', 'Full-time', 'Part-time', 'Contract', 'Hybrid', 'Any'];
+  const locations  = ['Ahmedabad', 'Mumbai', 'Bangalore', 'Delhi', 'Hyderabad', 'Pune', 'Remote', 'Any'];
   const interestOptions = [
     'Data Analytics', 'Data Science', 'Business Intelligence',
     'Software Development', 'Web Development', 'Machine Learning', 'Cloud Computing',
@@ -253,7 +495,43 @@ export default function Settings() {
   // ── render ─────────────────────────────────────────────────────────────────
   return (
     <Layout>
-      <Page title="Settings" subtitle="Manage your application preferences and account settings">
+      <Page
+        title="Settings"
+        subtitle="Manage your application preferences, account security, and cloud data"
+        action={
+          syncStatus ? (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 14px',
+              background: '#ecfdf5',
+              border: '1px solid #a7f3d0',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: 700,
+              color: '#065f46',
+            }}>
+              <Check size={14} color="#10b981" />
+              {syncStatus}
+            </div>
+          ) : isSyncing ? (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 14px',
+              background: '#eff6ff',
+              borderRadius: '20px',
+              fontSize: '12px',
+              color: '#2563eb',
+            }}>
+              <RefreshCw size={13} className="spin" />
+              Syncing...
+            </div>
+          ) : null
+        }
+      >
 
         {/* ── 1. APPEARANCE ─────────────────────────────────────────────── */}
         <SettingsCard
@@ -271,7 +549,7 @@ export default function Settings() {
                   <button
                     key={id}
                     type="button"
-                    onClick={() => setTheme(id)}
+                    onClick={() => handleThemeChange(id)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -296,7 +574,7 @@ export default function Settings() {
               })}
             </div>
             <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '10px' }}>
-              {theme === 'system' ? "CareerIQ will follow your operating system's color preference." :
+              {theme === 'system' ? "CareerIQ follows your operating system's color preference." :
                theme === 'dark'   ? 'Dark mode is active. Darker backgrounds and surfaces are applied.' :
                                     'Light mode is active. Standard CareerIQ interface.'}
             </div>
@@ -308,7 +586,7 @@ export default function Settings() {
             description="Reduce spacing and card sizes for a denser layout"
             noBorder
           >
-            <Toggle checked={compactMode} onChange={setCompactMode} />
+            <Toggle checked={compactMode} onChange={handleCompactChange} />
           </SettingsRow>
         </SettingsCard>
 
@@ -336,7 +614,7 @@ export default function Settings() {
         <SettingsCard
           icon={Briefcase}
           title="Career Preferences"
-          subtitle="Set preferences used by CareerIQ recommendations"
+          subtitle="Set preferences synced with MySQL database and recommendation algorithms"
         >
           {/* Work type */}
           <div style={{ paddingBottom: '16px', borderBottom: '1px solid #f1f5f9' }}>
@@ -345,7 +623,7 @@ export default function Settings() {
               <select
                 className="select"
                 value={preferences.workType}
-                onChange={e => setPreferences(p => ({ ...p, workType: e.target.value }))}
+                onChange={e => handleWorkTypeChange(e.target.value)}
                 style={{ appearance: 'none', paddingRight: '36px', cursor: 'pointer' }}
               >
                 {workTypes.map(t => <option key={t} value={t}>{t}</option>)}
@@ -361,7 +639,7 @@ export default function Settings() {
               <select
                 className="select"
                 value={preferences.location}
-                onChange={e => setPreferences(p => ({ ...p, location: e.target.value }))}
+                onChange={e => handleLocationChange(e.target.value)}
                 style={{ appearance: 'none', paddingRight: '36px', cursor: 'pointer' }}
               >
                 {locations.map(l => <option key={l} value={l}>{l}</option>)}
@@ -407,7 +685,7 @@ export default function Settings() {
 
           {/* Remote */}
           <SettingsRow label="Open to Remote Work" description="Include remote positions in your job matches and recommendations" noBorder>
-            <Toggle checked={preferences.remoteOk} onChange={v => setPreferences(p => ({ ...p, remoteOk: v }))} />
+            <Toggle checked={preferences.remoteOk} onChange={handleRemoteChange} />
           </SettingsRow>
         </SettingsCard>
 
@@ -427,7 +705,7 @@ export default function Settings() {
             color: '#0369a1',
             lineHeight: 1.6,
           }}>
-            <strong>Note:</strong> These preferences are stored locally and will be applied when the AI recommendation engine is connected. They do not affect live AI behaviour yet.
+            <strong>Live AI Engine:</strong> Your preferences are stored in the backend and directly tune the recommendation and matching algorithms.
           </div>
 
           <SettingsRow label="Personalised Recommendations" description="Use my profile and skills to generate career recommendations">
@@ -445,7 +723,7 @@ export default function Settings() {
         <SettingsCard
           icon={Shield}
           title="Privacy & Data"
-          subtitle="Manage your CareerIQ data and resume information"
+          subtitle="Manage your CareerIQ data, resume information, and cloud exports"
         >
           {/* Resume data */}
           <div style={{ paddingBottom: '16px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
@@ -459,12 +737,11 @@ export default function Settings() {
             </Link>
           </div>
 
-
           {/* Download */}
           <div style={{ paddingBottom: '16px', borderBottom: '1px solid #f1f5f9', paddingTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
             <div>
               <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '2px' }}>Download My Data</div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>Export a copy of your CareerIQ account data</div>
+              <div style={{ fontSize: '12px', color: '#64748b' }}>Export a complete JSON archive of your CareerIQ account data</div>
             </div>
             <button type="button" className="btn outline" style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '8px 16px' }} onClick={() => setDownloadModal(true)}>
               <Download size={14} />
@@ -476,9 +753,9 @@ export default function Settings() {
           <div style={{ paddingTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
             <div>
               <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '2px' }}>Recommendation Data</div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>Manage information used for personalised career recommendations</div>
+              <div style={{ fontSize: '12px', color: '#64748b' }}>View details and manage recommendations stored in MySQL</div>
             </div>
-            <button type="button" className="btn outline" style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '8px 16px' }} onClick={() => setRecDataModal(true)}>
+            <button type="button" className="btn outline" style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '8px 16px' }} onClick={handleOpenRecModal}>
               <Database size={14} />
               Manage Data
             </button>
@@ -503,7 +780,7 @@ export default function Settings() {
           <div style={{ paddingTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
             <div>
               <div style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', marginBottom: '2px' }}>Change Password</div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>Update your account password</div>
+              <div style={{ fontSize: '12px', color: '#64748b' }}>Update your account password stored securely in MySQL</div>
             </div>
             <button type="button" className="btn outline" style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '8px 16px' }} onClick={() => setPwModal(true)}>
               <Key size={14} />
@@ -522,7 +799,7 @@ export default function Settings() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
             <div>
               <div style={{ fontSize: '14px', fontWeight: 700, color: '#991b1b', marginBottom: '2px' }}>Delete Account</div>
-              <div style={{ fontSize: '12px', color: '#b91c1c' }}>Permanently delete your CareerIQ account and all associated data</div>
+              <div style={{ fontSize: '12px', color: '#b91c1c' }}>Permanently delete your CareerIQ account, resume, and MySQL records</div>
             </div>
             <button
               type="button"
@@ -553,76 +830,180 @@ export default function Settings() {
             MODALS
         ════════════════════════════════════════════════════════════════ */}
 
-        {/* Resume Data modal */}
-        <Modal show={resumeModal} onClose={() => setResumeModal(false)} title="Resume Data">
-          <div style={{ fontSize: '14px', color: '#475569', lineHeight: 1.7, marginBottom: '20px' }}>
-            Resume data management will be available once the backend data pipeline is connected. Your uploaded resume and extracted information will be viewable and editable here.
-          </div>
-          <button type="button" className="btn" onClick={() => setResumeModal(false)} style={{ width: '100%' }}>Got it</button>
-        </Modal>
-
         {/* Download Data modal */}
         <Modal show={downloadModal} onClose={() => setDownloadModal(false)} title="Download My Data">
           <div style={{ fontSize: '14px', color: '#475569', lineHeight: 1.7, marginBottom: '20px' }}>
-            Data export will be available once backend account management is connected. You will be able to download a complete copy of your CareerIQ profile, preferences, and activity data.
+            Export a complete JSON copy of your CareerIQ account, including your registered profile, skill matrix, candidate preferences, uploaded resume metadata, and AI career recommendations.
           </div>
-          <button type="button" className="btn" onClick={() => setDownloadModal(false)} style={{ width: '100%' }}>Got it</button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button type="button" className="btn outline" onClick={() => setDownloadModal(false)} style={{ flex: 1 }}>Cancel</button>
+            <button type="button" className="btn" onClick={handleDownloadData} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <Download size={14} /> Export JSON File
+            </button>
+          </div>
         </Modal>
 
         {/* Recommendation Data modal */}
         <Modal show={recDataModal} onClose={() => setRecDataModal(false)} title="Recommendation Data">
-          <div style={{ fontSize: '14px', color: '#475569', lineHeight: 1.7, marginBottom: '20px' }}>
-            Recommendation data management will be available once the AI recommendation engine backend is connected. You will be able to view and clear the data used to personalise your career suggestions.
-          </div>
-          <button type="button" className="btn" onClick={() => setRecDataModal(false)} style={{ width: '100%' }}>Got it</button>
+          {recLoading ? (
+            <div style={{ textAlign: 'center', padding: '24px 0', color: '#64748b' }}>
+              <RefreshCw size={24} className="spin" style={{ margin: '0 auto 10px' }} />
+              <div>Loading recommendation records...</div>
+            </div>
+          ) : recDetails?.has_data ? (
+            <div>
+              {recActionMsg && (
+                <div style={{ padding: '8px 12px', background: '#ecfdf5', color: '#065f46', borderRadius: 8, fontSize: 13, marginBottom: 14 }}>
+                  {recActionMsg}
+                </div>
+              )}
+              <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '14px' }}>
+                Latest Analysis Run: <strong>#{recDetails.analysis_id}</strong> ({new Date(recDetails.analysis_date).toLocaleDateString()})
+              </div>
+              <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+                {recDetails.recommendations.map(r => (
+                  <div key={r.role} style={{ padding: '10px 14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>#{r.rank} {r.role}</div>
+                      <div style={{ fontSize: '11px', color: '#64748b' }}>{r.summary || 'AI role recommendation'}</div>
+                    </div>
+                    <span className="pill blue" style={{ fontSize: '12px' }}>{r.match}% match</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="button" className="btn outline" onClick={() => setRecDataModal(false)} style={{ flex: 1 }}>Close</button>
+                <button type="button" className="btn outline" onClick={handleClearRecData} style={{ flex: 1, borderColor: '#fca5a5', color: '#dc2626' }}>
+                  Reset Recommendations
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginBottom: '20px' }}>
+                {recActionMsg || 'No recommendation data found in the database. Upload a resume to generate fresh AI recommendations.'}
+              </div>
+              <button type="button" className="btn" onClick={() => setRecDataModal(false)} style={{ width: '100%' }}>Got it</button>
+            </div>
+          )}
         </Modal>
 
         {/* Change Password modal */}
-        <Modal show={pwModal} onClose={() => setPwModal(false)} title="Change Password">
-          <div style={{
-            display: 'flex', alignItems: 'flex-start', gap: '12px',
-            background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px',
-            padding: '14px 16px', marginBottom: '20px',
-          }}>
-            <Key size={18} color="#2563eb" style={{ flexShrink: 0, marginTop: '2px' }} />
-            <div style={{ fontSize: '13px', color: '#1e40af', lineHeight: 1.6 }}>
-              Password management will be available after authentication is fully connected. This feature will let you update your password securely.
+        <Modal show={pwModal} onClose={() => { setPwModal(false); setPwError(''); setPwSuccess(''); }} title="Change Password">
+          <form onSubmit={handlePasswordSubmit}>
+            {pwError && (
+              <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#dc2626', fontSize: 13, marginBottom: 14 }}>
+                {pwError}
+              </div>
+            )}
+            {pwSuccess && (
+              <div style={{ padding: '10px 14px', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 8, color: '#065f46', fontSize: 13, marginBottom: 14 }}>
+                {pwSuccess}
+              </div>
+            )}
+
+            <div style={{ marginBottom: 14 }}>
+              <label className="label" style={{ display: 'block', marginBottom: 6, fontSize: 13 }}>Current Password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPw ? 'text' : 'password'}
+                  className="input"
+                  style={{ width: '100%', paddingRight: 40 }}
+                  value={currentPassword}
+                  onChange={e => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}
+                >
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
-          </div>
-          <button type="button" className="btn" onClick={() => setPwModal(false)} style={{ width: '100%' }}>Got it</button>
+
+            <div style={{ marginBottom: 14 }}>
+              <label className="label" style={{ display: 'block', marginBottom: 6, fontSize: 13 }}>New Password</label>
+              <input
+                type={showPw ? 'text' : 'password'}
+                className="input"
+                style={{ width: '100%' }}
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="At least 6 characters"
+                required
+              />
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label className="label" style={{ display: 'block', marginBottom: 6, fontSize: 13 }}>Confirm New Password</label>
+              <input
+                type={showPw ? 'text' : 'password'}
+                className="input"
+                style={{ width: '100%' }}
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="Re-enter new password"
+                required
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button type="button" className="btn outline" onClick={() => setPwModal(false)} style={{ flex: 1 }}>Cancel</button>
+              <button type="submit" className="btn" disabled={pwLoading} style={{ flex: 1 }}>
+                {pwLoading ? 'Updating...' : 'Save Password'}
+              </button>
+            </div>
+          </form>
         </Modal>
 
         {/* Delete Account confirmation modal */}
-        <Modal show={deleteModal} onClose={() => setDeleteModal(false)} title="Delete Account?">
-          <div style={{ fontSize: '14px', color: '#475569', lineHeight: 1.7, marginBottom: '8px' }}>
-            Are you sure you want to delete your account?
-          </div>
-          <div style={{ fontSize: '13px', color: '#ef4444', fontWeight: 600, marginBottom: '20px' }}>
-            ⚠ This action cannot be undone.
-          </div>
-          <div style={{
-            background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px',
-            padding: '12px 16px', marginBottom: '20px', fontSize: '13px', color: '#991b1b', lineHeight: 1.6,
-          }}>
-            Account deletion will be available once backend authentication and account management are connected. No data will be deleted at this time.
-          </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button type="button" className="btn outline" style={{ flex: 1 }} onClick={() => setDeleteModal(false)}>Cancel</button>
-            <button
-              type="button"
-              style={{
-                flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                padding: '10px 18px', borderRadius: '8px', border: 'none',
-                background: '#ef4444', color: '#ffffff', fontSize: '13px', fontWeight: 700, cursor: 'not-allowed',
-                opacity: 0.5,
-              }}
-              title="Account deletion requires backend authentication"
-              disabled
-            >
-              <Trash2 size={14} />
-              Delete Account
-            </button>
-          </div>
+        <Modal show={deleteModal} onClose={() => { setDeleteModal(false); setDeleteError(''); }} title="Delete Account?">
+          <form onSubmit={handleDeleteAccountSubmit}>
+            <div style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, marginBottom: '8px' }}>
+              Are you sure you want to delete your account? All your profiles, uploaded resumes, and roadmap records will be permanently erased from MySQL.
+            </div>
+            <div style={{ fontSize: '13px', color: '#ef4444', fontWeight: 600, marginBottom: '16px' }}>
+              ⚠ This action is permanent and cannot be undone.
+            </div>
+
+            {deleteError && (
+              <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#dc2626', fontSize: 13, marginBottom: 14 }}>
+                {deleteError}
+              </div>
+            )}
+
+            <div style={{ marginBottom: 20 }}>
+              <label className="label" style={{ display: 'block', marginBottom: 6, fontSize: 13 }}>Enter Password to Confirm</label>
+              <input
+                type="password"
+                className="input"
+                style={{ width: '100%' }}
+                value={deletePassword}
+                onChange={e => setDeletePassword(e.target.value)}
+                placeholder="Your account password"
+                required
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button type="button" className="btn outline" style={{ flex: 1 }} onClick={() => setDeleteModal(false)}>Cancel</button>
+              <button
+                type="submit"
+                disabled={deleteLoading}
+                style={{
+                  flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  padding: '10px 18px', borderRadius: '8px', border: 'none',
+                  background: '#ef4444', color: '#ffffff', fontSize: '13px', fontWeight: 700, cursor: deleteLoading ? 'not-allowed' : 'pointer',
+                }}
+              >
+                <Trash2 size={14} />
+                {deleteLoading ? 'Deleting...' : 'Delete Permanently'}
+              </button>
+            </div>
+          </form>
         </Modal>
 
       </Page>

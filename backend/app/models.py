@@ -47,6 +47,7 @@ class CandidateProfile(Base):
     linkedin_url = Column(String(500), nullable=True)
     portfolio_url = Column(String(500), nullable=True)
     profile_summary = Column(Text, nullable=True)
+    settings_json = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

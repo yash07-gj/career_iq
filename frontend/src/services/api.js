@@ -128,6 +128,34 @@ export const api = {
     return await res.json();
   },
 
+  // Settings & Account Management
+  getSettings: (userId) => fetchApi(`/profile/${userId}/settings`),
+  updateSettings: (userId, data) =>
+    fetchApi(`/profile/${userId}/settings`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  exportUserData: (userId) => fetchApi(`/profile/${userId}/export-data`),
+  getRecommendationData: (userId) => fetchApi(`/profile/${userId}/recommendation-data`),
+  clearRecommendationData: (userId) =>
+    fetchApi(`/profile/${userId}/recommendation-data`, {
+      method: 'DELETE',
+    }),
+  changePassword: (userId, currentPassword, newPassword) =>
+    fetchApi('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({
+        user_id: userId,
+        current_password: currentPassword,
+        new_password: newPassword,
+      }),
+    }),
+  deleteAccount: (userId, password) =>
+    fetchApi(`/auth/account/${userId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ password }),
+    }),
+
   // Learning Roadmap
   getRoadmap: (userId) => fetchApi(`/roadmap${userId ? `?user_id=${userId}` : ''}`),
   updateRoadmapStep: (stepId, status) =>
