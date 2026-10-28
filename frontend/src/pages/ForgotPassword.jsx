@@ -12,23 +12,21 @@ import {
   KeyRound,
   Mail,
   ShieldCheck,
-  RotateCw,
 } from 'lucide-react';
 import api from '../services/api';
 
 export default function ForgotPassword() {
   const nav = useNavigate();
   const [email, setEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [otpCode, setOtpCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
   // OTP state
   const [otpSent, setOtpSent] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
-  const [devOtp, setDevOtp] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
 
   // Submit state
@@ -36,7 +34,7 @@ export default function ForgotPassword() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Send OTP
+  // Send OTP (Code is delivered exclusively to user's email inbox)
   const handleSendOtp = async () => {
     if (!email.trim()) {
       setError('Please enter your registered email address first.');
@@ -50,14 +48,11 @@ export default function ForgotPassword() {
       const res = await api.sendForgotPasswordOtp(email.trim());
       if (res && res.success) {
         setOtpSent(true);
-        setInfoMsg(res.message || 'Verification code sent to your email.');
-        if (res.dev_otp) {
-          setDevOtp(res.dev_otp);
-          setOtpCode(res.dev_otp); // auto-fill dev code for extreme convenience
-        }
+        setOtpCode(''); // Never auto-fill OTP, user must enter from their email
+        setInfoMsg(res.message || 'A 6-digit verification code has been sent to your email address.');
       }
     } catch (err) {
-      setError(err.message || 'Failed to send verification code. Please check your email.');
+      setError(err.message || 'Failed to send verification code. Please check your email address.');
     } finally {
       setOtpLoading(false);
     }
@@ -71,6 +66,16 @@ export default function ForgotPassword() {
 
     if (!email.trim()) {
       setError('Please enter your registered email address.');
+      return;
+    }
+
+    if (!otpSent) {
+      setError('Please click "Get OTP" first to receive your verification code via email.');
+      return;
+    }
+
+    if (!otpCode.trim() || otpCode.trim().length !== 6) {
+      setError('Please enter the 6-digit verification code received in your email.');
       return;
     }
 
@@ -90,7 +95,7 @@ export default function ForgotPassword() {
       const res = await api.resetPassword(
         email.trim(),
         newPassword.trim(),
-        otpCode.trim() || null
+        otpCode.trim()
       );
 
       if (res && res.success) {
@@ -100,7 +105,7 @@ export default function ForgotPassword() {
         }, 2000);
       }
     } catch (err) {
-      setError(err.message || 'Failed to update password. Please check your details.');
+      setError(err.message || 'Failed to update password. Please check your verification code.');
     } finally {
       setLoading(false);
     }
@@ -117,15 +122,15 @@ export default function ForgotPassword() {
           >
             <GraduationCap size={28} />
           </div>
-          <h1>Account Security</h1>
+          <h1>Account Recovery</h1>
           <p>Reset your password to regain access to your CareerIQ career intelligence profile.</p>
 
           <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 14 }}>
             {[
-              'Instant database credential synchronization',
+              'Secure email verification code (OTP)',
               'Enterprise-grade bcrypt password hashing',
-              'Optional 6-digit OTP verification',
-              'Zero downtime account recovery',
+              'Real-time MySQL database credential update',
+              'Fast and seamless account recovery',
             ].map((text) => (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }} key={text}>
                 <CheckCircle2 size={16} color="#6ee7b7" />
@@ -145,7 +150,7 @@ export default function ForgotPassword() {
           </div>
 
           <h2>Change Password</h2>
-          <p>Enter your email and set your new password</p>
+          <p>Verify your registered email and choose a new password</p>
 
           {error && (
             <div
@@ -203,26 +208,6 @@ export default function ForgotPassword() {
             </div>
           )}
 
-          {devOtp && (
-            <div
-              style={{
-                padding: '10px 14px',
-                background: '#fef3c7',
-                border: '1px solid #fde68a',
-                color: '#92400e',
-                borderRadius: 8,
-                fontSize: 13,
-                marginBottom: 16,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <span>Demo OTP Code: <strong>{devOtp}</strong></span>
-              <span style={{ fontSize: 11, background: '#f59e0b', color: '#fff', padding: '2px 6px', borderRadius: 4 }}>Dev Mode</span>
-            </div>
-          )}
-
           <form onSubmit={handleSubmit}>
             {/* Email field + Get OTP button */}
             <div className="form-group" style={{ marginBottom: 14 }}>
@@ -264,17 +249,23 @@ export default function ForgotPassword() {
               </div>
             </div>
 
-            {/* OTP field (optional/shown when requested) */}
+            {/* 6-Digit OTP field (Only displayed when OTP is requested) */}
             {otpSent && (
               <div className="form-group" style={{ marginBottom: 14 }}>
-                <label className="label">6-Digit Verification Code</label>
+                <label className="label">
+                  Verification Code (OTP){' '}
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>
+                    — check your email inbox
+                  </span>
+                </label>
                 <input
                   className="input"
                   type="text"
                   maxLength={6}
-                  placeholder="Enter 6-digit OTP"
+                  placeholder="Enter 6-digit code"
+                  required
                   value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value)}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                   style={{ letterSpacing: '4px', fontWeight: 700, fontSize: 16 }}
                 />
               </div>
@@ -305,6 +296,7 @@ export default function ForgotPassword() {
                     cursor: 'pointer',
                     color: '#64748b',
                   }}
+                  title={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -336,6 +328,7 @@ export default function ForgotPassword() {
                     cursor: 'pointer',
                     color: '#64748b',
                   }}
+                  title={showConfirm ? 'Hide password' : 'Show password'}
                 >
                   {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>

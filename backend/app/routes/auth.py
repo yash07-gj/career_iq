@@ -334,11 +334,11 @@ def send_forgot_password_otp(req: ForgotPasswordSendOtpRequest, db: Session = De
             detail=f"Failed to deliver verification code: {msg}"
         )
 
-    dev_code = otp_code if msg == "DEV_MODE" else None
+    # Never return OTP to frontend - it is only delivered via email
     return OtpResponse(
         success=True,
-        message="Password reset code sent to your email inbox successfully!",
-        dev_otp=dev_code
+        message="A 6-digit verification code has been sent to your email address.",
+        dev_otp=None
     )
 
 
@@ -357,21 +357,26 @@ def reset_forgotten_password(req: ForgotPasswordResetRequest, db: Session = Depe
     if len(new_pwd) < 6:
         raise HTTPException(status_code=400, detail="New password must be at least 6 characters long.")
 
-    # 3. Verify OTP if provided
-    if req.otp_code and req.otp_code.strip():
-        record = db.query(EmailVerification).filter(
-            EmailVerification.email == email,
-            EmailVerification.otp_code == req.otp_code.strip(),
-            EmailVerification.is_used == 0,
-            EmailVerification.expires_at > datetime.utcnow()
-        ).first()
+    # 3. Verify OTP is provided and matches active code in MySQL
+    if not req.otp_code or not req.otp_code.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Verification code (OTP) is required. Please check your email and enter the 6-digit OTP."
+        )
 
-        if not record:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid or expired verification code. Please request a new one."
-            )
-        record.is_used = 1
+    record = db.query(EmailVerification).filter(
+        EmailVerification.email == email,
+        EmailVerification.otp_code == req.otp_code.strip(),
+        EmailVerification.is_used == 0,
+        EmailVerification.expires_at > datetime.utcnow()
+    ).first()
+
+    if not record:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or expired verification code. Please check your email or request a new code."
+        )
+    record.is_used = 1
 
     # 4. Update password_hash in MySQL
     user.password_hash = hash_password(new_pwd)
