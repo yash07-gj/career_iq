@@ -15,6 +15,8 @@ from app.schemas import (
     TokenResponse,
     ChangePasswordRequest,
     DeleteAccountRequest,
+    ForgotPasswordSendOtpRequest,
+    ForgotPasswordResetRequest,
 )
 from app.services.email_service import (
     is_valid_email_domain,
@@ -285,3 +287,98 @@ def delete_account(user_id: int, req: DeleteAccountRequest, db: Session = Depend
 
     return {"success": True, "message": "Your account has been deleted permanently."}
 
+
+
+@router.post("/forgot-password/send-otp", response_model=OtpResponse)
+def send_forgot_password_otp(req: ForgotPasswordSendOtpRequest, db: Session = Depends(get_db)):
+    email = req.email.strip().lower()
+
+    # 1. Verify user exists
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="No account found with this email address. Please check your email or register."
+        )
+
+    # 2. Check if domain is valid
+    is_valid, domain_msg = is_valid_email_domain(email)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=domain_msg)
+
+    # 3. Generate 6-digit OTP
+    otp_code = generate_otp()
+    expires_at = datetime.utcnow() + timedelta(minutes=10)
+
+    # Invalidate previous unused OTPs for this email
+    db.query(EmailVerification).filter(
+        EmailVerification.email == email,
+        EmailVerification.is_used == 0
+    ).update({"is_used": 2})
+
+    # Save new OTP record in MySQL
+    new_otp = EmailVerification(
+        email=email,
+        otp_code=otp_code,
+        expires_at=expires_at,
+        is_used=0
+    )
+    db.add(new_otp)
+    db.commit()
+
+    # 4. Dispatch Email
+    sent, msg = send_otp_email(email, user.full_name or "Student", otp_code)
+    if not sent:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to deliver verification code: {msg}"
+        )
+
+    dev_code = otp_code if msg == "DEV_MODE" else None
+    return OtpResponse(
+        success=True,
+        message="Password reset code sent to your email inbox successfully!",
+        dev_otp=dev_code
+    )
+
+
+@router.post("/forgot-password/reset")
+@router.post("/reset-password")
+def reset_forgotten_password(req: ForgotPasswordResetRequest, db: Session = Depends(get_db)):
+    email = req.email.strip().lower()
+
+    # 1. Verify user exists
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="No account found with this email address.")
+
+    # 2. Validate new password
+    new_pwd = req.new_password.strip()
+    if len(new_pwd) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters long.")
+
+    # 3. Verify OTP if provided
+    if req.otp_code and req.otp_code.strip():
+        record = db.query(EmailVerification).filter(
+            EmailVerification.email == email,
+            EmailVerification.otp_code == req.otp_code.strip(),
+            EmailVerification.is_used == 0,
+            EmailVerification.expires_at > datetime.utcnow()
+        ).first()
+
+        if not record:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid or expired verification code. Please request a new one."
+            )
+        record.is_used = 1
+
+    # 4. Update password_hash in MySQL
+    user.password_hash = hash_password(new_pwd)
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "success": True,
+        "message": "Password updated successfully in database! You can now log in with your new password."
+    }

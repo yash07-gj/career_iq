@@ -55,6 +55,22 @@ export const api = {
       body: JSON.stringify({ email, otp_code: otpCode }),
     }),
 
+  sendForgotPasswordOtp: (email) =>
+    fetchApi('/auth/forgot-password/send-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (email, newPassword, otpCode = null) =>
+    fetchApi('/auth/forgot-password/reset', {
+      method: 'POST',
+      body: JSON.stringify({
+        email,
+        new_password: newPassword,
+        otp_code: otpCode,
+      }),
+    }),
+
   registerWithOtp: (fullName, email, password, otpCode) =>
     fetchApi('/auth/register-with-otp', {
       method: 'POST',

@@ -19,6 +19,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminManagement from './pages/AdminManagement';
 import PlaceholderAdmin from './pages/PlaceholderAdmin';
 import Settings from './pages/Settings';
+import ForgotPassword from './pages/ForgotPassword';
 import './App.css';
 
 export default function App() {
@@ -52,6 +53,9 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/change-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ForgotPassword />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />

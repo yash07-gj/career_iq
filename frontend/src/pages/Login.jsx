@@ -136,7 +136,7 @@ export default function Login() {
               />
               <span>Remember me</span>
             </label>
-            <a href="#" style={{ color: 'var(--blue)', fontWeight: 600 }}>Forgot password?</a>
+            <Link to="/forgot-password" style={{ color: 'var(--blue)', fontWeight: 600 }}>Forgot password?</Link>
           </div>
 
           <button

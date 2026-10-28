@@ -20,6 +20,14 @@ class VerifyOtpRequest(BaseModel):
     email: EmailStr
     otp_code: str
 
+class ForgotPasswordSendOtpRequest(BaseModel):
+    email: EmailStr
+
+class ForgotPasswordResetRequest(BaseModel):
+    email: EmailStr
+    new_password: str
+    otp_code: Optional[str] = None
+
 class UserRegisterWithOtp(BaseModel):
     full_name: str
     email: EmailStr
