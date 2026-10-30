@@ -48,9 +48,21 @@ export default function GapAnalysis() {
     loadGaps();
   }, [selectedRoleId, currentUser?.user_id]);
 
-  const matchedSkills = gapData?.matched_skills || [];
-  const missingSkills = gapData?.missing_skills || [];
+  const rawMatched = gapData?.matched_skills || [];
+  const rawMissing = gapData?.missing_skills || [];
   const readinessScore = gapData?.readiness_score || 0;
+
+  // STRICT RULE: Any skill mentioned in Missing / Skill Deficiencies
+  // must NOT be mentioned in Verified Acquired Skills!
+  const missingSkillNamesSet = new Set(
+    rawMissing.map((m) => (typeof m === 'string' ? m : m.name)?.toLowerCase().trim()).filter(Boolean)
+  );
+
+  const matchedSkills = rawMatched.filter((s) => {
+    const name = (typeof s === 'string' ? s : s.name)?.toLowerCase().trim();
+    return name && !missingSkillNamesSet.has(name);
+  });
+  const missingSkills = rawMissing;
 
   return (
     <Layout>
