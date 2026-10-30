@@ -89,7 +89,7 @@ def evaluate_candidate_profile(profile_id: int, db: Session) -> int:
         db.add(readiness)
 
         # Save Skill Gaps for top role
-        if rank <= 2:
+        if True:
             for skill_id, cur_lvl, req_lvl, imp, gap_status in gaps:
                 p_score = float(imp) * 50.0
                 priority_label = "High" if p_score >= 60 else "Medium" if p_score >= 40 else "Low"

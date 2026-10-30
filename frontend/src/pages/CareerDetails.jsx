@@ -131,7 +131,7 @@ export default function CareerDetails() {
           matchScore: found.match,
           category: found.category,
           description: found.desc,
-          matchedSkills: details.matchedSkills,
+          matchedSkills: (details.matchedSkills || []).filter(s => !(details.missingSkills || []).some(m => (typeof m === 'string' ? m : m.name || '').toLowerCase() === (typeof s === 'string' ? s : s.name || '').toLowerCase())),
           skillAlignment: details.skillAlignment,
           missingSkills: details.missingSkills,
           contributingFactors: details.contributingFactors,
