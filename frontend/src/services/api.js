@@ -94,6 +94,38 @@ export const api = {
 
   // Jobs
   getJobs: () => fetchApi('/jobs'),
+  getJobById: (jobId) => fetchApi(`/jobs/${jobId}`),
+  createJob: (data) =>
+    fetchApi('/jobs', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateJob: (jobId, data) =>
+    fetchApi(`/jobs/${jobId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deleteJob: (jobId) =>
+    fetchApi(`/jobs/${jobId}`, {
+      method: 'DELETE',
+    }),
+  applyJob: (data) =>
+    fetchApi('/jobs/apply', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  applyJobWithResume: async (formData) => {
+    const res = await fetch(`${API_BASE_URL}/jobs/apply-with-resume`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Application submission failed with status ${res.status}`);
+    }
+    return await res.json();
+  },
+  getUserApplications: (userId) => fetchApi(`/jobs/user-applications/${userId}`),
 
   // Analysis & Recommendations
   getRecommendations: (userId) =>

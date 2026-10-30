@@ -239,9 +239,13 @@ class Job(Base):
     work_mode = Column(String(30), nullable=True)
     description = Column(Text, nullable=True)
     experience_requirement = Column(String(100), nullable=True)
-    is_demo_data = Column(SmallInteger, default=1)
+    salary_range = Column(String(100), nullable=True)
+    job_type = Column(String(50), default="Full-time")
+    responsibilities = Column(Text, nullable=True)
+    is_demo_data = Column(SmallInteger, default=0)
     source = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     career_role = relationship("CareerRole", back_populates="jobs")
     job_skills = relationship("JobSkill", back_populates="job", cascade="all, delete-orphan")
@@ -423,3 +427,24 @@ class RoadmapStep(Base):
     roadmap = relationship("LearningRoadmap", back_populates="steps")
     skill = relationship("Skill")
     resource = relationship("LearningResource")
+
+class JobApplication(Base):
+    __tablename__ = "job_applications"
+
+    application_id = Column(BigInteger, primary_key=True, autoincrement=True)
+    job_id = Column(BigInteger, ForeignKey("jobs.job_id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(BigInteger, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    full_name = Column(String(150), nullable=False)
+    email = Column(String(255), nullable=False)
+    phone = Column(String(30), nullable=True)
+    experience_level = Column(String(100), nullable=True)
+    cover_note = Column(Text, nullable=True)
+    portfolio_url = Column(String(500), nullable=True)
+    resume_file_url = Column(String(500), nullable=True)
+    status = Column(String(50), default="Applied")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    job = relationship("Job")
+    user = relationship("User")
+

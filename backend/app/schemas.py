@@ -119,6 +119,19 @@ class CareerRoleResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class JobCreateOrUpdate(BaseModel):
+    career_role_id: int
+    job_title: str
+    company_name: str
+    location: Optional[str] = "Bangalore, India"
+    work_mode: Optional[str] = "Hybrid"
+    job_type: Optional[str] = "Full-time"
+    experience_requirement: Optional[str] = "0 - 1 Years"
+    salary_range: Optional[str] = None
+    description: Optional[str] = None
+    responsibilities: Optional[str] = None
+    skill_ids: Optional[List[int]] = []
+
 class JobResponse(BaseModel):
     job_id: int
     career_role_id: int
@@ -127,9 +140,14 @@ class JobResponse(BaseModel):
     company_name: str
     location: Optional[str] = None
     work_mode: Optional[str] = None
+    job_type: Optional[str] = "Full-time"
+    salary_range: Optional[str] = None
     description: Optional[str] = None
+    responsibilities: Optional[str] = None
     experience_requirement: Optional[str] = None
-    is_demo_data: int = 1
+    skills: List[str] = []
+    match: Optional[int] = 85
+    is_demo_data: int = 0
 
     class Config:
         from_attributes = True
@@ -224,3 +242,32 @@ class SimulationResponse(BaseModel):
     simulated_score: float
     score_delta: float
     added_skills: List[str]
+
+class JobApplicationCreate(BaseModel):
+    job_id: int
+    user_id: int
+    full_name: str
+    email: EmailStr
+    phone: Optional[str] = None
+    experience_level: Optional[str] = None
+    cover_note: Optional[str] = None
+    portfolio_url: Optional[str] = None
+    resume_file_url: Optional[str] = None
+
+class JobApplicationResponse(BaseModel):
+    application_id: int
+    job_id: int
+    user_id: int
+    full_name: str
+    email: str
+    phone: Optional[str] = None
+    experience_level: Optional[str] = None
+    cover_note: Optional[str] = None
+    portfolio_url: Optional[str] = None
+    resume_file_url: Optional[str] = None
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
