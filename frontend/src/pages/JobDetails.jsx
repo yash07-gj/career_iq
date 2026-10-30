@@ -171,12 +171,16 @@ export default function JobDetails() {
     match,
     description,
     responsibilities,
-    matchedSkills,
-    missingSkills,
+    matchedSkills: rawMatchedSkills,
+    missingSkills: rawMissingSkills,
     educationMatch,
     experienceMatch,
     breakdown
   } = job;
+
+  const missingSet = new Set((rawMissingSkills || []).map((m) => m.toLowerCase().trim()));
+  const matchedSkills = (rawMatchedSkills || []).filter((s) => !missingSet.has(s.toLowerCase().trim()));
+  const missingSkills = rawMissingSkills || [];
 
   return (
     <Layout>

@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.database import get_db
 from app.models import (
-    AnalysisRun, CareerRecommendation, CareerRole, SkillGap, Skill,
-    CandidateProfile, CandidateSkill, ReadinessScore, User, CareerRoleSkill
+    AnalysisRun, CareerRecommendation, CareerRole, CareerRoleSkill, SkillGap, Skill,
+    CandidateProfile, CandidateSkill, ReadinessScore, User
 )
 from app.schemas import GapAnalysisResponse, SkillGapItem, CareerRecommendationResponse
 from app.services.matching_engine import evaluate_candidate_profile
@@ -56,118 +56,108 @@ def get_gap_analysis(role_id: int = 1, user_id: Optional[int] = Query(None), db:
     if not role:
         role = db.query(CareerRole).first()
 
-    profile_id = 1
-    analysis_id = None
-
+    profile = None
     if user_id:
         profile = db.query(CandidateProfile).filter(CandidateProfile.user_id == user_id).first()
-        if profile:
-            profile_id = profile.profile_id
-            latest_run = db.query(AnalysisRun).filter(AnalysisRun.profile_id == profile_id).order_by(AnalysisRun.analysis_id.desc()).first()
-            if latest_run:
-                analysis_id = latest_run.analysis_id
 
-    if not analysis_id:
-        if user_id:
-            # User with no resume uploaded yet
-            return GapAnalysisResponse(
-                target_role=role.role_name if role else "Data Analyst",
-                target_role_id=role.career_role_id if role else 1,
-                readiness_score=0.0,
-                matched_skills=[],
-                missing_skills=[]
-            )
+    if not profile:
         latest_run = db.query(AnalysisRun).order_by(AnalysisRun.analysis_id.desc()).first()
-        analysis_id = latest_run.analysis_id if latest_run else 1
+        if latest_run and latest_run.profile_id:
+            profile = db.query(CandidateProfile).filter(CandidateProfile.profile_id == latest_run.profile_id).first()
+        if not profile:
+            profile = db.query(CandidateProfile).first()
 
-    target_role_id = role.career_role_id if role else 1
-
-    # 1. Fetch missing skills / gaps
-    gaps = db.query(SkillGap, Skill).join(
-        Skill, SkillGap.skill_id == Skill.skill_id
-    ).filter(
-        SkillGap.analysis_id == analysis_id,
-        SkillGap.career_role_id == target_role_id
-    ).all()
-
-    # If gaps are not yet in database for this specific role, compute dynamically:
-    if not gaps and role:
-        cand_skill_map = {cs.skill_id: cs.proficiency_level for cs in db.query(CandidateSkill).filter(CandidateSkill.profile_id == profile_id).all()}
-        role_skills = db.query(CareerRoleSkill, Skill).join(Skill, CareerRoleSkill.skill_id == Skill.skill_id).filter(CareerRoleSkill.career_role_id == target_role_id).all()
-        for rs, s in role_skills:
-            c_lvl = cand_skill_map.get(rs.skill_id, 0)
-            if c_lvl < rs.required_level:
-                p_val = float(rs.importance_weight) * 50.0
-                gap_status = "weak" if c_lvl > 0 else "missing"
-                new_gap = SkillGap(
-                    analysis_id=analysis_id,
-                    career_role_id=target_role_id,
-                    skill_id=rs.skill_id,
-                    current_level=c_lvl,
-                    required_level=rs.required_level,
-                    priority_score=p_val,
-                    status=gap_status
-                )
-                db.add(new_gap)
-        db.commit()
-        gaps = db.query(SkillGap, Skill).join(
-            Skill, SkillGap.skill_id == Skill.skill_id
-        ).filter(
-            SkillGap.analysis_id == analysis_id,
-            SkillGap.career_role_id == target_role_id
-        ).all()
-
-    # Collect all gap skill IDs and normalized names so they are NEVER included in matched_skills
-    gap_skill_ids = set()
-    gap_skill_names = set()
-    gap_items = []
-    for g, s in gaps:
-        gap_skill_ids.add(g.skill_id)
-        gap_skill_names.add(s.skill_name.strip().lower())
-        p_val = float(g.priority_score)
-        p_label = "High" if p_val >= 60 else "Medium" if p_val >= 40 else "Low"
-        gap_items.append(
-            SkillGapItem(
-                skill_gap_id=g.skill_gap_id,
-                skill_id=g.skill_id,
-                name=s.skill_name,
-                current_level=g.current_level,
-                required_level=g.required_level,
-                priority=p_label,
-                priority_score=p_val,
-                status=g.status
-            )
+    if not profile:
+        return GapAnalysisResponse(
+            target_role=role.role_name if role else "Data Analyst",
+            target_role_id=role.career_role_id if role else 1,
+            readiness_score=0.0,
+            matched_skills=[],
+            missing_skills=[]
         )
 
-    # Fetch candidate matched skills
-    # STRICT EXCLUSION: Any skill mentioned in Missing / Skill Deficiencies MUST NOT appear in Verified Acquired Skills
+    profile_id = profile.profile_id
+    latest_run = db.query(AnalysisRun).filter(AnalysisRun.profile_id == profile_id).order_by(AnalysisRun.analysis_id.desc()).first()
+
+    # Fetch candidate skills
     cand_skills = db.query(CandidateSkill, Skill).join(
         Skill, CandidateSkill.skill_id == Skill.skill_id
     ).filter(CandidateSkill.profile_id == profile_id).all()
 
+    if user_id and not latest_run and not cand_skills:
+        return GapAnalysisResponse(
+            target_role=role.role_name if role else "Data Analyst",
+            target_role_id=role.career_role_id if role else 1,
+            readiness_score=0.0,
+            matched_skills=[],
+            missing_skills=[]
+        )
+
+    cand_skill_map = {cs.Skill.skill_id: (cs.CandidateSkill.proficiency_level, cs.Skill.skill_name) for cs in cand_skills}
+
+    # Fetch required skills for the target career role
+    role_skills = db.query(CareerRoleSkill, Skill).join(
+        Skill, CareerRoleSkill.skill_id == Skill.skill_id
+    ).filter(CareerRoleSkill.career_role_id == role.career_role_id).all()
+
+    gap_items = []
+    missing_skill_names_lower = set()
+
+    for rs, sk in role_skills:
+        req_level = rs.required_level
+        cand_level, _ = cand_skill_map.get(rs.skill_id, (0, sk.skill_name))
+
+        # If candidate does not meet the required level, it is a gap / deficiency
+        if cand_level < req_level:
+            p_val = float(rs.importance_weight) * 50.0
+            p_label = "High" if p_val >= 60 else "Medium" if p_val >= 40 else "Low"
+            status_label = "weak" if cand_level > 0 else "missing"
+            gap_items.append(
+                SkillGapItem(
+                    skill_gap_id=rs.role_skill_id,
+                    skill_id=rs.skill_id,
+                    name=sk.skill_name,
+                    current_level=cand_level,
+                    required_level=req_level,
+                    priority=p_label,
+                    priority_score=p_val,
+                    status=status_label
+                )
+            )
+            missing_skill_names_lower.add(sk.skill_name.lower())
+
+    # Sort gaps: High priority first, then Medium, then Low
+    priority_order = {"High": 0, "Medium": 1, "Low": 2}
+    gap_items.sort(key=lambda x: (priority_order.get(x.priority, 3), -x.priority_score))
+
+    # STRICT GUARANTEE: Any skill mentioned in Missing / Skill Deficiencies
+    # must NEVER be mentioned in Verified Acquired Skills!
     matched_names = []
+    seen_matched = set()
     for cs in cand_skills:
         s_name = cs.Skill.skill_name
-        s_id = cs.Skill.skill_id
-        if s_id not in gap_skill_ids and s_name.strip().lower() not in gap_skill_names:
+        s_name_lower = s_name.lower()
+        if s_name_lower not in missing_skill_names_lower and s_name_lower not in seen_matched:
             matched_names.append(s_name)
+            seen_matched.add(s_name_lower)
 
-    readiness = db.query(ReadinessScore).filter(
-        ReadinessScore.analysis_id == analysis_id,
-        ReadinessScore.career_role_id == target_role_id
-    ).first()
-
-    readiness_score = float(readiness.overall_score) if readiness else 0.0
-    if not readiness and role:
-        cand_skill_map = {cs.skill_id: cs.proficiency_level for cs in db.query(CandidateSkill).filter(CandidateSkill.profile_id == profile_id).all()}
-        role_skills = db.query(CareerRoleSkill).filter(CareerRoleSkill.career_role_id == target_role_id).all()
-        total_w = sum(float(rs.importance_weight) for rs in role_skills)
-        earned_w = sum(float(rs.importance_weight) if cand_skill_map.get(rs.skill_id, 0) >= rs.required_level else (float(rs.importance_weight) * (cand_skill_map.get(rs.skill_id, 0) / rs.required_level) if cand_skill_map.get(rs.skill_id, 0) > 0 else 0.0) for rs in role_skills)
-        readiness_score = round((earned_w / total_w) * 100, 2) if total_w > 0 else 0.0
+    # Readiness score calculation
+    readiness_score = 0.0
+    if role_skills:
+        total_weight = sum(float(rs.importance_weight) for rs, _ in role_skills)
+        earned_weight = 0.0
+        for rs, _ in role_skills:
+            req_level = rs.required_level
+            cand_level, _ = cand_skill_map.get(rs.skill_id, (0, ""))
+            if cand_level >= req_level:
+                earned_weight += float(rs.importance_weight)
+            elif cand_level > 0:
+                earned_weight += float(rs.importance_weight) * (cand_level / req_level)
+        readiness_score = round((earned_weight / total_weight) * 100, 1) if total_weight > 0 else 0.0
 
     return GapAnalysisResponse(
         target_role=role.role_name if role else "Data Analyst",
-        target_role_id=target_role_id,
+        target_role_id=role.career_role_id if role else 1,
         readiness_score=readiness_score,
         matched_skills=matched_names,
         missing_skills=gap_items
