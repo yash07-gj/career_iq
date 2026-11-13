@@ -34,11 +34,13 @@ CREATE TABLE users (
 CREATE TABLE candidate_profiles (
     profile_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT UNSIGNED NOT NULL UNIQUE,
+    profile_picture_url VARCHAR(500) DEFAULT NULL,
     phone VARCHAR(20) DEFAULT NULL,
     city VARCHAR(100) DEFAULT NULL,
     linkedin_url VARCHAR(500) DEFAULT NULL,
     portfolio_url VARCHAR(500) DEFAULT NULL,
     profile_summary TEXT DEFAULT NULL,
+    settings_json TEXT DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_profile_user FOREIGN KEY (user_id) 
@@ -221,9 +223,13 @@ CREATE TABLE jobs (
     work_mode VARCHAR(30) DEFAULT NULL,
     description TEXT DEFAULT NULL,
     experience_requirement VARCHAR(100) DEFAULT NULL,
+    salary_range VARCHAR(100) DEFAULT NULL,
+    job_type VARCHAR(50) DEFAULT 'Full-time',
+    responsibilities TEXT DEFAULT NULL,
     is_demo_data TINYINT(1) NOT NULL DEFAULT 1,
     source VARCHAR(100) DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_job_role (career_role_id),
     CONSTRAINT fk_job_role FOREIGN KEY (career_role_id) 
         REFERENCES career_roles (career_role_id) ON DELETE RESTRICT
@@ -430,6 +436,27 @@ CREATE TABLE roadmap_steps (
         REFERENCES skills (skill_id) ON DELETE RESTRICT,
     CONSTRAINT fk_step_resource FOREIGN KEY (resource_id) 
         REFERENCES learning_resources (resource_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 26. job_applications: Applications submitted by candidates for jobs
+CREATE TABLE IF NOT EXISTS job_applications (
+    application_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    job_id BIGINT UNSIGNED NOT NULL,
+    user_id BIGINT UNSIGNED NOT NULL,
+    full_name VARCHAR(150) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(30) DEFAULT NULL,
+    experience_level VARCHAR(100) DEFAULT NULL,
+    cover_note TEXT DEFAULT NULL,
+    portfolio_url VARCHAR(500) DEFAULT NULL,
+    resume_file_url VARCHAR(500) DEFAULT NULL,
+    status VARCHAR(50) DEFAULT 'Applied',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_app_job (job_id),
+    INDEX idx_app_user (user_id),
+    CONSTRAINT fk_app_job FOREIGN KEY (job_id) REFERENCES jobs (job_id) ON DELETE CASCADE,
+    CONSTRAINT fk_app_user FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Re-enable foreign key checks

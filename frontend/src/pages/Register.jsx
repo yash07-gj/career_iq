@@ -78,6 +78,7 @@ export default function Register() {
   const handleVerifyAndRegister = async (e) => {
     e.preventDefault();
     setError('');
+    setInfoMessage('');
     setLoading(true);
 
     try {
