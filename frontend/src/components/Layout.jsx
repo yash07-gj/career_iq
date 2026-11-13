@@ -8,10 +8,10 @@ import api from '../services/api';
 export const Layout = ({ children, admin = false }) => {
   const nav = useNavigate();
   const [user, setUser] = useState(auth.getUser());
-  const displayName = user?.full_name || 'Student';
-  const initial = displayName.charAt(0).toUpperCase() || 'S';
-  const role = user?.target_role || 'Candidate';
-  const email = user?.email || 'student@example.com';
+  const displayName = user?.full_name || (admin ? 'Admin Manager' : 'Student');
+  const initial = displayName.charAt(0).toUpperCase() || 'A';
+  const role = (user?.account_role === 'admin' || admin) ? 'Administrator' : (user?.target_role || 'Candidate');
+  const email = user?.email || (admin ? 'admin@careeriq.com' : 'student@example.com');
 
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef(null);

@@ -1,80 +1,96 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
+from pydantic import BaseModel
 
 from app.database import get_db
-from app.models import User, CandidateProfile, CandidatePreference, CareerRole, Resume
+from app.models import User, CandidateProfile, Job, Resume, JobApplication, CareerRole
 
 router = APIRouter(prefix="/api/admin", tags=["Admin Management"])
 
-@router.get("/users")
-def get_all_users(db: Session = Depends(get_db)):
-    """
-    Fetches all user details from the MySQL database.
-    """
+class AdminUserItem(BaseModel):
+    user_id: int
+    full_name: str
+    email: str
+    account_role: str
+    active_status: int
+    created_at: Optional[datetime] = None
+    has_resume: bool = False
+    profile_summary: Optional[str] = None
+    city: Optional[str] = None
+
+class AdminStatsResponse(BaseModel):
+    total_users: int
+    active_users: int
+    total_jobs: int
+    total_resumes: int
+    total_applications: int
+
+@router.get("/stats", response_model=AdminStatsResponse)
+def get_admin_stats(db: Session = Depends(get_db)):
+    total_users = db.query(User).count()
+    active_users = db.query(User).filter(User.active_status == 1).count()
+    total_jobs = db.query(Job).count()
+    total_resumes = db.query(Resume).count()
+    total_applications = db.query(JobApplication).count()
+
+    return AdminStatsResponse(
+        total_users=total_users,
+        active_users=active_users,
+        total_jobs=total_jobs,
+        total_resumes=total_resumes,
+        total_applications=total_applications
+    )
+
+@router.get("/users", response_model=List[AdminUserItem])
+def get_admin_users(db: Session = Depends(get_db)):
     users = db.query(User).order_by(User.user_id.asc()).all()
-    user_list = []
-
+    results = []
     for u in users:
-        profile = db.query(CandidateProfile).filter(CandidateProfile.user_id == u.user_id).first()
-        target_role_name = None
-        resumes_count = 0
+        prof = db.query(CandidateProfile).filter(CandidateProfile.user_id == u.user_id).first()
+        has_res = False
+        city_val = None
+        summary_val = None
+        if prof:
+            has_res = db.query(Resume).filter(Resume.profile_id == prof.profile_id).count() > 0
+            city_val = prof.city
+            summary_val = prof.profile_summary
 
-        if profile:
-            pref = db.query(CandidatePreference).filter(CandidatePreference.profile_id == profile.profile_id).first()
-            if pref and pref.target_role_id:
-                role = db.query(CareerRole).filter(CareerRole.career_role_id == pref.target_role_id).first()
-                if role:
-                    target_role_name = role.role_name
+        results.append(AdminUserItem(
+            user_id=u.user_id,
+            full_name=u.full_name,
+            email=u.email,
+            account_role=u.account_role,
+            active_status=u.active_status,
+            created_at=u.created_at,
+            has_resume=has_res,
+            profile_summary=summary_val,
+            city=city_val
+        ))
+    return results
 
-            resumes_count = db.query(Resume).filter(Resume.profile_id == profile.profile_id).count()
-
-        user_list.append({
-            "user_id": u.user_id,
-            "full_name": u.full_name,
-            "email": u.email,
-            "account_role": u.account_role or "candidate",
-            "active_status": u.active_status if u.active_status is not None else 1,
-            "created_at": u.created_at.strftime("%d %b %Y, %I:%M %p") if u.created_at else "N/A",
-            "phone": profile.phone if profile and profile.phone else "Not provided",
-            "city": profile.city if profile and profile.city else "Not provided",
-            "target_role": target_role_name or "Not set",
-            "resumes_count": resumes_count,
-        })
-
-    return user_list
+@router.patch("/users/{user_id}/status")
+def toggle_user_status(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.account_role == "admin":
+        raise HTTPException(status_code=400, detail="Cannot deactivate admin account.")
+    
+    user.active_status = 0 if user.active_status == 1 else 1
+    db.commit()
+    db.refresh(user)
+    return {"success": True, "user_id": user.user_id, "active_status": user.active_status}
 
 @router.delete("/users/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db)):
-    """
-    Deletes a user account from MySQL database (protects primary admin user).
-    """
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found.")
-
-    if user.email == "admin@careeriq.com":
-        raise HTTPException(status_code=400, detail="Cannot delete the primary system administrator account.")
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.account_role == "admin":
+        raise HTTPException(status_code=400, detail="Cannot delete admin account.")
 
     db.delete(user)
     db.commit()
-    return {"success": True, "message": f"User '{user.full_name}' deleted successfully from database."}
-
-@router.patch("/users/{user_id}/toggle-status")
-def toggle_user_status(user_id: int, db: Session = Depends(get_db)):
-    """
-    Toggles user active_status between Active (1) and Inactive (0).
-    """
-    user = db.query(User).filter(User.user_id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found.")
-
-    user.active_status = 0 if user.active_status == 1 else 1
-    db.commit()
-    status_text = "Active" if user.active_status == 1 else "Inactive"
-    return {
-        "success": True,
-        "message": f"User status updated to {status_text}.",
-        "active_status": user.active_status
-    }
+    return {"success": True, "message": f"User {user_id} deleted successfully."}
