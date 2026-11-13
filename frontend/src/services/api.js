@@ -218,6 +218,12 @@ export const api = {
         selected_skill_ids: selectedSkillIds,
       }),
     }),
+
+  // Admin Management
+  getAdminStats: () => fetchApi('/admin/stats'),
+  getAdminUsers: () => fetchApi('/admin/users'),
+  toggleAdminUserStatus: (userId) => fetchApi(`/admin/users/${userId}/status`, { method: 'PATCH' }),
+  deleteAdminUser: (userId) => fetchApi(`/admin/users/${userId}`, { method: 'DELETE' }),
 };
 
 

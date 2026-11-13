@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.routes import auth, dashboard, skills, jobs, analysis, roadmap, simulation, resume, profile
+from app.routes import auth, dashboard, skills, jobs, analysis, roadmap, simulation, resume, profile, admin
 
 app = FastAPI(
     title="CareerIQ — AI Career Intelligence API",
@@ -35,6 +35,7 @@ app.include_router(roadmap.router)
 app.include_router(simulation.router)
 app.include_router(resume.router)
 app.include_router(profile.router)
+app.include_router(admin.router)
 
 
 @app.get("/")

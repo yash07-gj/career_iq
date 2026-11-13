@@ -4,33 +4,33 @@ from datetime import datetime, date
 
 # --- Auth Schemas ---
 class UserLogin(BaseModel):
-    email: str  # Accepts email address or username like 'admin'
+    email: str
     password: str
 
 class UserRegister(BaseModel):
     full_name: str
-    email: str  # Accepts email address or username like 'admin'
+    email: EmailStr
     password: str
 
 class SendOtpRequest(BaseModel):
-    email: str  # Accepts email address or username like 'admin'
+    email: EmailStr
     full_name: Optional[str] = "Student"
 
 class VerifyOtpRequest(BaseModel):
-    email: str  # Accepts email address or username like 'admin'
+    email: EmailStr
     otp_code: str
 
 class ForgotPasswordSendOtpRequest(BaseModel):
-    email: str  # Accepts email address or username like 'admin'
+    email: EmailStr
 
 class ForgotPasswordResetRequest(BaseModel):
-    email: str  # Accepts email address or username like 'admin'
+    email: EmailStr
     new_password: str
     otp_code: Optional[str] = None
 
 class UserRegisterWithOtp(BaseModel):
     full_name: str
-    email: str  # Accepts email address or username like 'admin'
+    email: EmailStr
     password: str
     otp_code: str
 
@@ -73,7 +73,7 @@ class SettingsPayload(BaseModel):
 # --- Profile Schemas ---
 class ProfileUpdateRequest(BaseModel):
     full_name: str
-    email: str  # Accepts email address or username like 'admin'
+    email: EmailStr
     target_role_id: Optional[int] = None
     target_role_name: Optional[str] = None
     education: Optional[str] = None
@@ -247,7 +247,7 @@ class JobApplicationCreate(BaseModel):
     job_id: int
     user_id: int
     full_name: str
-    email: str  # Accepts email address or username like 'admin'
+    email: EmailStr
     phone: Optional[str] = None
     experience_level: Optional[str] = None
     cover_note: Optional[str] = None
