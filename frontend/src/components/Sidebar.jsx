@@ -23,11 +23,7 @@ const Sidebar = ({ admin = false }) => {
 
   const items = admin
     ? [
-        { name: 'Users', path: '/admin', icon: Users },
-        { name: 'Jobs', path: '/admin/jobs', icon: Briefcase },
-        { name: 'Skills', path: '/admin/skills', icon: BarChart3 },
-        { name: 'Resources', path: '/admin/resources', icon: BookOpen },
-        { name: 'Settings', path: '/admin/settings', icon: Settings },
+        { name: 'All Users', path: '/admin', icon: Users },
       ]
     : [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
