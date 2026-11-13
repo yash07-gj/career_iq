@@ -36,6 +36,14 @@ export default function Register() {
     e.preventDefault();
     setError('');
     setInfoMessage('');
+    if (
+      fullName.toLowerCase().includes('admin') ||
+      email.toLowerCase().includes('admin')
+    ) {
+      setError('Registration with admin name or details is not permitted. Admin accounts are restricted.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -79,6 +87,14 @@ export default function Register() {
     e.preventDefault();
     setError('');
     setInfoMessage('');
+    if (
+      fullName.toLowerCase().includes('admin') ||
+      email.toLowerCase().includes('admin')
+    ) {
+      setError('Registration with admin name or details is not permitted. Admin accounts are restricted.');
+      return;
+    }
+
     setLoading(true);
 
     try {

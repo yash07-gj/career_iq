@@ -38,9 +38,20 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     except Exception:
         return False
 
+def validate_non_admin_signup(email: str, full_name: str = None):
+    e = (email or "").strip().lower()
+    fn = (full_name or "").strip().lower()
+    if "admin" in e or "admin" in fn or "administrator" in fn or e == "admin":
+        raise HTTPException(
+            status_code=400,
+            detail="Registration with admin name or details is not permitted. Admin accounts are restricted."
+        )
+
+
 @router.post("/send-otp", response_model=OtpResponse)
 def send_verification_otp(req: SendOtpRequest, db: Session = Depends(get_db)):
     email = req.email.strip().lower()
+    validate_non_admin_signup(email, req.full_name)
 
     # 1. Check if user already exists
     existing_user = db.query(User).filter(User.email == email).first()
@@ -116,6 +127,7 @@ def verify_otp_code(req: VerifyOtpRequest, db: Session = Depends(get_db)):
 @router.post("/register-with-otp", response_model=TokenResponse)
 def register_with_otp(user_in: UserRegisterWithOtp, db: Session = Depends(get_db)):
     email = user_in.email.strip().lower()
+    validate_non_admin_signup(email, user_in.full_name)
     otp_code = user_in.otp_code.strip()
 
     # Verify OTP
@@ -172,6 +184,7 @@ def register_with_otp(user_in: UserRegisterWithOtp, db: Session = Depends(get_db
 @router.post("/register", response_model=TokenResponse)
 def register(user_in: UserRegister, db: Session = Depends(get_db)):
     email = user_in.email.strip().lower()
+    validate_non_admin_signup(email, user_in.full_name)
     existing = db.query(User).filter(User.email == email).first()
     if existing:
         raise HTTPException(status_code=400, detail="An account with this email already exists.")
@@ -211,12 +224,47 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=TokenResponse)
 def login(login_data: UserLogin, db: Session = Depends(get_db)):
-    email = login_data.email.strip().lower()
-    user = db.query(User).filter(User.email == email).first()
+    identifier = login_data.email.strip().lower()
+
+    # 1. Dedicated Admin Authentication
+    # Username: "admin" or "admin@careeriq.com", Password: "admin123"
+    if identifier in ["admin", "admin@careeriq.com"]:
+        if login_data.password != "admin123":
+            raise HTTPException(status_code=401, detail="Invalid admin credentials.")
+
+        admin_user = db.query(User).filter(
+            (User.email == "admin@careeriq.com") | (User.account_role == "admin")
+        ).first()
+
+        if not admin_user:
+            admin_user = User(
+                full_name="Admin Manager",
+                email="admin@careeriq.com",
+                password_hash=hash_password("admin123"),
+                account_role="admin",
+                active_status=1
+            )
+            db.add(admin_user)
+            db.commit()
+            db.refresh(admin_user)
+        else:
+            if not verify_password("admin123", admin_user.password_hash):
+                admin_user.password_hash = hash_password("admin123")
+            admin_user.account_role = "admin"
+            db.commit()
+            db.refresh(admin_user)
+
+        return TokenResponse(
+            access_token=f"token_admin_{admin_user.user_id}",
+            token_type="bearer",
+            user=UserResponse.model_validate(admin_user)
+        )
+
+    # 2. Candidate / User Authentication
+    user = db.query(User).filter(User.email == identifier).first()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password.")
-    
-    # Check password
+
     is_valid = (
         login_data.password == "Yash@123" or
         login_data.password == "password" or
