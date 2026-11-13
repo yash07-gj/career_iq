@@ -20,6 +20,11 @@ import {
   Eye,
   EyeOff,
   FileText,
+  MapPin,
+  Building2,
+  ExternalLink,
+  Sparkles,
+  ArrowRight,
 } from 'lucide-react';
 import { Layout, Page } from '../components/Layout';
 import { Link, useNavigate } from 'react-router-dom';
@@ -201,7 +206,7 @@ export default function Settings() {
     workType: 'Any',
     location: 'Any',
     interests: [],
-    remoteOk: true,
+    remoteOk: false,
   }));
 
   const [aiSettings, setAiSettings] = useState(() => readLS(LS_AI_SETTINGS, {
@@ -239,6 +244,28 @@ export default function Settings() {
   const [recDetails, setRecDetails] = useState(null);
   const [recLoading, setRecLoading] = useState(false);
   const [recActionMsg, setRecActionMsg] = useState('');
+
+  // Live Preference Jobs state
+  const [jobs, setJobs] = useState([]);
+  const [jobsLoading, setJobsLoading] = useState(false);
+
+  useEffect(() => {
+    async function loadPreferenceJobs() {
+      setJobsLoading(true);
+      try {
+        const res = await api.getJobs();
+        if (Array.isArray(res)) {
+          setJobs(res);
+        }
+      } catch (err) {
+        console.warn('[Settings] Failed to fetch jobs for preference preview:', err);
+      } finally {
+        setJobsLoading(false);
+      }
+    }
+    loadPreferenceJobs();
+  }, []);
+
 
   // ── theme application ──────────────────────────────────────────────────────
   const applyTheme = useCallback((t) => {
@@ -411,6 +438,90 @@ export default function Settings() {
     writeLS(LS_PREFERENCES, updated);
     syncSettingsToBackend({ preferences: updated }, true);
   };
+
+  // Filter available jobs live based on selected career preferences
+  const filteredPreferenceJobs = jobs.filter((j) => {
+    // 1. Remote Work filter:
+    // When toggle is ON -> show ONLY Remote Work
+    // When toggle is OFF -> show all types of work (Hybrid, Onsite, Remote)
+    if (preferences.remoteOk) {
+      const isRemote = (j.work_mode || '').toLowerCase().includes('remote') ||
+                       (j.location || '').toLowerCase().includes('remote');
+      if (!isRemote) return false;
+    }
+
+    // 2. Preferred Work Type filter
+    if (preferences.workType && preferences.workType !== 'Any') {
+      const wt = preferences.workType.toLowerCase();
+      const jType = (j.job_type || '').toLowerCase();
+      const jTitle = (j.job_title || '').toLowerCase();
+      const jMode = (j.work_mode || '').toLowerCase();
+
+      if (wt === 'internship') {
+        if (!jType.includes('intern') && !jTitle.includes('intern')) return false;
+      } else if (wt === 'full-time') {
+        if (!jType.includes('full')) return false;
+      } else if (wt === 'hybrid') {
+        if (!jMode.includes('hybrid') && !jType.includes('hybrid')) return false;
+      } else if (wt === 'part-time') {
+        if (!jType.includes('part')) return false;
+      } else if (wt === 'contract') {
+        if (!jType.includes('contract')) return false;
+      }
+    }
+
+    // 3. Preferred Location filter
+    if (preferences.location && preferences.location !== 'Any') {
+      const locPref = preferences.location.toLowerCase();
+      const jLoc = (j.location || '').toLowerCase();
+      const jMode = (j.work_mode || '').toLowerCase();
+
+      if (locPref === 'remote') {
+        if (!jLoc.includes('remote') && !jMode.includes('remote')) return false;
+      } else if (locPref === 'delhi') {
+        if (!jLoc.includes('delhi') && !jLoc.includes('gurgaon') && !jLoc.includes('noida')) return false;
+      } else {
+        if (!jLoc.includes(locPref)) return false;
+      }
+    }
+
+    // 4. Career Interests filter
+    if (preferences.interests && preferences.interests.length > 0) {
+      const jTitle = (j.job_title || '').toLowerCase();
+      const jRole = (j.role_name || '').toLowerCase();
+      const jDesc = (j.description || '').toLowerCase();
+      const jCompany = (j.company_name || '').toLowerCase();
+      const jSkills = (j.skills || []).map((s) => s.toLowerCase());
+
+      const matchesAnyInterest = preferences.interests.some((interest) => {
+        const intLower = interest.toLowerCase();
+        if (intLower.includes('analytics') || intLower.includes('analyst')) {
+          return jTitle.includes('analyst') || jRole.includes('analyst') || jSkills.includes('sql') || jSkills.includes('pandas') || jSkills.includes('data analytics') || jDesc.includes('analyst');
+        }
+        if (intLower.includes('science')) {
+          return jTitle.includes('science') || jTitle.includes('scientist') || jRole.includes('scientist') || jSkills.includes('machine learning') || jSkills.includes('statistics') || jDesc.includes('science');
+        }
+        if (intLower.includes('intelligence') || intLower.includes('bi')) {
+          return jTitle.includes('bi') || jTitle.includes('business intelligence') || jTitle.includes('business analyst') || jRole.includes('bi') || jSkills.includes('power bi') || jSkills.includes('tableau');
+        }
+        if (intLower.includes('machine learning')) {
+          return jTitle.includes('machine learning') || jTitle.includes('ml') || jSkills.includes('machine learning') || jSkills.includes('deep learning') || jSkills.includes('scikit-learn');
+        }
+        if (intLower.includes('software') || intLower.includes('web')) {
+          return jTitle.includes('developer') || jTitle.includes('engineer') || jSkills.includes('python') || jSkills.includes('git');
+        }
+        if (intLower.includes('cloud')) {
+          return jTitle.includes('cloud') || jDesc.includes('cloud') || jSkills.includes('aws') || jSkills.includes('azure') || jSkills.includes('oracle') || jCompany.includes('oracle');
+        }
+        return jTitle.includes(intLower) || jRole.includes(intLower) || jDesc.includes(intLower) || jSkills.some((s) => s.includes(intLower));
+      });
+
+      if (!matchesAnyInterest) return false;
+    }
+
+    return true;
+  });
+
 
   // ── Password Change Action ──────────────────────────────────────────────────
   const handlePasswordSubmit = async (e) => {
@@ -732,9 +843,199 @@ export default function Settings() {
           </div>
 
           {/* Remote */}
-          <SettingsRow label="Open to Remote Work" description="Include remote positions in your job matches and recommendations" noBorder>
+          <SettingsRow
+            label="Open to Remote Work"
+            description={preferences.remoteOk ? "Active: Showing ONLY Remote positions" : "Inactive: Showing all types of work (Hybrid, Onsite, Remote)"}
+            noBorder
+          >
             <Toggle checked={preferences.remoteOk} onChange={handleRemoteChange} />
           </SettingsRow>
+
+          {/* ── Live Available Jobs Matching Career Preferences ────────────────── */}
+          <div style={{
+            marginTop: '22px',
+            paddingTop: '20px',
+            borderTop: '1px solid var(--line, #f1f5f9)',
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+              marginBottom: '14px',
+            }}>
+              <div>
+                <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--navy, #0f172a)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Sparkles size={16} color="#2563eb" />
+                  <span>Available Jobs Matching Preferences</span>
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)', marginTop: '2px' }}>
+                  Filtered dynamically from MySQL corporate database
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span className="pill blue" style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 700 }}>
+                  {filteredPreferenceJobs.length} {filteredPreferenceJobs.length === 1 ? 'Job' : 'Jobs'} Available
+                </span>
+                <Link
+                  to="/job-matching"
+                  className="btn small"
+                  style={{
+                    padding: '6px 14px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    textDecoration: 'none',
+                  }}
+                >
+                  Explore in Job Matching <ArrowRight size={13} />
+                </Link>
+              </div>
+            </div>
+
+            {/* Active Preference Filters Summary Pills */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted, #64748b)', alignSelf: 'center', marginRight: '4px' }}>
+                Active Filters:
+              </span>
+              <span className="pill neutral" style={{ fontSize: '11px', padding: '3px 9px' }}>
+                Type: <strong>{preferences.workType || 'Any'}</strong>
+              </span>
+              <span className="pill neutral" style={{ fontSize: '11px', padding: '3px 9px' }}>
+                Location: <strong>{preferences.location || 'Any'}</strong>
+              </span>
+              <span className={`pill ${preferences.remoteOk ? 'green' : 'neutral'}`} style={{ fontSize: '11px', padding: '3px 9px' }}>
+                Remote Only: <strong>{preferences.remoteOk ? 'ON' : 'OFF'}</strong>
+              </span>
+              {preferences.interests && preferences.interests.length > 0 && preferences.interests.map(i => (
+                <span key={i} className="pill blue" style={{ fontSize: '11px', padding: '3px 9px' }}>
+                  {i}
+                </span>
+              ))}
+            </div>
+
+            {/* Job Listings List */}
+            {jobsLoading ? (
+              <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-muted, #64748b)', fontSize: '13px' }}>
+                Loading available opportunities from MySQL...
+              </div>
+            ) : filteredPreferenceJobs.length === 0 ? (
+              <div style={{
+                background: 'var(--bg-card, #f8fafc)',
+                border: '1px dashed var(--line, #cbd5e1)',
+                borderRadius: '12px',
+                padding: '24px',
+                textAlign: 'center',
+              }}>
+                <Briefcase size={28} style={{ margin: '0 auto 8px', color: '#94a3b8' }} />
+                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '4px' }}>
+                  No available jobs match this combination
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)', maxWidth: '420px', margin: '0 auto 12px' }}>
+                  Try adjusting your Preferred Location, Work Type, or turning OFF "Open to Remote Work" to view all available positions.
+                </div>
+                <button
+                  type="button"
+                  className="btn small"
+                  onClick={() => {
+                    const reset = { workType: 'Any', location: 'Any', interests: [], remoteOk: false };
+                    setPreferences(reset);
+                    writeLS(LS_PREFERENCES, reset);
+                    syncSettingsToBackend({ preferences: reset }, true);
+                  }}
+                  style={{ fontSize: '12px' }}
+                >
+                  Reset All Preferences
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '420px', overflowY: 'auto', paddingRight: '4px' }}>
+                {filteredPreferenceJobs.map((j) => (
+                  <div
+                    key={j.job_id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '12px',
+                      padding: '12px 16px',
+                      background: 'var(--bg-card, #ffffff)',
+                      border: '1px solid var(--line, #e2e8f0)',
+                      borderRadius: '10px',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '240px' }}>
+                      <div style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '8px',
+                        background: '#eff6ff',
+                        color: '#2563eb',
+                        fontWeight: 800,
+                        fontSize: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '1px solid #bfdbfe',
+                        flexShrink: 0,
+                      }}>
+                        {j.company_name ? j.company_name.charAt(0) : 'J'}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy, #0f172a)' }}>
+                          {j.job_title}
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--text, #334155)' }}>{j.company_name}</span>
+                          <span>•</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                            <MapPin size={11} /> {j.location}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span className={`pill ${j.work_mode?.toLowerCase() === 'remote' ? 'green' : j.work_mode?.toLowerCase() === 'hybrid' ? 'blue' : 'neutral'}`} style={{ fontSize: '11px', padding: '3px 8px' }}>
+                        {j.work_mode || 'Onsite'}
+                      </span>
+                      <span className={`pill ${j.job_type?.toLowerCase().includes('intern') ? 'orange' : 'blue'}`} style={{ fontSize: '11px', padding: '3px 8px' }}>
+                        {j.job_type || 'Full-time'}
+                      </span>
+                      {j.salary_range && (
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#047857', padding: '0 4px' }}>
+                          {j.salary_range}
+                        </span>
+                      )}
+                      <Link
+                        to={`/job-details/${j.job_id}`}
+                        style={{
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          color: '#2563eb',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '3px',
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          background: '#eff6ff',
+                          textDecoration: 'none',
+                        }}
+                      >
+                        View & Apply <ExternalLink size={11} />
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </SettingsCard>
 
         {/* ── 4. AI & RECOMMENDATIONS ───────────────────────────────────── */}

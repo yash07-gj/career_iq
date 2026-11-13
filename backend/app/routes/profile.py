@@ -141,7 +141,7 @@ def get_user_settings(user_id: int, db: Session = Depends(get_db)):
             "workType": pref.work_mode if (pref and pref.work_mode) else "Any",
             "location": pref.preferred_location if (pref and pref.preferred_location) else "Any",
             "interests": [],
-            "remoteOk": True
+            "remoteOk": False
         },
         "ai_settings": {
             "personalizedRecs": True,

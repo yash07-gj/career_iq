@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Briefcase, Award, Eye, Building2, RefreshCw } from 'lucide-react';
+import { Search, MapPin, Briefcase, Award, Eye, Building2, RefreshCw, Sparkles, Filter, X, Laptop } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Layout, Page } from '../components/Layout';
 import api from '../services/api';
@@ -8,9 +8,32 @@ export default function JobMatching() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('All');
+
+  // Read saved user preferences from Settings (localStorage)
+  const savedPrefs = (() => {
+    try {
+      const v = localStorage.getItem('careerIQ_preferences');
+      return v ? JSON.parse(v) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const [selectedLocation, setSelectedLocation] = useState(
+    savedPrefs?.location && savedPrefs.location !== 'Any' ? savedPrefs.location : 'All'
+  );
   const [selectedExp, setSelectedExp] = useState('All');
-  const [selectedType, setSelectedType] = useState('All');
+  const [selectedType, setSelectedType] = useState(
+    savedPrefs?.workType && savedPrefs.workType !== 'Any' ? savedPrefs.workType : 'All'
+  );
+  const [remoteOnly, setRemoteOnly] = useState(Boolean(savedPrefs?.remoteOk));
+  const [selectedInterests, setSelectedInterests] = useState(savedPrefs?.interests || []);
+
+  const hasPreferencesActive =
+    (savedPrefs?.location && savedPrefs.location !== 'Any') ||
+    (savedPrefs?.workType && savedPrefs.workType !== 'Any') ||
+    savedPrefs?.remoteOk ||
+    (savedPrefs?.interests && savedPrefs.interests.length > 0);
 
   const fetchJobs = async () => {
     setLoading(true);
@@ -30,6 +53,15 @@ export default function JobMatching() {
     fetchJobs();
   }, []);
 
+  const clearFilters = () => {
+    setQ('');
+    setSelectedLocation('All');
+    setSelectedExp('All');
+    setSelectedType('All');
+    setRemoteOnly(false);
+    setSelectedInterests([]);
+  };
+
   const filteredJobs = jobs.filter((j) => {
     const jobTitle = (j.job_title || '').toLowerCase();
     const company = (j.company_name || '').toLowerCase();
@@ -41,36 +73,167 @@ export default function JobMatching() {
       company.includes(query) ||
       skills.some((s) => s.includes(query));
 
-    const loc = (j.location || '').toLowerCase();
-    const matchesLoc =
-      selectedLocation === 'All' ||
-      loc.includes(selectedLocation.toLowerCase());
+    // 1. Remote Work Filter:
+    // When Open to Remote Work toggle is ON -> show ONLY Remote Work
+    // When OFF -> show all types of work (Hybrid, Onsite, Remote)
+    if (remoteOnly) {
+      const isRemote =
+        (j.work_mode || '').toLowerCase().includes('remote') ||
+        (j.location || '').toLowerCase().includes('remote');
+      if (!isRemote) return false;
+    }
 
+    // 2. Preferred Location Filter
+    const loc = (j.location || '').toLowerCase();
+    const mode = (j.work_mode || '').toLowerCase();
+    let matchesLoc = selectedLocation === 'All';
+    if (!matchesLoc) {
+      const targetLoc = selectedLocation.toLowerCase();
+      if (targetLoc === 'remote') {
+        matchesLoc = loc.includes('remote') || mode.includes('remote');
+      } else if (targetLoc === 'delhi' || targetLoc === 'gurgaon') {
+        matchesLoc = loc.includes('delhi') || loc.includes('gurgaon') || loc.includes('noida');
+      } else {
+        matchesLoc = loc.includes(targetLoc);
+      }
+    }
+
+    // 3. Preferred Work Type Filter
+    const type = (j.job_type || '').toLowerCase();
+    let matchesType = selectedType === 'All';
+    if (!matchesType) {
+      const targetType = selectedType.toLowerCase();
+      if (targetType === 'internship') {
+        matchesType = type.includes('intern') || jobTitle.includes('intern');
+      } else if (targetType === 'full-time') {
+        matchesType = type.includes('full');
+      } else if (targetType === 'hybrid') {
+        matchesType = mode.includes('hybrid') || type.includes('hybrid');
+      } else {
+        matchesType = type.includes(targetType);
+      }
+    }
+
+    // 4. Experience Filter
     const exp = (j.experience_requirement || '').toLowerCase();
     const matchesExp =
       selectedExp === 'All' ||
-      (selectedExp === 'Internship' && (exp.includes('intern') || (j.job_type || '').toLowerCase().includes('intern'))) ||
+      (selectedExp === 'Internship' && (exp.includes('intern') || type.includes('intern'))) ||
       (selectedExp === '0-1 Years' && (exp.includes('0') || exp.includes('1') || exp.includes('fresher'))) ||
       (selectedExp === '1-3 Years' && (exp.includes('1') || exp.includes('2') || exp.includes('3')));
 
-    const type = (j.job_type || '').toLowerCase();
-    const matchesType =
-      selectedType === 'All' ||
-      (selectedType === 'Internship' && type.includes('intern')) ||
-      (selectedType === 'Full-time' && type.includes('full'));
+    // 5. Career Interests Filter
+    if (selectedInterests && selectedInterests.length > 0) {
+      const jRole = (j.role_name || '').toLowerCase();
+      const jDesc = (j.description || '').toLowerCase();
+      const matchesAnyInterest = selectedInterests.some((interest) => {
+        const intLower = interest.toLowerCase();
+        if (intLower.includes('analytics') || intLower.includes('analyst')) {
+          return jobTitle.includes('analyst') || jRole.includes('analyst') || skills.includes('sql') || skills.includes('data analytics');
+        }
+        if (intLower.includes('science')) {
+          return jobTitle.includes('science') || jobTitle.includes('scientist') || jRole.includes('scientist') || skills.includes('machine learning');
+        }
+        if (intLower.includes('intelligence') || intLower.includes('bi')) {
+          return jobTitle.includes('bi') || jobTitle.includes('business intelligence') || jobTitle.includes('business analyst') || jRole.includes('bi') || skills.includes('power bi');
+        }
+        if (intLower.includes('machine learning')) {
+          return jobTitle.includes('machine learning') || jobTitle.includes('ml') || skills.includes('machine learning') || skills.includes('deep learning');
+        }
+        if (intLower.includes('software') || intLower.includes('web')) {
+          return jobTitle.includes('developer') || jobTitle.includes('engineer') || skills.includes('python') || skills.includes('git');
+        }
+        if (intLower.includes('cloud')) {
+          return jobTitle.includes('cloud') || jDesc.includes('cloud') || skills.includes('aws') || skills.includes('azure') || skills.includes('oracle');
+        }
+        return jobTitle.includes(intLower) || jRole.includes(intLower) || jDesc.includes(intLower) || skills.some((s) => s.includes(intLower));
+      });
+      if (!matchesAnyInterest) return false;
+    }
 
-    return matchesSearch && matchesLoc && matchesExp && matchesType;
+    return matchesSearch && matchesLoc && matchesType && matchesExp;
   });
 
   return (
     <Layout>
       <Page title="Job & Internship Matching" subtitle="Explore real opportunities live from the corporate database matched to your profile">
         <div className="card card-pad">
+          {/* PREFERENCES ACTIVE BANNER */}
+          {hasPreferencesActive && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 10,
+                padding: '10px 16px',
+                background: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                borderRadius: 10,
+                marginBottom: 16,
+                fontSize: 12,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <Sparkles size={15} color="#2563eb" />
+                <span style={{ fontWeight: 700, color: '#1e40af' }}>Career Preferences Applied from Settings:</span>
+                {savedPrefs?.workType && savedPrefs.workType !== 'Any' && (
+                  <span className="pill blue" style={{ fontSize: 11, padding: '2px 8px' }}>
+                    Type: {savedPrefs.workType}
+                  </span>
+                )}
+                {savedPrefs?.location && savedPrefs.location !== 'Any' && (
+                  <span className="pill blue" style={{ fontSize: 11, padding: '2px 8px' }}>
+                    Location: {savedPrefs.location}
+                  </span>
+                )}
+                <span className={`pill ${savedPrefs?.remoteOk ? 'green' : 'neutral'}`} style={{ fontSize: 11, padding: '2px 8px' }}>
+                  Remote Work: {savedPrefs?.remoteOk ? 'ON (Only Remote)' : 'OFF (All Work Types)'}
+                </span>
+                {savedPrefs?.interests && savedPrefs.interests.length > 0 && (
+                  <span className="pill blue" style={{ fontSize: 11, padding: '2px 8px' }}>
+                    Interests: {savedPrefs.interests.join(', ')}
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#2563eb',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Show All Jobs
+                </button>
+                <Link
+                  to="/settings"
+                  style={{
+                    color: '#64748b',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                  }}
+                >
+                  Edit in Settings ↗
+                </Link>
+              </div>
+            </div>
+          )}
+
           {/* SEARCH & FILTERS HEADER */}
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: '1.5fr 1fr 1fr 1fr auto',
+              gridTemplateColumns: '1.4fr 1fr 1fr 1fr auto auto',
               gap: 10,
               marginBottom: 20
             }}
@@ -85,7 +248,7 @@ export default function JobMatching() {
                 style={{ paddingLeft: 38, width: '100%' }}
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search by job title, company (e.g. Google, Data Analyst)..."
+                placeholder="Search job title, company (Google, Oracle)..."
               />
             </div>
 
@@ -99,8 +262,9 @@ export default function JobMatching() {
               <option value="Hyderabad">Hyderabad</option>
               <option value="Pune">Pune</option>
               <option value="Mumbai">Mumbai</option>
-              <option value="Gurgaon">Gurgaon / Noida</option>
+              <option value="Gurgaon">Gurgaon / Delhi</option>
               <option value="Ahmedabad">Ahmedabad</option>
+              <option value="Remote">Remote</option>
             </select>
 
             <select
@@ -111,6 +275,7 @@ export default function JobMatching() {
               <option value="All">All Job Types</option>
               <option value="Full-time">Full-time</option>
               <option value="Internship">Internship</option>
+              <option value="Hybrid">Hybrid</option>
             </select>
 
             <select
@@ -123,6 +288,28 @@ export default function JobMatching() {
               <option value="0-1 Years">0 - 1 Years / Fresher</option>
               <option value="1-3 Years">1 - 3 Years</option>
             </select>
+
+            <button
+              type="button"
+              onClick={() => setRemoteOnly(!remoteOnly)}
+              className="btn outline"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '0 14px',
+                background: remoteOnly ? '#10b981' : 'transparent',
+                borderColor: remoteOnly ? '#10b981' : 'var(--line, #cbd5e1)',
+                color: remoteOnly ? '#ffffff' : 'var(--text, #334155)',
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: 'pointer',
+              }}
+              title="Toggle Remote Work Only"
+            >
+              <Laptop size={14} />
+              <span>{remoteOnly ? 'Remote Only: ON' : 'Remote: All'}</span>
+            </button>
 
             <button
               type="button"
@@ -143,8 +330,25 @@ export default function JobMatching() {
               <div>Fetching real-time opportunities from MySQL database...</div>
             </div>
           ) : filteredJobs.length === 0 ? (
-            <div style={{ padding: '40px 0', textAlign: 'center', color: '#64748b' }}>
-              No matching jobs found in database. Try adjusting your search query or filters.
+            <div style={{
+              padding: '48px 24px',
+              textAlign: 'center',
+              background: 'var(--bg-card, #f8fafc)',
+              borderRadius: 12,
+              border: '1px dashed var(--line, #cbd5e1)',
+            }}>
+              <Briefcase size={32} style={{ margin: '0 auto 10px', color: '#94a3b8' }} />
+              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--navy, #0f172a)', marginBottom: 6 }}>
+                No opportunities match these criteria
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted, #64748b)', maxWidth: 440, margin: '0 auto 16px' }}>
+                {remoteOnly
+                  ? 'Open to Remote Work is ON. Only remote positions are currently shown. Try turning Remote Only OFF to see Hybrid and Onsite jobs.'
+                  : 'Try selecting All Locations, All Job Types, or clearing your search keywords.'}
+              </div>
+              <button type="button" className="btn small" onClick={clearFilters}>
+                Clear All Filters
+              </button>
             </div>
           ) : (
             filteredJobs.map((j) => (
@@ -159,7 +363,7 @@ export default function JobMatching() {
                       {j.job_type || 'Full-time'}
                     </span>
                     {j.work_mode && (
-                      <span className="pill green" style={{ fontSize: 11 }}>
+                      <span className={`pill ${j.work_mode.toLowerCase() === 'remote' ? 'green' : j.work_mode.toLowerCase() === 'hybrid' ? 'blue' : 'neutral'}`} style={{ fontSize: 11 }}>
                         {j.work_mode}
                       </span>
                     )}
