@@ -1732,6 +1732,11 @@ a {
 }
 
 .grid-4 { grid-template-columns: repeat(4, 1fr); }
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
 .grid-3 { grid-template-columns: repeat(3, 1fr); }
 .grid-2 { grid-template-columns: 1.4fr 1fr; }
 

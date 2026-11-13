@@ -277,49 +277,165 @@ export default function AdminDashboard() {
         }
       >
         {/* STATS OVERVIEW CARDS */}
-        <div className="admin-grid" style={{ marginBottom: 20 }}>
-          <div className="card admin-stat">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Total Registered Users</span>
-              <Users size={18} color="var(--blue, #2563eb)" />
+        <div className="grid grid-4" style={{ marginBottom: 24, gap: 16 }}>
+          {/* Card 1: Users */}
+          <div
+            className="card"
+            style={{
+              padding: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16,
+              borderRadius: 14,
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              background: '#ffffff'
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 12,
+                background: '#eff6ff',
+                display: 'grid',
+                placeItems: 'center',
+                flexShrink: 0
+              }}
+            >
+              <Users size={24} color="#2563eb" />
             </div>
-            <strong style={{ fontSize: 24, color: 'var(--navy, #0f172a)' }}>{stats.total_users}</strong>
-            <span style={{ fontSize: 12, color: '#10b981', marginTop: 4, display: 'block' }}>
-              ✓ {stats.active_users} Active Accounts
-            </span>
+            <div>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>
+                Total Registered Users
+              </span>
+              <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--navy, #0f172a)', lineHeight: 1.2 }}>
+                {stats.total_users}
+              </div>
+              <span style={{ fontSize: 12, color: '#10b981', fontWeight: 600, marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                ✓ {stats.active_users} Active Accounts
+              </span>
+            </div>
           </div>
 
-          <div className="card admin-stat">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Available Opportunities</span>
-              <Briefcase size={18} color="#059669" />
+          {/* Card 2: Opportunities */}
+          <div
+            className="card"
+            style={{
+              padding: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16,
+              borderRadius: 14,
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              background: '#ffffff'
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 12,
+                background: '#ecfdf5',
+                display: 'grid',
+                placeItems: 'center',
+                flexShrink: 0
+              }}
+            >
+              <Briefcase size={24} color="#059669" />
             </div>
-            <strong style={{ fontSize: 24, color: 'var(--navy, #0f172a)' }}>{stats.total_jobs}</strong>
-            <span style={{ fontSize: 12, color: '#64748b', marginTop: 4, display: 'block' }}>
-              Corporate Jobs & Internships
-            </span>
+            <div>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>
+                Available Opportunities
+              </span>
+              <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--navy, #0f172a)', lineHeight: 1.2 }}>
+                {stats.total_jobs}
+              </div>
+              <span style={{ fontSize: 12, color: '#64748b', marginTop: 4, display: 'block' }}>
+                Corporate Jobs & Internships
+              </span>
+            </div>
           </div>
 
-          <div className="card admin-stat">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Candidate Resumes</span>
-              <FileText size={18} color="#d97706" />
+          {/* Card 3: Resumes */}
+          <div
+            className="card"
+            style={{
+              padding: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16,
+              borderRadius: 14,
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              background: '#ffffff'
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 12,
+                background: '#fffbeb',
+                display: 'grid',
+                placeItems: 'center',
+                flexShrink: 0
+              }}
+            >
+              <FileText size={24} color="#d97706" />
             </div>
-            <strong style={{ fontSize: 24, color: 'var(--navy, #0f172a)' }}>{stats.total_resumes}</strong>
-            <span style={{ fontSize: 12, color: '#64748b', marginTop: 4, display: 'block' }}>
-              Processed for AI matching
-            </span>
+            <div>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>
+                Candidate Resumes
+              </span>
+              <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--navy, #0f172a)', lineHeight: 1.2 }}>
+                {stats.total_resumes}
+              </div>
+              <span style={{ fontSize: 12, color: '#64748b', marginTop: 4, display: 'block' }}>
+                Processed for AI matching
+              </span>
+            </div>
           </div>
 
-          <div className="card admin-stat">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Database Status</span>
-              <ShieldCheck size={18} color="#2563eb" />
+          {/* Card 4: Database Status */}
+          <div
+            className="card"
+            style={{
+              padding: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16,
+              borderRadius: 14,
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              background: '#ffffff'
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 12,
+                background: '#eff6ff',
+                display: 'grid',
+                placeItems: 'center',
+                flexShrink: 0
+              }}
+            >
+              <ShieldCheck size={24} color="#2563eb" />
             </div>
-            <strong style={{ fontSize: 18, color: '#10b981', marginTop: 3 }}>careeriq_db Live</strong>
-            <span style={{ fontSize: 12, color: '#64748b', marginTop: 4, display: 'block' }}>
-              MySQL 8.0 Connected
-            </span>
+            <div>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>
+                Database Status
+              </span>
+              <div style={{ fontSize: 18, fontWeight: 800, color: '#10b981', lineHeight: 1.2 }}>
+                careeriq_db Live
+              </div>
+              <span style={{ fontSize: 12, color: '#64748b', marginTop: 4, display: 'block' }}>
+                MySQL 8.0 Connected
+              </span>
+            </div>
           </div>
         </div>
 
