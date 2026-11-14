@@ -15,6 +15,7 @@ import {
   LogOut,
   Users,
   BarChart3,
+  FileCheck,
 } from 'lucide-react';
 import auth from '../utils/auth';
 
@@ -26,6 +27,7 @@ const Sidebar = ({ admin = false }) => {
         { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
         { name: 'Users Table', path: '/admin/users', icon: Users },
         { name: 'Jobs Manager', path: '/admin/jobs', icon: Briefcase },
+        { name: 'Applications', path: '/admin/applications', icon: FileCheck },
       ]
     : [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },

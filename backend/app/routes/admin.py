@@ -27,6 +27,27 @@ class AdminStatsResponse(BaseModel):
     total_resumes: int
     total_applications: int
 
+class AdminApplicationItem(BaseModel):
+    application_id: int
+    job_id: int
+    job_title: str
+    company_name: str
+    job_type: str
+    location: Optional[str] = None
+    user_id: int
+    full_name: str
+    email: str
+    phone: Optional[str] = None
+    experience_level: Optional[str] = None
+    cover_note: Optional[str] = None
+    portfolio_url: Optional[str] = None
+    resume_file_url: Optional[str] = None
+    status: str
+    created_at: Optional[datetime] = None
+
+class StatusUpdateRequest(BaseModel):
+    status: str
+
 @router.get("/stats", response_model=AdminStatsResponse)
 def get_admin_stats(db: Session = Depends(get_db)):
     total_users = db.query(User).count()
@@ -94,3 +115,50 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     db.delete(user)
     db.commit()
     return {"success": True, "message": f"User {user_id} deleted successfully."}
+
+@router.get("/applications", response_model=List[AdminApplicationItem])
+def get_admin_applications(db: Session = Depends(get_db)):
+    results = db.query(JobApplication, Job).outerjoin(
+        Job, JobApplication.job_id == Job.job_id
+    ).order_by(JobApplication.application_id.desc()).all()
+
+    items = []
+    for app, job in results:
+        items.append(AdminApplicationItem(
+            application_id=app.application_id,
+            job_id=app.job_id,
+            job_title=job.job_title if job else "General Application",
+            company_name=job.company_name if job else "CareerIQ Partner",
+            job_type=job.job_type if job and job.job_type else "Full-time",
+            location=job.location if job else "India",
+            user_id=app.user_id,
+            full_name=app.full_name,
+            email=app.email,
+            phone=app.phone,
+            experience_level=app.experience_level,
+            cover_note=app.cover_note,
+            portfolio_url=app.portfolio_url,
+            resume_file_url=app.resume_file_url,
+            status=app.status or "Applied",
+            created_at=app.created_at
+        ))
+    return items
+
+@router.patch("/applications/{application_id}/status")
+def update_application_status(application_id: int, payload: StatusUpdateRequest, db: Session = Depends(get_db)):
+    app = db.query(JobApplication).filter(JobApplication.application_id == application_id).first()
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+    app.status = payload.status
+    db.commit()
+    db.refresh(app)
+    return {"success": True, "application_id": app.application_id, "status": app.status}
+
+@router.delete("/applications/{application_id}")
+def delete_application(application_id: int, db: Session = Depends(get_db)):
+    app = db.query(JobApplication).filter(JobApplication.application_id == application_id).first()
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+    db.delete(app)
+    db.commit()
+    return {"success": True, "message": f"Application {application_id} deleted successfully."}

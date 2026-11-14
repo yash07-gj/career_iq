@@ -224,6 +224,14 @@ export const api = {
   getAdminUsers: () => fetchApi('/admin/users'),
   toggleAdminUserStatus: (userId) => fetchApi(`/admin/users/${userId}/status`, { method: 'PATCH' }),
   deleteAdminUser: (userId) => fetchApi(`/admin/users/${userId}`, { method: 'DELETE' }),
+  getAdminApplications: () => fetchApi('/admin/applications'),
+  updateApplicationStatus: (appId, status) =>
+    fetchApi(`/admin/applications/${appId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
+  deleteAdminApplication: (appId) =>
+    fetchApi(`/admin/applications/${appId}`, { method: 'DELETE' }),
 };
 
 
