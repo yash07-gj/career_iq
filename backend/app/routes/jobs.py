@@ -37,6 +37,8 @@ def format_job_response(job: Job, role: CareerRole, db: Session) -> JobResponse:
         description=job.description,
         responsibilities=job.responsibilities,
         experience_requirement=job.experience_requirement,
+        posted_date=str(job.posted_date) if job.posted_date else None,
+        due_date=str(job.due_date) if job.due_date else None,
         skills=skill_names,
         match=match_score,
         is_demo_data=job.is_demo_data
@@ -67,6 +69,22 @@ def create_job(payload: JobCreateOrUpdate, db: Session = Depends(get_db)):
     if not role:
         raise HTTPException(status_code=400, detail="Invalid career_role_id")
 
+    p_date = None
+    if payload.posted_date:
+        try:
+            p_date = datetime.strptime(payload.posted_date, "%Y-%m-%d").date()
+        except Exception:
+            p_date = datetime.utcnow().date()
+    else:
+        p_date = datetime.utcnow().date()
+
+    d_date = None
+    if payload.due_date:
+        try:
+            d_date = datetime.strptime(payload.due_date, "%Y-%m-%d").date()
+        except Exception:
+            d_date = None
+
     new_job = Job(
         career_role_id=payload.career_role_id,
         job_title=payload.job_title,
@@ -78,6 +96,8 @@ def create_job(payload: JobCreateOrUpdate, db: Session = Depends(get_db)):
         salary_range=payload.salary_range,
         description=payload.description,
         responsibilities=payload.responsibilities,
+        posted_date=p_date,
+        due_date=d_date,
         is_demo_data=0,
         source="Admin Added"
     )
@@ -109,6 +129,18 @@ def update_job(job_id: int, payload: JobCreateOrUpdate, db: Session = Depends(ge
     job.salary_range = payload.salary_range
     job.description = payload.description
     job.responsibilities = payload.responsibilities
+
+    if payload.posted_date is not None:
+        try:
+            job.posted_date = datetime.strptime(payload.posted_date, "%Y-%m-%d").date() if payload.posted_date else None
+        except Exception:
+            pass
+
+    if payload.due_date is not None:
+        try:
+            job.due_date = datetime.strptime(payload.due_date, "%Y-%m-%d").date() if payload.due_date else None
+        except Exception:
+            pass
     
     # Update skills if provided
     if payload.skill_ids is not None:

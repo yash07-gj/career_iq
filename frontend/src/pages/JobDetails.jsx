@@ -24,7 +24,8 @@ import {
   Phone,
   FileText,
   Send,
-  Loader2
+  Loader2,
+  Clock
 } from 'lucide-react';
 import { Layout, Page } from '../components/Layout';
 // removed mockJobs
@@ -78,6 +79,8 @@ export default function JobDetails() {
             missingSkills: ['Cloud Warehousing', 'Advanced Machine Learning'],
             educationMatch: 'MCA / Computer Science or Quantitative degree (Matched)',
             experienceMatch: `${data.experience_requirement || '0-1 Years'} (Matched)`,
+            posted_date: data.posted_date,
+            due_date: data.due_date,
             breakdown: { skillScore: 88, educationScore: 95, experienceScore: 80 }
           });
         }
@@ -266,6 +269,43 @@ export default function JobDetails() {
                 </span>
               )}
             </div>
+
+            {/* DATES: AVAILABLE FROM & APPLICATION DUE DATE */}
+            {(job.posted_date || job.due_date) && (
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 16,
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  padding: '8px 14px',
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  marginTop: 6
+                }}
+              >
+                {job.posted_date && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#475569' }}>
+                    <Calendar size={14} color="#2563eb" />
+                    <span>Available From: <strong style={{ color: '#0f172a' }}>{new Date(job.posted_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</strong></span>
+                  </span>
+                )}
+                {job.due_date && (
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    color: new Date(job.due_date) < new Date() ? '#b91c1c' : '#b45309',
+                    fontWeight: 600
+                  }}>
+                    <Clock size={14} />
+                    <span>Apply Due Date: {new Date(job.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12 }}>
@@ -619,9 +659,27 @@ export default function JobDetails() {
                 <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: 'var(--navy, #0f172a)' }}>
                   Apply for {title}
                 </h3>
-                <span style={{ fontSize: 12, color: 'var(--text-muted, #64748b)' }}>
-                  at {company} · {location}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 3 }}>
+                  <span style={{ fontSize: 12, color: 'var(--text-muted, #64748b)' }}>
+                    at {company} · {location}
+                  </span>
+                  {job.due_date && (
+                    <span style={{ 
+                      fontSize: 11, 
+                      color: '#b45309', 
+                      background: '#fffbeb', 
+                      padding: '2px 8px', 
+                      borderRadius: 6,
+                      border: '1px solid #fde68a',
+                      fontWeight: 600,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4
+                    }}>
+                      <Clock size={11} /> Due Date: {new Date(job.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                  )}
+                </div>
               </div>
               <button
                 type="button"

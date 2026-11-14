@@ -242,6 +242,8 @@ class Job(Base):
     salary_range = Column(String(100), nullable=True)
     job_type = Column(String(50), default="Full-time")
     responsibilities = Column(Text, nullable=True)
+    posted_date = Column(Date, nullable=True)
+    due_date = Column(Date, nullable=True)
     is_demo_data = Column(SmallInteger, default=0)
     source = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

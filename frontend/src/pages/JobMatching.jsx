@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Briefcase, Award, Eye, Building2, RefreshCw, Sparkles, Filter, X, Laptop } from 'lucide-react';
+import { Search, MapPin, Briefcase, Award, Eye, Building2, RefreshCw, Sparkles, Filter, X, Laptop, Calendar, Clock, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Layout, Page } from '../components/Layout';
 import api from '../services/api';
@@ -389,6 +389,34 @@ export default function JobMatching() {
                       <span className="pill blue" style={{ fontSize: 11 }}>{j.role_name}</span>
                     )}
                   </div>
+
+                  {/* DATES: AVAILABLE FROM & APPLICATION DUE DATE */}
+                  {(j.posted_date || j.due_date) && (
+                    <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', fontSize: 12 }}>
+                      {j.posted_date && (
+                        <span style={{ color: '#64748b', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                          <Calendar size={13} color="#2563eb" />
+                          <span>Available From: <strong style={{ color: '#1e293b' }}>{new Date(j.posted_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</strong></span>
+                        </span>
+                      )}
+                      {j.due_date && (
+                        <span style={{ 
+                          color: new Date(j.due_date) < new Date() ? '#b91c1c' : '#b45309', 
+                          display: 'inline-flex', 
+                          alignItems: 'center', 
+                          gap: 5,
+                          background: new Date(j.due_date) < new Date() ? '#fef2f2' : '#fffbeb',
+                          padding: '3px 8px',
+                          borderRadius: 6,
+                          border: new Date(j.due_date) < new Date() ? '1px solid #fecaca' : '1px solid #fde68a',
+                          fontWeight: 600
+                        }}>
+                          <Clock size={13} />
+                          <span>Apply Due Date: {new Date(j.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div style={{ textAlign: 'right', marginRight: 16 }}>
                   <div className="match" style={{ color: 'var(--blue, #2563eb)', fontWeight: 800, fontSize: 20 }}>

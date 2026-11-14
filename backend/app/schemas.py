@@ -130,6 +130,8 @@ class JobCreateOrUpdate(BaseModel):
     salary_range: Optional[str] = None
     description: Optional[str] = None
     responsibilities: Optional[str] = None
+    posted_date: Optional[str] = None
+    due_date: Optional[str] = None
     skill_ids: Optional[List[int]] = []
 
 class JobResponse(BaseModel):
@@ -145,6 +147,8 @@ class JobResponse(BaseModel):
     description: Optional[str] = None
     responsibilities: Optional[str] = None
     experience_requirement: Optional[str] = None
+    posted_date: Optional[str] = None
+    due_date: Optional[str] = None
     skills: List[str] = []
     match: Optional[int] = 85
     is_demo_data: int = 0

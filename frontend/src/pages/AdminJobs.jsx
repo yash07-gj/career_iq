@@ -11,7 +11,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Eye,
-  ExternalLink
+  ExternalLink,
+  Calendar,
+  Clock
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Layout, Page } from '../components/Layout';
@@ -39,6 +41,8 @@ export default function AdminJobs() {
   const [salaryRange, setSalaryRange] = useState('');
   const [description, setDescription] = useState('');
   const [responsibilities, setResponsibilities] = useState('');
+  const [postedDate, setPostedDate] = useState('');
+  const [dueDate, setDueDate] = useState('');
 
   const fetchJobs = async () => {
     setLoading(true);
@@ -72,6 +76,8 @@ export default function AdminJobs() {
     setSalaryRange('');
     setDescription('');
     setResponsibilities('');
+    setPostedDate(new Date().toISOString().split('T')[0]);
+    setDueDate('');
     setFeedback({ error: '', success: '' });
     setShowModal(true);
   };
@@ -88,6 +94,8 @@ export default function AdminJobs() {
     setSalaryRange(j.salary_range || '');
     setDescription(j.description || '');
     setResponsibilities(j.responsibilities || '');
+    setPostedDate(j.posted_date || new Date().toISOString().split('T')[0]);
+    setDueDate(j.due_date || '');
     setFeedback({ error: '', success: '' });
     setShowModal(true);
   };
@@ -117,7 +125,9 @@ export default function AdminJobs() {
       experience_requirement: experienceReq.trim(),
       salary_range: salaryRange.trim() || null,
       description: description.trim() || null,
-      responsibilities: responsibilities.trim() || null
+      responsibilities: responsibilities.trim() || null,
+      posted_date: postedDate || null,
+      due_date: dueDate || null
     };
 
     try {
@@ -193,6 +203,7 @@ export default function AdminJobs() {
                     <th>Type</th>
                     <th>Location & Mode</th>
                     <th>Salary</th>
+                    <th>Available & Due Date</th>
                     <th style={{ textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
@@ -220,6 +231,28 @@ export default function AdminJobs() {
                         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{j.work_mode}</span>
                       </td>
                       <td style={{ color: '#047857', fontWeight: 600 }}>{j.salary_range || 'Competitive'}</td>
+                      <td>
+                        <div style={{ fontSize: 12, color: '#475569', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          {j.posted_date && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <Calendar size={12} color="#2563eb" />
+                              <span>From: {new Date(j.posted_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
+                            </span>
+                          )}
+                          {j.due_date && (
+                            <span style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: 4, 
+                              color: new Date(j.due_date) < new Date() ? '#b91c1c' : '#b45309',
+                              fontWeight: 600
+                            }}>
+                              <Clock size={12} />
+                              <span>Due: {new Date(j.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td style={{ textAlign: 'right' }}>
                         <div style={{ display: 'inline-flex', gap: 6 }}>
                           <Link
@@ -415,6 +448,27 @@ export default function AdminJobs() {
                       placeholder="e.g. ₹12.0 - ₹18.0 LPA or ₹50,000/mo"
                       value={salaryRange}
                       onChange={(e) => setSalaryRange(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="label" style={{ fontSize: 12 }}>Available / Opening Date</label>
+                    <input
+                      className="input"
+                      type="date"
+                      value={postedDate}
+                      onChange={(e) => setPostedDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="label" style={{ fontSize: 12 }}>Application Due Date (Deadline)</label>
+                    <input
+                      className="input"
+                      type="date"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
                     />
                   </div>
                 </div>

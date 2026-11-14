@@ -73,6 +73,8 @@ export default function AdminDashboard({ initialTab = 'all' }) {
   const [salaryRange, setSalaryRange] = useState('');
   const [description, setDescription] = useState('');
   const [responsibilities, setResponsibilities] = useState('');
+  const [postedDate, setPostedDate] = useState('');
+  const [dueDate, setDueDate] = useState('');
 
   // Fetch all admin data
   const fetchData = async () => {
@@ -171,6 +173,8 @@ export default function AdminDashboard({ initialTab = 'all' }) {
           ? job.responsibilities.join('\n')
           : job.responsibilities || ''
       );
+      setPostedDate(job.posted_date || new Date().toISOString().split('T')[0]);
+      setDueDate(job.due_date || '');
     } else {
       setEditingJob(null);
       setJobTitle('');
@@ -183,6 +187,8 @@ export default function AdminDashboard({ initialTab = 'all' }) {
       setSalaryRange('');
       setDescription('');
       setResponsibilities('');
+      setPostedDate(new Date().toISOString().split('T')[0]);
+      setDueDate('');
     }
     setShowJobModal(true);
   };
@@ -202,7 +208,9 @@ export default function AdminDashboard({ initialTab = 'all' }) {
       experience_requirement: experienceReq.trim(),
       salary_range: salaryRange.trim(),
       description: description.trim(),
-      responsibilities: responsibilities.trim()
+      responsibilities: responsibilities.trim(),
+      posted_date: postedDate || null,
+      due_date: dueDate || null
     };
 
     try {
@@ -1069,6 +1077,34 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                           <span>⏳ {job.experience_requirement || 'Fresher'}</span>
                         </div>
 
+                        {/* Dates row: Available From & Due Date */}
+                        {(job.posted_date || job.due_date) && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', fontSize: 12, marginTop: 6 }}>
+                            {job.posted_date && (
+                              <span style={{ color: '#475569', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <Calendar size={13} color="#2563eb" />
+                                <span>Available: <strong style={{ color: '#0f172a' }}>{new Date(job.posted_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</strong></span>
+                              </span>
+                            )}
+                            {job.due_date && (
+                              <span style={{ 
+                                color: new Date(job.due_date) < new Date() ? '#b91c1c' : '#b45309',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                background: new Date(job.due_date) < new Date() ? '#fef2f2' : '#fffbeb',
+                                padding: '2px 8px',
+                                borderRadius: 4,
+                                fontWeight: 600,
+                                border: new Date(job.due_date) < new Date() ? '1px solid #fecaca' : '1px solid #fde68a'
+                              }}>
+                                <Clock size={13} />
+                                <span>Due Date: {new Date(job.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                              </span>
+                            )}
+                          </div>
+                        )}
+
                         {/* Skills preview */}
                         {job.skills && job.skills.length > 0 && (
                           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
@@ -1273,6 +1309,28 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                       placeholder="e.g. ₹12.0 - ₹18.0 LPA or ₹50k/mo"
                       value={salaryRange}
                       onChange={(e) => setSalaryRange(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-2" style={{ gap: 12 }}>
+                  <div className="form-group">
+                    <label className="label">Available / Opening Date</label>
+                    <input
+                      className="input"
+                      type="date"
+                      value={postedDate}
+                      onChange={(e) => setPostedDate(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="label">Application Due Date (Deadline)</label>
+                    <input
+                      className="input"
+                      type="date"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
                     />
                   </div>
                 </div>
