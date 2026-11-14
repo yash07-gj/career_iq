@@ -22,6 +22,7 @@ import AdminApplications from './pages/AdminApplications';
 import PlaceholderAdmin from './pages/PlaceholderAdmin';
 import Settings from './pages/Settings';
 import ForgotPassword from './pages/ForgotPassword';
+import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 
 export default function App() {
@@ -51,7 +52,8 @@ export default function App() {
   }, []);
   return (
     <Router>
-      <Routes>
+      <ErrorBoundary>
+        <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
@@ -82,6 +84,7 @@ export default function App() {
         <Route path="/admin/settings" element={<Navigate to="/admin" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </Router>
+    </ErrorBoundary>
+  </Router>
   );
 }

@@ -21,7 +21,9 @@ import {
   AlertCircle,
   FileCheck,
   Mail,
-  Phone
+  Phone,
+  Calendar,
+  Clock
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Layout, Page } from '../components/Layout';
