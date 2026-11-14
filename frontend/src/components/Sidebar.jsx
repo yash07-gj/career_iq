@@ -26,9 +26,6 @@ const Sidebar = ({ admin = false }) => {
         { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
         { name: 'Users Table', path: '/admin/users', icon: Users },
         { name: 'Jobs Manager', path: '/admin/jobs', icon: Briefcase },
-        { name: 'Skills', path: '/admin/skills', icon: BarChart3 },
-        { name: 'Resources', path: '/admin/resources', icon: BookOpen },
-        { name: 'Settings', path: '/admin/settings', icon: Settings },
       ]
     : [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -73,13 +70,15 @@ const Sidebar = ({ admin = false }) => {
 
       {/* BOTTOM ACTION BUTTONS (SETTINGS & LOGOUT) */}
       <div className="sidebar-bottom">
-        <NavLink
-          to={admin ? '/admin/settings' : '/settings'}
-          className="sidebar-bottom-btn settings-btn"
-        >
-          <Settings size={18} className="bottom-icon settings-icon" />
-          <span>Settings</span>
-        </NavLink>
+        {!admin && (
+          <NavLink
+            to="/settings"
+            className="sidebar-bottom-btn settings-btn"
+          >
+            <Settings size={18} className="bottom-icon settings-icon" />
+            <span>Settings</span>
+          </NavLink>
+        )}
 
         <button
           type="button"

@@ -75,9 +75,9 @@ export default function App() {
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<AdminManagement />} />
         <Route path="/admin/jobs" element={<AdminJobs />} />
-        <Route path="/admin/skills" element={<PlaceholderAdmin title="Skills" />} />
-        <Route path="/admin/resources" element={<PlaceholderAdmin title="Resources" />} />
-        <Route path="/admin/settings" element={<PlaceholderAdmin title="Settings" />} />
+        <Route path="/admin/skills" element={<Navigate to="/admin" replace />} />
+        <Route path="/admin/resources" element={<Navigate to="/admin" replace />} />
+        <Route path="/admin/settings" element={<Navigate to="/admin" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

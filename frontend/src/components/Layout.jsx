@@ -91,8 +91,8 @@ export const Layout = ({ children, admin = false }) => {
       <Sidebar admin={admin} />
       <main className="main">
         <div className="topbar">
-          <Bell size={15} color="#7890aa" />
-          <span className="hello">Hi, {displayName}</span>
+          {!admin && <Bell size={15} color="#7890aa" />}
+          {!admin && <span className="hello">Hi, {displayName}</span>}
           
           <div ref={dropdownRef} style={{ position: 'relative' }}>
             <div 
@@ -149,7 +149,7 @@ export const Layout = ({ children, admin = false }) => {
                   </div>
                   <div style={{ overflow: 'hidden', lineHeight: 1.3 }}>
                     <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--navy, #0f172a)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                      {displayName}
+                      {admin ? 'Administrator' : displayName}
                     </div>
                     <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--blue, #2563eb)', marginTop: '2px' }}>
                       {role}
@@ -161,88 +161,92 @@ export const Layout = ({ children, admin = false }) => {
                 </div>
 
                 {/* Menu Actions */}
-                <div style={{ padding: '6px' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleNavigate('/profile')}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      color: '#334155',
-                      textAlign: 'left',
-                      transition: 'background 0.15s ease, color 0.15s ease'
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#2563eb'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#334155'; }}
-                  >
-                    <UserIcon size={16} color="#64748b" />
-                    <span>My Profile</span>
-                  </button>
+                {!admin && (
+                  <>
+                    <div style={{ padding: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleNavigate('/profile')}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          fontWeight: 500,
+                          color: '#334155',
+                          textAlign: 'left',
+                          transition: 'background 0.15s ease, color 0.15s ease'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#2563eb'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#334155'; }}
+                      >
+                        <UserIcon size={16} color="#64748b" />
+                        <span>My Profile</span>
+                      </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleNavigate('/resume-analysis')}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      color: '#334155',
-                      textAlign: 'left',
-                      transition: 'background 0.15s ease, color 0.15s ease'
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#2563eb'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#334155'; }}
-                  >
-                    <FileText size={16} color="#64748b" />
-                    <span>Resume</span>
-                  </button>
+                      <button
+                        type="button"
+                        onClick={() => handleNavigate('/resume-analysis')}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          fontWeight: 500,
+                          color: '#334155',
+                          textAlign: 'left',
+                          transition: 'background 0.15s ease, color 0.15s ease'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#2563eb'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#334155'; }}
+                      >
+                        <FileText size={16} color="#64748b" />
+                        <span>Resume</span>
+                      </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleNavigate('/settings')}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      color: '#334155',
-                      textAlign: 'left',
-                      transition: 'background 0.15s ease, color 0.15s ease'
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#2563eb'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#334155'; }}
-                  >
-                    <Settings size={16} color="#64748b" />
-                    <span>Settings</span>
-                  </button>
-                </div>
+                      <button
+                        type="button"
+                        onClick={() => handleNavigate('/settings')}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          fontWeight: 500,
+                          color: '#334155',
+                          textAlign: 'left',
+                          transition: 'background 0.15s ease, color 0.15s ease'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#2563eb'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#334155'; }}
+                      >
+                        <Settings size={16} color="#64748b" />
+                        <span>Settings</span>
+                      </button>
+                    </div>
 
-                {/* Divider */}
-                <div style={{ height: '1px', background: '#f1f5f9', margin: '2px 0' }} />
+                    {/* Divider */}
+                    <div style={{ height: '1px', background: '#f1f5f9', margin: '2px 0' }} />
+                  </>
+                )}
 
                 {/* Logout Action */}
                 <div style={{ padding: '6px' }}>
