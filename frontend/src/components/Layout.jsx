@@ -151,12 +151,16 @@ export const Layout = ({ children, admin = false }) => {
                     <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--navy, #0f172a)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                       {admin ? 'Administrator' : displayName}
                     </div>
-                    <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--blue, #2563eb)', marginTop: '2px' }}>
-                      {role}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', marginTop: '1px' }}>
-                      {email}
-                    </div>
+                    {!admin && (
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--blue, #2563eb)', marginTop: '2px' }}>
+                        {role}
+                      </div>
+                    )}
+                    {!admin && (
+                      <div style={{ fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', marginTop: '1px' }}>
+                        {email}
+                      </div>
+                    )}
                   </div>
                 </div>
 
