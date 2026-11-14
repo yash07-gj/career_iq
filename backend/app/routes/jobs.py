@@ -208,5 +208,33 @@ def submit_job_application_with_resume(
 
 @router.get("/user-applications/{user_id}", response_model=List[JobApplicationResponse])
 def get_user_applications(user_id: int, db: Session = Depends(get_db)):
-    apps = db.query(JobApplication).filter(JobApplication.user_id == user_id).order_by(JobApplication.application_id.desc()).all()
-    return apps
+    results = (
+        db.query(JobApplication, Job)
+        .outerjoin(Job, JobApplication.job_id == Job.job_id)
+        .filter(JobApplication.user_id == user_id)
+        .order_by(JobApplication.application_id.desc())
+        .all()
+    )
+    res = []
+    for app, job in results:
+        res.append(
+            JobApplicationResponse(
+                application_id=app.application_id,
+                job_id=app.job_id,
+                user_id=app.user_id,
+                full_name=app.full_name,
+                email=app.email,
+                phone=app.phone,
+                experience_level=app.experience_level,
+                cover_note=app.cover_note,
+                portfolio_url=app.portfolio_url,
+                resume_file_url=app.resume_file_url,
+                status=app.status or "Applied",
+                created_at=app.created_at or datetime.utcnow(),
+                job_title=job.job_title if job else "Position",
+                company_name=job.company_name if job else "Company",
+                job_type=job.job_type if job else "Full-time",
+                location=job.location if job else "India"
+            )
+        )
+    return res

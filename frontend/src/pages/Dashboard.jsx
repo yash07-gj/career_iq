@@ -22,6 +22,7 @@ export default function Dashboard() {
     has_resume: false,
     resume_filename: null,
   });
+  const [userApplications, setUserApplications] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,12 +32,18 @@ export default function Dashboard() {
         return;
       }
       try {
-        const res = await api.getDashboard(currentUser.user_id);
+        const [res, apps] = await Promise.all([
+          api.getDashboard(currentUser.user_id).catch(() => null),
+          api.getUserApplications(currentUser.user_id).catch(() => [])
+        ]);
         if (res && res.metrics) {
           setData({
             ...res,
             user_name: currentUser.full_name || res.user_name,
           });
+        }
+        if (Array.isArray(apps)) {
+          setUserApplications(apps);
         }
       } catch (err) {
         console.warn('Dashboard fetch error:', err);
@@ -315,6 +322,108 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* CANDIDATE'S SUBMITTED JOB APPLICATIONS */}
+        {userApplications.length > 0 && (
+          <div className="card card-pad" style={{ marginTop: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <CheckCircle2 size={20} color="#2563eb" />
+                <h3 className="card-title" style={{ margin: 0 }}>
+                  My Submitted Applications ({userApplications.length})
+                </h3>
+              </div>
+              <Link
+                to="/job-matching"
+                style={{ fontSize: 12, fontWeight: 700, color: 'var(--blue)', display: 'flex', alignItems: 'center', gap: 4 }}
+              >
+                Explore More Jobs <ArrowRight size={13} />
+              </Link>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+              {userApplications.map((app) => {
+                const isIntern = (app.job_type || '').toLowerCase().includes('intern');
+                const appDate = app.created_at
+                  ? new Date(app.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                  : 'Recent';
+
+                const statusColor =
+                  app.status === 'Shortlisted' || app.status === 'Hired'
+                    ? 'green'
+                    : app.status === 'Rejected'
+                    ? 'red'
+                    : app.status === 'Under Review'
+                    ? 'orange'
+                    : 'blue';
+
+                return (
+                  <div
+                    key={app.application_id}
+                    style={{
+                      padding: '16px 18px',
+                      borderRadius: 12,
+                      border: '1px solid #e2e8f0',
+                      background: '#f8fafc',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      gap: 12
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                        <div>
+                          <strong style={{ fontSize: 15, color: 'var(--navy, #0f172a)', display: 'block' }}>
+                            {app.job_title}
+                          </strong>
+                          <span style={{ fontSize: 12, color: '#475569', fontWeight: 600 }}>
+                            {app.company_name}
+                          </span>
+                        </div>
+                        <span
+                          className={`pill ${statusColor}`}
+                          style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px' }}
+                        >
+                          {app.status || 'Applied'}
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                        <span className={`pill ${isIntern ? 'orange' : 'blue'}`} style={{ fontSize: 10, padding: '2px 6px' }}>
+                          {app.job_type || 'Full-time'}
+                        </span>
+                        <span style={{ fontSize: 12, color: '#64748b' }}>
+                          📍 {app.location}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: 11,
+                        color: '#94a3b8',
+                        paddingTop: 10,
+                        borderTop: '1px solid #e2e8f0'
+                      }}
+                    >
+                      <span>Applied on: <strong style={{ color: '#475569' }}>{appDate}</strong></span>
+                      <Link
+                        to={`/job-details/${app.job_id}`}
+                        style={{ color: 'var(--blue, #2563eb)', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}
+                      >
+                        View Details →
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </Page>
     </Layout>
   );

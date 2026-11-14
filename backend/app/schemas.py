@@ -267,6 +267,10 @@ class JobApplicationResponse(BaseModel):
     resume_file_url: Optional[str] = None
     status: str
     created_at: datetime
+    job_title: Optional[str] = None
+    company_name: Optional[str] = None
+    job_type: Optional[str] = None
+    location: Optional[str] = None
 
     class Config:
         from_attributes = True
