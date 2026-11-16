@@ -8,11 +8,11 @@ export const mockUserProfile = {
 };
 
 export const mockCareerRecommendations = [
-  { id: 1, role: "Data Analyst", match: 89, category: "Data Science & Technology", desc: "Analyze data to help organizations make better decisions." },
-  { id: 2, role: "Business Analyst", match: 82, category: "Business & Technology", desc: "Bridge the gap between business and technology." },
-  { id: 3, role: "BI Analyst", match: 79, category: "Business Intelligence", desc: "Work with business intelligence tools and dashboards." },
-  { id: 4, role: "Data Scientist", match: 65, category: "Advanced Analytics", desc: "Build predictive models and work with large datasets." },
-  { id: 5, role: "Software Developer", match: 60, category: "Software Engineering", desc: "Design and develop software applications." }
+  { id: 1, role: "Data Analyst", match: 79.04, category: "Data Science & Technology", desc: "Analyzes structured datasets, designs dashboards, and delivers actionable business insights." },
+  { id: 2, role: "Business Analyst", match: 72.76, category: "Business & Technology", desc: "Bridges business requirements with data solutions, reporting workflows, and communication." },
+  { id: 3, role: "BI Analyst", match: 39.86, category: "Business Intelligence", desc: "Specializes in business intelligence reporting, ETL metrics, Power BI/Tableau, and enterprise dashboarding." },
+  { id: 4, role: "Junior Data Scientist", match: 47.35, category: "Advanced Analytics", desc: "Applies statistical modeling, machine learning, and advanced algorithms to solve predictive data challenges." },
+  { id: 5, role: "Machine Learning Engineer", match: 16.2, category: "Machine Learning & AI", desc: "Deploys, monitors, and optimizes scalable machine learning pipelines and models in production." }
 ];
 
 export const mockJobs = [

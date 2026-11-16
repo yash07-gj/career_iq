@@ -16,6 +16,7 @@ import {
 import { Layout, Page } from '../components/Layout';
 import { mockCareerRecommendations } from '../mockData/careerData';
 import api from '../services/api';
+import auth from '../utils/auth';
 
 // Detailed mock prediction data mapping (fallback for current mock mode)
 const detailedPredictions = {
@@ -102,17 +103,40 @@ export default function CareerDetails() {
     async function loadData() {
       setLoading(true);
       try {
-        // Find base career recommendation object by ID or fallback to first
+        const currentUser = auth.getUser();
         const numericId = parseInt(careerId, 10) || 1;
-        const found = mockCareerRecommendations.find(
+
+        let userRec = null;
+        let gapData = null;
+
+        if (currentUser?.user_id) {
+          try {
+            const [recs, gap] = await Promise.all([
+              api.getRecommendations(currentUser.user_id).catch(() => null),
+              api.getGapAnalysis(numericId, currentUser.user_id).catch(() => null)
+            ]);
+            if (Array.isArray(recs)) {
+              userRec = recs.find(
+                (r) => r.career_role_id === numericId || String(r.career_role_id) === String(careerId) || r.id === numericId
+              );
+            }
+            gapData = gap;
+          } catch (e) {
+            console.warn('Could not fetch user recommendations:', e);
+          }
+        }
+
+        // Fallback to mock career recommendation if not found from live API
+        const fallbackCareer = mockCareerRecommendations.find(
           (c) => c.id === numericId || String(c.id) === String(careerId)
         ) || mockCareerRecommendations[0];
 
-        setCareer(found);
+        const roleName = userRec?.role || fallbackCareer.role;
+        const matchScore = userRec?.match !== undefined ? userRec.match : fallbackCareer.match;
+        const description = userRec?.desc || userRec?.summary_explanation || fallbackCareer.desc;
+        const category = fallbackCareer.category || 'Data Science & Technology';
 
-        // Fetch detailed explanation from prediction model / backend if available,
-        // otherwise load from structured fallback mapping
-        const details = detailedPredictions[found.id] || {
+        const details = detailedPredictions[numericId] || {
           matchedSkills: ['Python', 'SQL', 'Excel', 'Pandas'],
           skillAlignment: [
             { skill: 'Python', score: 90, level: 'Strong' },
@@ -120,22 +144,49 @@ export default function CareerDetails() {
           ],
           missingSkills: ['Advanced Tooling', 'Specialized Frameworks'],
           contributingFactors: [
-            'Resume skills extracted from technical background',
+            `Technical Skills Extraction (${matchScore}% match with ${roleName} requirements)`,
             'Coursework alignment with core role competencies'
           ]
         };
 
+        const rawMatched = (gapData?.matched_skills?.length > 0)
+          ? gapData.matched_skills
+          : details.matchedSkills;
+
+        const rawMissing = (gapData?.missing_skills?.length > 0)
+          ? gapData.missing_skills.map(m => typeof m === 'string' ? m : m.name || m.skill_name)
+          : details.missingSkills;
+
+        const missingSet = new Set((rawMissing || []).map(m => (typeof m === 'string' ? m : m.name || '').toLowerCase().trim()));
+        const cleanMatched = (rawMatched || []).filter(s => !missingSet.has((typeof s === 'string' ? s : s.name || '').toLowerCase().trim()));
+
+        const contributingFactors = [
+          `Technical Skills Extraction (${matchScore}% match with ${roleName} benchmark)`,
+          'Academic coursework in database management, computer applications & algorithms',
+          'Demonstrated analytical project experience and data manipulation proficiency',
+          'Extracted competencies aligned with industry benchmark standards'
+        ];
+
+        setCareer({
+          id: numericId,
+          role: roleName,
+          match: matchScore,
+          category: category,
+          desc: description
+        });
+
         setPredictionData({
-          careerId: found.id,
-          careerName: found.role,
-          matchScore: found.match,
-          category: found.category,
-          description: found.desc,
-          matchedSkills: (details.matchedSkills || []).filter(s => !(details.missingSkills || []).some(m => (typeof m === 'string' ? m : m.name || '').toLowerCase() === (typeof s === 'string' ? s : s.name || '').toLowerCase())),
+          careerId: numericId,
+          careerName: roleName,
+          matchScore: matchScore,
+          category: category,
+          description: description,
+          matchedSkills: cleanMatched,
           skillAlignment: details.skillAlignment,
-          missingSkills: details.missingSkills,
-          contributingFactors: details.contributingFactors,
+          missingSkills: rawMissing,
+          contributingFactors: contributingFactors,
           explanation:
+            userRec?.summary_explanation ||
             'Your profile was compared with the skills, education, experience and other candidate information associated with this career. The prediction model generated the displayed match percentage based on the information available in your profile.'
         });
       } catch (err) {
