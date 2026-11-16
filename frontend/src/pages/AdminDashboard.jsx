@@ -45,6 +45,8 @@ export default function AdminDashboard({ initialTab = 'all' }) {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [syncingDaily, setSyncingDaily] = useState(false);
+  const [syncBanner, setSyncBanner] = useState('');
 
   // Filters & Search
   const [userSearch, setUserSearch] = useState('');
@@ -121,6 +123,21 @@ export default function AdminDashboard({ initialTab = 'all' }) {
   const handleRefresh = () => {
     setRefreshing(true);
     fetchData();
+  };
+
+  const handleSyncDailyJobs = async () => {
+    setSyncingDaily(true);
+    setSyncBanner('');
+    try {
+      const res = await api.syncDailyJobs();
+      setSyncBanner(res.message || 'Daily job opportunities synchronized with current dates!');
+      fetchData();
+      setTimeout(() => setSyncBanner(''), 5000);
+    } catch (err) {
+      alert('Failed to sync daily jobs: ' + (err.message || 'Error'));
+    } finally {
+      setSyncingDaily(false);
+    }
   };
 
   // User Actions
@@ -313,7 +330,17 @@ export default function AdminDashboard({ initialTab = 'all' }) {
         title="Admin Control Center"
         subtitle="Manage platform users, available jobs & internships, and candidate job applications in MySQL"
         action={
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button
+              className="btn outline"
+              onClick={handleSyncDailyJobs}
+              disabled={syncingDaily}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, borderColor: '#7c3aed', color: '#7c3aed' }}
+              title="Automatically refresh available dates and extend application deadlines"
+            >
+              <RefreshCw size={14} className={syncingDaily ? 'spin' : ''} />
+              <span>{syncingDaily ? 'Syncing Daily...' : '⚡ Daily Job Sync'}</span>
+            </button>
             <button
               className="btn outline"
               onClick={handleRefresh}
@@ -334,6 +361,26 @@ export default function AdminDashboard({ initialTab = 'all' }) {
           </div>
         }
       >
+        {syncBanner && (
+          <div
+            style={{
+              padding: '12px 18px',
+              borderRadius: 10,
+              background: '#ecfdf5',
+              border: '1px solid #a7f3d0',
+              color: '#065f46',
+              fontSize: 13,
+              fontWeight: 600,
+              marginBottom: 20,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8
+            }}
+          >
+            <CheckCircle2 size={16} />
+            <span>{syncBanner}</span>
+          </div>
+        )}
         {/* STATS OVERVIEW CARDS */}
         <div className="grid grid-4" style={{ marginBottom: 24, gap: 16 }}>
           {/* Card 1: Users */}

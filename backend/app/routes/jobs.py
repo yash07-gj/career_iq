@@ -270,3 +270,9 @@ def get_user_applications(user_id: int, db: Session = Depends(get_db)):
             )
         )
     return res
+
+@router.post("/sync-daily")
+def trigger_daily_job_sync(db: Session = Depends(get_db)):
+    """Triggers the daily sync of jobs and internships, extending deadlines and refreshing available dates."""
+    from app.services.job_sync_service import sync_daily_jobs
+    return sync_daily_jobs(db)

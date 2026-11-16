@@ -232,6 +232,7 @@ export const api = {
     }),
   deleteAdminApplication: (appId) =>
     fetchApi(`/admin/applications/${appId}`, { method: 'DELETE' }),
+  syncDailyJobs: () => fetchApi('/jobs/sync-daily', { method: 'POST' }),
 };
 
 

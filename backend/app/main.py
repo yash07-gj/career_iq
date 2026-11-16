@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+import asyncio
+from app.database import SessionLocal
+from app.services.job_sync_service import sync_daily_jobs
 from app.routes import auth, dashboard, skills, jobs, analysis, roadmap, simulation, resume, profile, admin
 
 app = FastAPI(
@@ -50,3 +53,25 @@ def root():
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy", "database": "connected"}
+
+async def daily_job_sync_scheduler():
+    """
+    Automated background worker that runs immediately on startup and repeats
+    every 24 hours to automatically refresh jobs, available dates, and deadlines.
+    """
+    while True:
+        try:
+            db = SessionLocal()
+            try:
+                res = sync_daily_jobs(db)
+                print(f"[CareerIQ Scheduler] Automated daily sync: {res['message']}")
+            finally:
+                db.close()
+        except Exception as err:
+            print(f"[CareerIQ Scheduler] Daily job sync error: {err}")
+        # Run automatically every 24 hours (86,400 seconds)
+        await asyncio.sleep(86400)
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(daily_job_sync_scheduler())

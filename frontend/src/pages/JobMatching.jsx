@@ -156,7 +156,31 @@ export default function JobMatching() {
 
   return (
     <Layout>
-      <Page title="Job & Internship Matching" subtitle="Explore real opportunities live from the corporate database matched to your profile">
+      <Page
+        title="Job & Internship Matching"
+        subtitle="Explore real opportunities live from the corporate database • Automatically updated daily with live deadlines"
+        action={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span
+              style={{
+                fontSize: 12,
+                color: '#059669',
+                background: '#ecfdf5',
+                border: '1px solid #a7f3d0',
+                padding: '4px 12px',
+                borderRadius: 20,
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6
+              }}
+            >
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981' }} />
+              Live Daily Sync Active
+            </span>
+          </div>
+        }
+      >
         <div className="card card-pad">
           {/* PREFERENCES ACTIVE BANNER */}
           {hasPreferencesActive && (
