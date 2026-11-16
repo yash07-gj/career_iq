@@ -226,6 +226,8 @@ CREATE TABLE jobs (
     salary_range VARCHAR(100) DEFAULT NULL,
     job_type VARCHAR(50) DEFAULT 'Full-time',
     responsibilities TEXT DEFAULT NULL,
+    posted_date DATE DEFAULT NULL,
+    due_date DATE DEFAULT NULL,
     is_demo_data TINYINT(1) NOT NULL DEFAULT 1,
     source VARCHAR(100) DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
