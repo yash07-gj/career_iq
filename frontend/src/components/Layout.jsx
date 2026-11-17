@@ -74,9 +74,9 @@ export const Layout = ({ children, admin = false }) => {
     };
   }, [profileOpen]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setProfileOpen(false);
-    auth.logout();
+    await auth.logout();
     setUser(null);
     nav('/login');
   };

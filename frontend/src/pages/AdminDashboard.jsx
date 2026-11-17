@@ -81,8 +81,8 @@ export default function AdminDashboard({ initialTab = 'all' }) {
   const [dueDate, setDueDate] = useState('');
 
   // Fetch all admin data
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (showSpinner = false) => {
+    if (showSpinner) setLoading(true);
     try {
       const [statsData, usersData, jobsData, appsData, rolesData] = await Promise.all([
         api.getAdminStats().catch(() => null),
@@ -111,18 +111,25 @@ export default function AdminDashboard({ initialTab = 'all' }) {
     } catch (err) {
       console.error('Error fetching admin dashboard data:', err);
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
       setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    fetchData(true);
+    const interval = setInterval(() => fetchData(false), 10000);
+    const handleFocus = () => fetchData(false);
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const handleRefresh = () => {
     setRefreshing(true);
-    fetchData();
+    fetchData(true);
   };
 
   const handleSyncDailyJobs = async () => {

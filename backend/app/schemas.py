@@ -7,6 +7,9 @@ class UserLogin(BaseModel):
     email: str
     password: str
 
+class UserLogout(BaseModel):
+    user_id: int
+
 class UserRegister(BaseModel):
     full_name: str
     email: EmailStr

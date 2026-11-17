@@ -84,8 +84,8 @@ const Sidebar = ({ admin = false }) => {
 
         <button
           type="button"
-          onClick={() => {
-            auth.logout();
+          onClick={async () => {
+            await auth.logout();
             navigate('/login');
           }}
           className="sidebar-bottom-btn logout-btn"
