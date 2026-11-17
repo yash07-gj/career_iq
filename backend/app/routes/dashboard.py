@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import (
-    User, CandidateProfile, CandidateSkill, CareerRole, CareerRecommendation,
+    User, CandidateProfile, CandidateSkill, CareerRole, CareerRoleSkill, CareerRecommendation,
     ReadinessScore, SkillGap, Skill, AnalysisRun, Resume
 )
 from app.schemas import DashboardResponse, MetricOverview, CareerRecommendationResponse
@@ -78,29 +78,45 @@ def get_dashboard_data(user_id: int, db: Session = Depends(get_db)):
         for r in recs
     ]
 
+    top_role_id = rec_responses[0].career_role_id if rec_responses else 1
+    top_role_name = rec_responses[0].role if rec_responses else "Pending Assessment"
+    top_match_pct = rec_responses[0].match if rec_responses else 0.0
+
     # Fetch user's readiness score
     readiness = db.query(ReadinessScore).filter(ReadinessScore.analysis_id == analysis_id).first()
     overall_readiness = float(readiness.overall_score) if readiness else 0.0
 
-    # Counts
-    total_skills = db.query(CandidateSkill).filter(CandidateSkill.profile_id == profile_id).count()
-    missing_skills = db.query(SkillGap).filter(SkillGap.analysis_id == analysis_id).count()
+    # Fetch candidate's acquired skills
+    cand_skills = db.query(CandidateSkill).filter(CandidateSkill.profile_id == profile_id).all()
+    cand_skill_map = {cs.skill_id: cs.proficiency_level for cs in cand_skills}
+    total_skills = len(cand_skills)
 
-    top_role_name = rec_responses[0].role if rec_responses else "Pending Assessment"
-    top_match_pct = rec_responses[0].match if rec_responses else 0.0
+    # Calculate missing skills for the top career match role (exact same as Skill Gap Analysis)
+    role_skills = db.query(CareerRoleSkill, Skill).join(
+        Skill, CareerRoleSkill.skill_id == Skill.skill_id
+    ).filter(CareerRoleSkill.career_role_id == top_role_id).all()
+
+    missing_skill_names = []
+    for rs, sk in role_skills:
+        cand_level = cand_skill_map.get(rs.skill_id, 0)
+        if cand_level < rs.required_level:
+            missing_skill_names.append(sk.skill_name)
+
+    missing_skills_count = len(missing_skill_names)
 
     metrics = MetricOverview(
         career_readiness=overall_readiness,
         top_career_match=top_role_name,
         top_match_percentage=top_match_pct,
         total_skills=total_skills,
-        missing_skills=missing_skills
+        missing_skills=missing_skills_count
     )
 
     return DashboardResponse(
         metrics=metrics,
         recommendations=rec_responses,
         market_skills=market_skills,
+        missing_skills_list=missing_skill_names,
         user_name=user.full_name,
         has_resume=True,
         resume_filename=latest_resume.file_name if latest_resume else "resume.pdf"

@@ -180,6 +180,7 @@ class DashboardResponse(BaseModel):
     metrics: MetricOverview
     recommendations: List[CareerRecommendationResponse]
     market_skills: List[dict]
+    missing_skills_list: List[str] = []
     user_name: str
     has_resume: bool = False
     resume_filename: Optional[str] = None

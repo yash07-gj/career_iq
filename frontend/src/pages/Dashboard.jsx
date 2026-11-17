@@ -18,6 +18,7 @@ export default function Dashboard() {
     },
     recommendations: [],
     market_skills: mockMarketSkills,
+    missing_skills_list: [],
     user_name: currentUser?.full_name || 'Candidate',
     has_resume: false,
     resume_filename: null,
@@ -36,9 +37,30 @@ export default function Dashboard() {
           api.getDashboard(currentUser.user_id).catch(() => null),
           api.getUserApplications(currentUser.user_id).catch(() => [])
         ]);
+
+        let missingSkills = res?.missing_skills_list || [];
+        let missingCount = res?.metrics?.missing_skills ?? 0;
+
+        // Fetch exact target role gaps from gap-analysis to ensure 100% synchronization
+        const topRoleId = res?.recommendations?.[0]?.career_role_id || 1;
+        try {
+          const gapRes = await api.getGapAnalysis(topRoleId, currentUser.user_id);
+          if (gapRes && Array.isArray(gapRes.missing_skills)) {
+            missingSkills = gapRes.missing_skills.map((m) => (typeof m === 'string' ? m : m.name));
+            missingCount = missingSkills.length;
+          }
+        } catch (e) {
+          console.warn('Gap analysis sync fallback:', e);
+        }
+
         if (res && res.metrics) {
           setData({
             ...res,
+            metrics: {
+              ...res.metrics,
+              missing_skills: missingCount,
+            },
+            missing_skills_list: missingSkills,
             user_name: currentUser.full_name || res.user_name,
           });
         }
@@ -63,6 +85,7 @@ export default function Dashboard() {
   };
   const recommendations = data.recommendations || [];
   const marketSkills = data.market_skills || mockMarketSkills;
+  const missingSkillsList = data.missing_skills_list || [];
   const hasResume = Boolean(data.has_resume);
 
   return (
@@ -173,31 +196,43 @@ export default function Dashboard() {
               'Career Readiness',
               `${metrics.career_readiness}%`,
               metrics.career_readiness > 0 ? 'green' : 'blue',
-              hasResume ? 'Calculated from your resume' : 'Upload resume to calculate'
+              hasResume ? 'Calculated from your resume' : 'Upload resume to calculate',
+              '/gap-analysis'
             ],
             [
               Award,
               'Top Career Match',
               metrics.top_match_percentage > 0 ? `${metrics.top_match_percentage}% Match` : '0% Match',
               metrics.top_match_percentage > 0 ? 'orange' : 'blue',
-              metrics.top_career_match
+              metrics.top_career_match,
+              '/recommendations'
             ],
             [
               BrainCircuit,
               'Total Skills Found',
               `${metrics.total_skills}`,
               'blue',
-              hasResume ? 'Extracted from your resume' : '0 skills detected'
+              hasResume ? 'Extracted from your resume' : '0 skills detected',
+              '/resume'
             ],
             [
               ShieldAlert,
               'Missing Skills',
               `${metrics.missing_skills}`,
               metrics.missing_skills > 0 ? 'red' : 'blue',
-              hasResume ? 'Identified for target role' : 'Pending resume upload'
+              hasResume
+                ? (missingSkillsList.length > 0 ? missingSkillsList.slice(0, 3).join(', ') : '0 gaps for target role')
+                : 'Pending resume upload',
+              '/gap-analysis'
             ],
-          ].map(([Icon, label, val, color, sub]) => (
-            <div className="card metric" key={label}>
+          ].map(([Icon, label, val, color, sub, link]) => (
+            <Link
+              to={link}
+              className="card metric"
+              key={label}
+              style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}
+              title={label === 'Missing Skills' ? 'View exact gaps in Skill Gap Analysis' : undefined}
+            >
               <div
                 className="metric-icon"
                 style={{
@@ -224,12 +259,25 @@ export default function Dashboard() {
                   }
                 />
               </div>
-              <div>
+              <div style={{ minWidth: 0, flex: 1 }}>
                 <span className="metric-label">{label}</span>
                 <strong className={`metric-value ${color}`}>{val}</strong>
-                <span style={{ display: 'block', fontSize: 11, color: '#94a3b8', marginTop: 3 }}>{sub}</span>
+                <span
+                  style={{
+                    display: 'block',
+                    fontSize: 11,
+                    color: '#94a3b8',
+                    marginTop: 3,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}
+                  title={sub}
+                >
+                  {sub}
+                </span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 
@@ -301,9 +349,40 @@ export default function Dashboard() {
               </div>
             ))}
 
+            {/* Target Role Missing Skills from Gap Analysis */}
+            {hasResume && (
+              <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid #f1f5f9' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#be123c', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <ShieldAlert size={14} color="#ef4444" /> Missing Skills ({metrics.top_career_match}):
+                  </span>
+                  <Link to="/gap-analysis" style={{ fontSize: 11, color: 'var(--blue)', fontWeight: 600 }}>
+                    Skill Gap Analysis →
+                  </Link>
+                </div>
+                {missingSkillsList.length > 0 ? (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {missingSkillsList.map((skillName) => (
+                      <span
+                        key={skillName}
+                        className="pill red"
+                        style={{ fontSize: 11, padding: '3px 9px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      >
+                        ✕ {skillName}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span style={{ fontSize: 12, color: '#10b981', fontWeight: 600 }}>
+                    ✓ No missing skills for this role!
+                  </span>
+                )}
+              </div>
+            )}
+
             <div
               style={{
-                marginTop: 20,
+                marginTop: 18,
                 padding: 14,
                 background: '#eff6ff',
                 border: '1px solid #dbeafe',
@@ -317,7 +396,12 @@ export default function Dashboard() {
             >
               <TrendingUp size={16} />
               <span>
-                <strong>Live AI Tip:</strong> {hasResume ? 'Master top missing skills in your roadmap to boost role readiness!' : 'Upload your resume to receive custom AI tips and tailored skill gaps.'}
+                <strong>Live AI Tip:</strong>{' '}
+                {hasResume && missingSkillsList.length > 0
+                  ? `Master top missing skills for ${metrics.top_career_match} (${missingSkillsList.join(', ')}) in your roadmap to boost role readiness!`
+                  : hasResume
+                  ? 'All core prerequisites met for your top career role!'
+                  : 'Upload your resume to receive custom AI tips and tailored skill gaps.'}
               </span>
             </div>
           </div>
