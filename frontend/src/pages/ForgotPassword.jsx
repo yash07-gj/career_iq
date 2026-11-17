@@ -11,54 +11,23 @@ import {
   EyeOff,
   KeyRound,
   Mail,
-  ShieldCheck,
 } from 'lucide-react';
 import api from '../services/api';
 
 export default function ForgotPassword() {
   const nav = useNavigate();
   const [email, setEmail] = useState('');
-  const [otpCode, setOtpCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-
-  // OTP state
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [infoMsg, setInfoMsg] = useState('');
 
   // Submit state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Send OTP (Code is delivered exclusively to user's email inbox)
-  const handleSendOtp = async () => {
-    if (!email.trim()) {
-      setError('Please enter your registered email address first.');
-      return;
-    }
-    setError('');
-    setInfoMsg('');
-    setOtpLoading(true);
-
-    try {
-      const res = await api.sendForgotPasswordOtp(email.trim());
-      if (res && res.success) {
-        setOtpSent(true);
-        setOtpCode(''); // Never auto-fill OTP, user must enter from their email
-        setInfoMsg(res.message || 'A 6-digit verification code has been sent to your email address.');
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to send verification code. Please check your email address.');
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  // Submit Password Reset
+  // Submit Direct Password Reset
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -66,16 +35,6 @@ export default function ForgotPassword() {
 
     if (!email.trim()) {
       setError('Please enter your registered email address.');
-      return;
-    }
-
-    if (!otpSent) {
-      setError('Please click "Get OTP" first to receive your verification code via email.');
-      return;
-    }
-
-    if (!otpCode.trim() || otpCode.trim().length !== 6) {
-      setError('Please enter the 6-digit verification code received in your email.');
       return;
     }
 
@@ -94,18 +53,17 @@ export default function ForgotPassword() {
     try {
       const res = await api.resetPassword(
         email.trim(),
-        newPassword.trim(),
-        otpCode.trim()
+        newPassword.trim()
       );
 
       if (res && res.success) {
         setSuccess(res.message || 'Password updated successfully in database!');
         setTimeout(() => {
           nav('/login');
-        }, 2000);
+        }, 1500);
       }
     } catch (err) {
-      setError(err.message || 'Failed to update password. Please check your verification code.');
+      setError(err.message || 'Failed to update password. Please verify your email.');
     } finally {
       setLoading(false);
     }
@@ -127,10 +85,10 @@ export default function ForgotPassword() {
 
           <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 14 }}>
             {[
-              'Secure email verification code (OTP)',
+              'Direct and secure password recovery',
               'Enterprise-grade bcrypt password hashing',
               'Real-time MySQL database credential update',
-              'Fast and seamless account recovery',
+              'Instant account restoration without delay',
             ].map((text) => (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }} key={text}>
                 <CheckCircle2 size={16} color="#6ee7b7" />
@@ -150,7 +108,7 @@ export default function ForgotPassword() {
           </div>
 
           <h2>Change Password</h2>
-          <p>Verify your registered email and choose a new password</p>
+          <p>Enter your registered email and choose a new password</p>
 
           {error && (
             <div
@@ -184,92 +142,34 @@ export default function ForgotPassword() {
                 borderRadius: 8,
                 fontSize: 13,
                 marginBottom: 16,
-                fontWeight: 600,
               }}
             >
-              <ShieldCheck size={18} color="#10b981" style={{ flexShrink: 0 }} />
+              <CheckCircle2 size={16} style={{ flexShrink: 0, color: '#10b981' }} />
               <span>{success} Redirecting to login...</span>
             </div>
           )}
 
-          {infoMsg && !success && (
-            <div
-              style={{
-                padding: '10px 14px',
-                background: '#eff6ff',
-                border: '1px solid #bfdbfe',
-                color: '#1e40af',
-                borderRadius: 8,
-                fontSize: 13,
-                marginBottom: 16,
-              }}
-            >
-              {infoMsg}
-            </div>
-          )}
-
           <form onSubmit={handleSubmit}>
-            {/* Email field + Get OTP button */}
+            {/* Email field */}
             <div className="form-group" style={{ marginBottom: 14 }}>
               <label className="label">Registered Email Address</label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <div style={{ position: 'relative', flex: 1 }}>
-                  <input
-                    className="input"
-                    type="email"
-                    placeholder="e.g. yash@example.com"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    style={{ width: '100%' }}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSendOtp}
-                  disabled={otpLoading || !email.trim()}
-                  className="btn outline"
-                  style={{
-                    padding: '8px 14px',
-                    fontSize: 12,
-                    whiteSpace: 'nowrap',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                  }}
-                  title="Send 6-digit verification code to email"
-                >
-                  {otpLoading ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <Mail size={14} />
-                  )}
-                  <span>{otpSent ? 'Resend OTP' : 'Get OTP'}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* 6-Digit OTP field (Only displayed when OTP is requested) */}
-            {otpSent && (
-              <div className="form-group" style={{ marginBottom: 14 }}>
-                <label className="label">
-                  Verification Code (OTP){' '}
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>
-                    — check your email inbox
-                  </span>
-                </label>
+              <div style={{ position: 'relative' }}>
                 <input
                   className="input"
-                  type="text"
-                  maxLength={6}
-                  placeholder="Enter 6-digit code"
+                  type="email"
+                  placeholder="e.g. yash@gmail.com"
                   required
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                  style={{ letterSpacing: '4px', fontWeight: 700, fontSize: 16 }}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  style={{ paddingLeft: '36px', width: '100%' }}
+                />
+                <Mail
+                  size={16}
+                  color="#94a3b8"
+                  style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
                 />
               </div>
-            )}
+            </div>
 
             {/* New Password */}
             <div className="form-group" style={{ marginBottom: 14 }}>
@@ -284,22 +184,24 @@ export default function ForgotPassword() {
                   onChange={(e) => setNewPassword(e.target.value)}
                   style={{ paddingRight: '42px', width: '100%' }}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    background: 'transparent',
-                    border: 'none',
-                    padding: '4px',
-                    cursor: 'pointer',
-                    color: '#64748b',
-                  }}
-                  title={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+                {newPassword.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      background: 'transparent',
+                      border: 'none',
+                      padding: '4px',
+                      cursor: 'pointer',
+                      color: '#64748b',
+                    }}
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -316,22 +218,24 @@ export default function ForgotPassword() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   style={{ paddingRight: '42px', width: '100%' }}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm(!showConfirm)}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    background: 'transparent',
-                    border: 'none',
-                    padding: '4px',
-                    cursor: 'pointer',
-                    color: '#64748b',
-                  }}
-                  title={showConfirm ? 'Hide password' : 'Show password'}
-                >
-                  {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+                {confirmPassword.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      background: 'transparent',
+                      border: 'none',
+                      padding: '4px',
+                      cursor: 'pointer',
+                      color: '#64748b',
+                    }}
+                    title={showConfirm ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -345,7 +249,12 @@ export default function ForgotPassword() {
               {loading ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  <span>Updating in Database...</span>
+                  <span>Updating Password in Database...</span>
+                </>
+              ) : success ? (
+                <>
+                  <CheckCircle2 size={16} color="#ffffff" />
+                  <span>Password Reset Completed!</span>
                 </>
               ) : (
                 <>
