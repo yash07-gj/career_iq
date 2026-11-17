@@ -33,9 +33,22 @@ export const auth = {
     return localStorage.getItem(TOKEN_KEY);
   },
 
-  logout: () => {
-    localStorage.removeItem(USER_KEY);
-    localStorage.removeItem(TOKEN_KEY);
+  logout: async () => {
+    try {
+      const user = auth.getUser();
+      if (user && user.user_id) {
+        await fetch('http://127.0.0.1:8000/api/auth/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: user.user_id }),
+        });
+      }
+    } catch (e) {
+      console.warn('Backend logout call failed:', e);
+    } finally {
+      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(TOKEN_KEY);
+    }
   },
 
   isAuthenticated: () => {

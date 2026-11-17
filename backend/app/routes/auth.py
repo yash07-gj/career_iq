@@ -6,6 +6,7 @@ from app.database import get_db
 from app.models import User, CandidateProfile, CandidatePreference, EmailVerification
 from app.schemas import (
     UserLogin,
+    UserLogout,
     UserRegister,
     SendOtpRequest,
     VerifyOtpRequest,
@@ -251,6 +252,7 @@ def login(login_data: UserLogin, db: Session = Depends(get_db)):
             if not verify_password("admin123", admin_user.password_hash):
                 admin_user.password_hash = hash_password("admin123")
             admin_user.account_role = "admin"
+            admin_user.active_status = 1
             db.commit()
             db.refresh(admin_user)
 
@@ -273,11 +275,30 @@ def login(login_data: UserLogin, db: Session = Depends(get_db)):
     if not is_valid:
         raise HTTPException(status_code=401, detail="Invalid email or password.")
 
+    # Update candidate active status to active (1) on successful login
+    user.active_status = 1
+    db.commit()
+    db.refresh(user)
+
     return TokenResponse(
         access_token=f"token_user_{user.user_id}",
         token_type="bearer",
         user=UserResponse.model_validate(user)
     )
+
+@router.post("/logout")
+def logout(req: UserLogout, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.user_id == req.user_id).first()
+    if user:
+        user.active_status = 0
+        db.commit()
+        db.refresh(user)
+        return {
+            "success": True,
+            "message": f"User {user.user_id} logged out successfully.",
+            "active_status": 0
+        }
+    return {"success": True, "message": "Logged out successfully."}
 
 @router.get("/me", response_model=UserResponse)
 def get_current_user(user_id: int = None, email: str = None, db: Session = Depends(get_db)):

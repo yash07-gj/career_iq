@@ -9,20 +9,27 @@ export default function AdminManagement() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
 
-  const fetchUsers = async () => {
-    setLoading(true);
+  const fetchUsers = async (showSpinner = false) => {
+    if (showSpinner) setLoading(true);
     try {
       const data = await api.getAdminUsers();
       if (Array.isArray(data)) setUsers(data);
     } catch (err) {
       console.error('Failed to load users:', err);
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsers(true);
+    const interval = setInterval(() => fetchUsers(false), 8000);
+    const handleFocus = () => fetchUsers(false);
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   const handleToggleStatus = async (userId, currentStatus, accountRole) => {
@@ -70,7 +77,7 @@ export default function AdminManagement() {
         title="Manage Users"
         subtitle="View, monitor, and manage registered candidates and administrators in MySQL"
         action={
-          <button className="btn outline" onClick={fetchUsers} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button className="btn outline" onClick={() => fetchUsers(true)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <RefreshCw size={13} className={loading ? 'spin' : ''} />
             <span>Refresh</span>
           </button>
@@ -158,9 +165,20 @@ export default function AdminManagement() {
                           )}
                         </td>
                         <td style={{ padding: '12px' }}>
-                          <span className={`pill ${u.active_status === 1 ? 'green' : 'red'}`} style={{ fontSize: 11, padding: '3px 8px' }}>
-                            {u.active_status === 1 ? '● Active' : '○ Inactive'}
-                          </span>
+                          <button
+                            onClick={() => handleToggleStatus(u.user_id, u.active_status, u.account_role)}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              cursor: u.account_role === 'admin' ? 'default' : 'pointer',
+                              padding: 0
+                            }}
+                            title={u.account_role === 'admin' ? 'Admin status cannot be changed' : 'Click to toggle status'}
+                          >
+                            <span className={`pill ${u.active_status === 1 ? 'green' : 'red'}`} style={{ fontSize: 11, padding: '3px 8px' }}>
+                              {u.active_status === 1 ? '● Active' : '○ Inactive'}
+                            </span>
+                          </button>
                         </td>
                         <td style={{ padding: '12px', fontSize: 12, color: '#64748b' }}>
                           {joined}
