@@ -14,6 +14,7 @@ DB_PORT = os.getenv("DB_PORT", "3306")
 DB_USER = os.getenv("DB_USER", "root")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "Yash@123")
 DB_NAME = os.getenv("DB_NAME", "careeriq_db")
+DB_SSL = os.getenv("DB_SSL", "false").lower() in ("true", "1", "yes")
 
 # Safely encode special characters (like @, #, $, %) in password
 encoded_password = quote_plus(DB_PASSWORD)
