@@ -1,0 +1,469 @@
+===============================================================================
+                CareerIQ - FRONTEND GUIDE (Code, Libraries & Design)
+===============================================================================
+
+This file explains how the CareerIQ frontend (the website part) is built:
+which technologies and libraries are used, how the code is organised, how
+each page works, and how the user interface (UI) design works.
+
+Contents
+  1. What is the frontend?
+  2. Technologies and libraries
+  3. Folder structure
+  4. How the app starts (step by step)
+  5. Routing - how pages are connected
+  6. All pages and what they do
+  7. Shared components
+  8. How the frontend talks to the backend (API)
+  9. Login session (auth.js)
+ 10. UI design system (colours, fonts, animations, responsive)
+ 11. How to run the frontend
+ 12. Possible examiner questions and short answers
+
+
+-------------------------------------------------------------------------------
+1. WHAT IS THE FRONTEND?
+-------------------------------------------------------------------------------
+The frontend is everything the user sees and clicks in the browser: pages,
+buttons, forms, charts and menus.
+
+CareerIQ has 3 parts:
+
+   [ Browser: React frontend ]  --HTTP/JSON-->  [ FastAPI backend ]  -->  [ MySQL ]
+        (port 5173)                                 (port 8000)           (port 3306)
+
+- The frontend shows the screens and collects user input.
+- It sends requests to the backend API (for example "log me in", "give me my
+  recommendations").
+- The backend reads/writes the MySQL database and sends back data as JSON.
+- The frontend then displays that data.
+
+This is called a "Single Page Application" (SPA): the browser loads the site
+once, and React switches between pages instantly without reloading the page.
+
+
+-------------------------------------------------------------------------------
+2. TECHNOLOGIES AND LIBRARIES
+-------------------------------------------------------------------------------
+(Versions are from frontend/package.json)
+
+MAIN LIBRARIES (used when the app runs)
+
+  React 19 (react, react-dom)
+    - A JavaScript library for building user interfaces from "components".
+    - A component is a reusable piece of UI, e.g. the Sidebar or a Page.
+    - React "hooks" are used to store data and react to changes:
+        useState  -> stores data inside a component (e.g. form values, loading)
+        useEffect -> runs code when the page opens (e.g. fetch data from API)
+        useRef    -> points to an HTML element (e.g. the profile dropdown)
+
+  React Router DOM 7 (react-router-dom)
+    - Handles navigation between pages without reloading the browser.
+    - <Route>     -> connects a URL (e.g. /dashboard) to a page component
+    - <NavLink>   -> a link that knows if it is the "active" page
+    - useNavigate -> moves to another page from code (e.g. after login)
+    - useParams   -> reads values from the URL (e.g. /job-details/5 -> jobId 5)
+
+  Lucide React (lucide-react)
+    - A modern open-source icon library (clean line icons).
+    - Every icon on the site (Dashboard, Briefcase, Bell, LogOut ...) comes
+      from here, e.g.  <Briefcase size={18} />
+
+  Plotly.js + react-plotly.js
+    - A charting library. It is installed in the project and ready to use
+      for interactive charts, but no page uses it yet. The current bars
+      and progress meters are made with plain CSS.
+
+DEVELOPMENT TOOLS (used only while building)
+
+  Vite 8
+    - The build tool and development server.
+    - "npm run dev" starts a very fast local server with Hot Module
+      Replacement (HMR): when you save a file, the browser updates instantly.
+    - "npm run build" creates an optimised production version in /dist.
+
+  @vitejs/plugin-react
+    - Lets Vite understand React's JSX syntax (HTML-like code inside JS).
+
+  Oxlint
+    - A code checker (linter). "npm run lint" finds mistakes such as unused
+      variables.
+
+STYLING
+  - Plain CSS files (no CSS framework like Bootstrap or Tailwind).
+      src/App.css                    -> base styles for all pages
+      src/styles/design-system.css   -> modern design layer (see section 10)
+  - Google Fonts: "Plus Jakarta Sans" (headings) and "Inter" (body text).
+
+LANGUAGE
+  - JavaScript (ES Modules) with JSX.
+  - JSX = writing HTML-like tags inside JavaScript, e.g.
+        return <h1>Welcome back, {name}</h1>;
+
+
+-------------------------------------------------------------------------------
+3. FOLDER STRUCTURE
+-------------------------------------------------------------------------------
+frontend/
+ |-- index.html              The single HTML page. React is loaded into <div id="root">
+ |-- package.json            List of libraries + npm scripts (dev, build, lint)
+ |-- vite.config.js          Vite settings (enables the React plugin)
+ |-- public/                 Static files served as-is (favicon, icons)
+ |-- src/
+      |-- main.jsx           Entry point - starts React
+      |-- App.jsx            All routes (URL -> page) + global theme setup
+      |-- App.css            Base styles
+      |-- index.css          Tiny reset (full-height page)
+      |-- styles/
+      |    |-- design-system.css   Modern UI layer (colours, animations, responsive)
+      |-- components/        Reusable building blocks
+      |    |-- Layout.jsx          Top bar + sidebar wrapper + Page header
+      |    |-- Sidebar.jsx         Left navigation menu (grouped, numbered journey)
+      |    |-- ui.jsx              Shared UI: Gauge, JourneyBar, NextStep,
+      |    |                       ScoreBreakdown, StatTile, EmptyState
+      |    |-- charts.jsx          Skill Gap charts: SkillDonut (ring) + SkillLevelBars
+      |    |-- ErrorBoundary.jsx   Shows a friendly screen if a page crashes
+      |-- hooks/
+      |    |-- useToast.jsx        Small pop-up message ("Saved") hook
+      |-- pages/             One file per screen (Dashboard.jsx, Login.jsx ...)
+      |-- services/
+      |    |-- api.js              All calls to the backend in one place
+      |-- utils/
+      |    |-- auth.js             Saves / reads the logged-in user
+      |    |-- career.js           Journey steps list + score colour helper (toneFor)
+      |-- mockData/
+      |    |-- careerData.js       Sample data used by some pages
+      |-- assets/            Images (hero image, logos)
+
+
+-------------------------------------------------------------------------------
+4. HOW THE APP STARTS (STEP BY STEP)
+-------------------------------------------------------------------------------
+ 1. The browser opens index.html, which has an empty <div id="root">.
+ 2. index.html loads src/main.jsx.
+ 3. main.jsx creates the React app inside #root and renders <App />.
+    It uses <StrictMode>, which helps find problems during development.
+ 4. App.jsx:
+      - reads the saved theme (light / dark / system) and compact mode from
+        localStorage and applies it to the <html> tag (data-theme="dark")
+      - loads App.css and design-system.css
+      - wraps everything in <ErrorBoundary> (crash protection)
+      - defines all routes with React Router
+ 5. React Router looks at the URL and shows the matching page.
+
+
+-------------------------------------------------------------------------------
+5. ROUTING - HOW PAGES ARE CONNECTED (App.jsx)
+-------------------------------------------------------------------------------
+Each <Route> connects a URL path to a page component:
+
+  PUBLIC PAGES (no login needed)
+    /                     -> Home.jsx            (landing page)
+    /register             -> Register.jsx
+    /login                -> Login.jsx
+    /forgot-password      -> ForgotPassword.jsx  (also /reset-password, /change-password)
+
+  USER PAGES (inside Layout, need login)
+    /dashboard            -> Dashboard.jsx
+    /profile              -> Profile.jsx
+    /settings             -> Settings.jsx
+    /resume-analysis      -> ResumeAnalysis.jsx  (also /resume)
+    /recommendations      -> Recommendations.jsx
+    /career-details/:id   -> CareerDetails.jsx   (:id = career role id from URL)
+    /job-matching         -> JobMatching.jsx
+    /job-details/:jobId   -> JobDetails.jsx
+    /gap-analysis         -> GapAnalysis.jsx
+    /learning-resources   -> LearningResources.jsx
+    /roadmap              -> Roadmap.jsx
+    /simulation           -> Simulation.jsx
+    /market-intelligence  -> MarketIntelligence.jsx
+
+  ADMIN PAGES
+    /admin                -> AdminDashboard.jsx
+    /admin/users          -> AdminManagement.jsx
+    /admin/jobs           -> AdminJobs.jsx
+    /admin/applications   -> AdminApplications.jsx
+
+  Any unknown URL ("*") redirects to the Home page.
+
+Login protection: Layout.jsx checks if a user is saved in localStorage. If not,
+it sends the user to /login. It also asks the backend (/api/auth/me) whether
+the user still exists; if not, it logs them out.
+
+
+-------------------------------------------------------------------------------
+6. ALL PAGES AND WHAT THEY DO
+-------------------------------------------------------------------------------
+(Data source: "API" = live data from the backend/MySQL,
+              "Sample" = fixed example data written in the frontend code)
+
+ Page                  Purpose                                            Data
+ --------------------  -------------------------------------------------  ------
+ Home                  Landing page: hero, features, how it works, CTA    Static
+ Register              Create an account (name, email, password)          API
+ Login                 Login for users and admin                          API
+ ForgotPassword        Reset password                                     API
+ Dashboard             Readiness score, top matches, skills, applications API (+ sample market chart)
+ Profile               Edit personal details, skills, profile photo       API
+ Settings              Theme, compact mode, preferences, password,        API
+                       export data / PDF, delete account
+ ResumeAnalysis        Upload PDF/DOCX resume; shows extracted skills     API
+ Recommendations       Best-matching career roles with match %            API
+ CareerDetails         Detailed explanation of one career match           API + sample
+ JobMatching           List of jobs filtered by preferences               API
+ JobDetails            One job's details + apply with resume              API
+ GapAnalysis           Skills you have vs skills a role needs             API
+ LearningResources     Course / tutorial suggestions                      Sample
+ Roadmap               Step-by-step learning plan                         API
+ Simulation            "What if I learn these skills?" readiness preview  Sample
+ MarketIntelligence    In-demand skills and trending roles                Sample
+ AdminDashboard        Statistics + users, jobs, applications in one page API
+ AdminManagement       Users table: search, block/unblock, delete         API
+ AdminJobs             Add / edit / delete jobs                           API
+ AdminApplications     View applications, change status, delete           API
+
+Typical pattern inside a page (example):
+
+    const [data, setData] = useState(null);      // 1. place to store data
+    useEffect(() => {                             // 2. runs when page opens
+      api.getRecommendations(user.user_id)        // 3. ask the backend
+         .then(res => setData(res));              // 4. save the answer
+    }, []);
+    return <Layout><Page title="...">...</Page></Layout>;   // 5. show it
+
+When setData() is called, React automatically re-draws the page with new data.
+
+
+-------------------------------------------------------------------------------
+7. SHARED COMPONENTS (src/components)
+-------------------------------------------------------------------------------
+ Layout.jsx
+   - The frame around every logged-in page:
+       * Sidebar on the left
+       * Top bar with greeting, notification bell and avatar
+       * Profile dropdown menu (My Profile, Resume, Settings, Logout)
+       * Hamburger button (☰) on tablet/mobile that opens the sidebar drawer
+   - Also exports:
+       * <Page title subtitle>  -> the page heading block used by every page
+       * <Logo>                 -> CareerIQ logo
+   - Usage:  <Layout admin={true}>  shows the admin version of the menu.
+
+ Sidebar.jsx
+   - Left navigation. Has two menu lists: one for users, one for admin.
+   - Uses <NavLink>, which automatically adds the "active" class to the
+     current page so it is highlighted.
+   - Receives "open" and "onClose" from Layout to work as a slide-in drawer
+     on small screens.
+
+ ui.jsx  (shared UI components)
+   - Gauge          : circular score meter (e.g. Career readiness 78%), animated.
+   - JourneyBar     : the 6-step progress bar on journey pages
+                      (Resume -> Career matches -> Skill gaps -> Roadmap ->
+                       Simulation -> Apply to jobs).
+   - NextStep       : banner at the bottom of each journey page with a button
+                      to the next step.
+   - ScoreBreakdown : the "Why 89%?" panel on Career Recommendations. It loads
+                      real data from /api/analysis/gap-analysis for that role.
+   - StatTile, EmptyState : summary number cards and friendly empty messages.
+
+ charts.jsx  (Skill Gap Analysis charts, pure SVG + CSS)
+   - SkillDonut     : glowing ring split into Have / Partial / Missing skills,
+                      readiness % in the centre; segments glow on hover.
+   - SkillLevelBars : "Your level vs Required" bars per skill with a marker for
+                      the required level and a tooltip on hover.
+
+ ErrorBoundary.jsx
+   - A React "error boundary". If any page crashes because of a JavaScript
+     error, it shows a friendly error screen instead of a blank white page.
+
+
+-------------------------------------------------------------------------------
+8. HOW THE FRONTEND TALKS TO THE BACKEND (src/services/api.js)
+-------------------------------------------------------------------------------
+- All backend calls are kept in ONE file. Pages never write URLs themselves;
+  they call functions like api.login(), api.getJobs(), api.getProfile().
+- Base URL:  http://127.0.0.1:8000/api
+- Uses the browser's built-in fetch() function (no extra library like axios).
+- A helper function fetchApi():
+     * adds the header  Content-Type: application/json
+     * converts the response to JSON
+     * if the server returns an error, it throws an Error with the message
+       from the backend, so the page can show it to the user.
+- File uploads (resume, profile photo, apply with resume) use FormData,
+  which is the standard way to send files over HTTP.
+
+Examples:
+   api.login(email, password)        -> POST /api/auth/login
+   api.getDashboard(userId)          -> GET  /api/dashboard?user_id=1
+   api.uploadResume(file, userId)    -> POST /api/resume/upload  (FormData)
+   api.createJob(data)               -> POST /api/jobs
+   api.deleteAdminUser(userId)       -> DELETE /api/admin/users/{id}
+
+HTTP methods used:  GET = read,  POST = create,  PUT/PATCH = update,  DELETE = delete
+(This style is called a REST API.)
+
+
+-------------------------------------------------------------------------------
+9. LOGIN SESSION (src/utils/auth.js)
+-------------------------------------------------------------------------------
+- After a successful login, the user's details (id, name, email, role) are
+  saved in the browser's localStorage under the key "careeriq_user".
+- localStorage keeps data even after the browser is closed, so the user stays
+  logged in.
+- Functions:
+     auth.getUser()      -> read the saved user
+     auth.setUser()      -> save user (and token)
+     auth.logout()       -> remove the saved user
+     auth.isAuthenticated() -> true if someone is logged in
+
+
+-------------------------------------------------------------------------------
+10. UI DESIGN SYSTEM (src/styles/design-system.css)
+-------------------------------------------------------------------------------
+The whole look of the website comes from ONE CSS file loaded after App.css.
+Pages use its ready-made classes instead of writing styles inline.
+
+10.1 DESIGN IDEA: ONE GUIDED JOURNEY
+   The pages are arranged as one journey, grouped under "Career Journey" in
+   the sidebar:
+     Resume Analysis -> Career Recommendations -> Skill Gap Analysis ->
+     Career Roadmap -> What-If Simulation -> Job Matching
+   Each journey page shows the JourneyBar at the top and a "Next step"
+   button at the bottom, so the student always knows what to do next.
+
+10.2 DESIGN TOKENS (CSS variables)
+   All colours, fonts, radius and shadows are defined once in  :root { }:
+     --bg, --surface, --surface-2   page / card / soft backgrounds
+     --ink, --muted, --line         text, secondary text, borders
+     --accent, --accent-2           brand blue and indigo
+     --good, --warn, --bad          green / orange / red meanings
+     --hero                         dark navy for the landing hero and login panel
+   Dark mode ([data-theme="dark"]) only changes these values, so every page
+   switches theme automatically.
+
+10.3 COLOUR LANGUAGE (same meaning on every page)
+   Green  = you have this skill / strong match (75%+)
+   Orange = partial / medium (50-74%)
+   Red    = missing skill / weak match (below 50%)
+   The helper toneFor(score) in utils/career.js picks the colour.
+
+10.4 TYPOGRAPHY
+   Headings: "Plus Jakarta Sans" (bold, modern). Body: "Inter" (readable).
+   Both are free Google Fonts.
+
+10.5 REUSABLE CLASSES (examples)
+   Layout : ui-grid cols-2 / cols-3 / cols-4 / split
+   Cards  : card card-pad card-head card-title, stat-tile, list-row
+   Status : pill good / warn / bad / info, notice good / warn / bad / info
+   Forms  : input, select, input-icon, seg (tab buttons), toggle (switch)
+   Other  : table-wrap (scrolling tables), modal-bg + modal, tl (timeline)
+
+10.6 ANIMATIONS (pure CSS)
+   - Page content rises in gently, one block after another.
+   - Gauges fill their arc; progress bars grow from left to right.
+   - Cards lift on hover; list rows slide slightly on hover.
+   - Resume upload shows animated steps (Reading resume -> Extracting skills
+     -> Matching career roles -> Building your roadmap) while the real upload
+     request runs.
+   - "prefers-reduced-motion" switches animations off for users who ask.
+
+10.7 RESPONSIVE DESIGN
+   Breakpoints: 1080px, 900px, 640px, 420px.
+   - <= 900px: sidebar becomes a slide-in drawer opened with the hamburger
+     button; the journey bar wraps to 3 per row.
+   - <= 640px: all grids become one column, forms stack, tables scroll
+     sideways inside their card, login side panel hides.
+
+10.8 NEW INTERACTIONS ADDED WITH THE REDESIGN (frontend only)
+   - "Why X%?" on Career Recommendations (real gap-analysis data).
+   - Ring chart + level bars on Skill Gap Analysis.
+   - "Remove Resume" on the Dashboard (DELETE /api/resume/{user_id}).
+   - Profile is filled from the resume (education, experience, target role);
+     Target Career accepts a suggested role or a custom typed role.
+   - "Mark as done" on the Career Roadmap, saved with the existing
+     PUT /api/roadmap/step/{id}/status endpoint.
+   - Drag & drop on Resume Analysis.
+
+-------------------------------------------------------------------------------
+11. HOW TO RUN THE FRONTEND
+-------------------------------------------------------------------------------
+   cd frontend
+   npm install        (first time only - downloads the libraries)
+   npm run dev        (starts http://localhost:5173)
+
+   Other commands:
+   npm run build      (creates the production build in /dist)
+   npm run preview    (previews the production build)
+   npm run lint       (checks code for mistakes)
+
+   The backend must also be running on port 8000 and MySQL on port 3306.
+
+
+-------------------------------------------------------------------------------
+12. POSSIBLE EXAMINER QUESTIONS AND SHORT ANSWERS
+-------------------------------------------------------------------------------
+Q: Why did you choose React?
+A: It is component-based (reusable UI pieces like Sidebar and Layout), very
+   fast because of the virtual DOM, and it is the most widely used frontend
+   library in industry.
+
+Q: What is the virtual DOM?
+A: React keeps a lightweight copy of the page in memory. When data changes,
+   it compares the new copy with the old one and updates only the parts of
+   the real page that changed. This makes updates fast.
+
+Q: What is a SPA?
+A: Single Page Application. The site loads once and React Router changes the
+   page content without reloading the browser, so navigation is instant.
+
+Q: Why Vite and not Create React App?
+A: Vite starts in milliseconds, updates the browser instantly on save (HMR)
+   and produces smaller, optimised production builds. Create React App is
+   no longer maintained.
+
+Q: How does the frontend get data from the database?
+A: The frontend never talks to MySQL directly. It calls the FastAPI backend
+   using fetch() (in services/api.js). The backend queries MySQL and returns
+   JSON, which React displays.
+
+Q: What are useState and useEffect?
+A: useState stores data inside a component; when it changes, React re-draws
+   the component. useEffect runs code after the component appears, for
+   example to load data from the API when the page opens.
+
+Q: How is the website responsive?
+A: CSS Grid/Flexbox layouts plus media queries at 1200, 1024, 768 and 480px.
+   On tablet/phone the sidebar becomes a slide-in drawer with a hamburger
+   button, grids become one column and tables scroll sideways.
+
+Q: How did you draw the charts and gauges without a chart library?
+A: With SVG. The gauge and the ring chart are SVG circles: the length of the
+   coloured stroke (stroke-dasharray / stroke-dashoffset) shows the
+   percentage. The level bars are SVG rectangles whose width is
+   (level / max level) x chart width. Hover glow is a CSS drop-shadow filter.
+
+Q: How did you make the design consistent?
+A: With a design system: all colours, fonts, radii, shadows and animation
+   timings are CSS variables in one place (:root). Every component uses
+   them, and dark mode just changes the variable values.
+
+Q: Did you use any UI library like Bootstrap?
+A: No. All styling is custom CSS, which gives full control over the design
+   and keeps the website lightweight. Icons come from Lucide React.
+
+Q: How are animations done?
+A: With pure CSS @keyframes and transitions (fade-up, scale-in, progress bar
+   grow, button shine, hover lift). They respect the "reduce motion" setting
+   for accessibility.
+
+Q: How does login stay active after refresh?
+A: The logged-in user is saved in localStorage. Layout.jsx reads it on every
+   page and also checks with the backend that the user still exists.
+
+Q: What happens if a page has an error?
+A: ErrorBoundary.jsx catches the error and shows a friendly message instead
+   of a blank screen.
+
+===============================================================================
+                               End of guide
+===============================================================================

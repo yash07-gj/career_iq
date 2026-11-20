@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, XCircle, AlertCircle, Sparkles, ArrowRight } from 'lucide-react';
-import { mockSkillGaps } from '../mockData/careerData';
+import { CheckCircle2, XCircle, Sparkles, ArrowRight, BookOpen } from 'lucide-react';
 import { Layout, Page } from '../components/Layout';
+import { JourneyBar, NextStep, EmptyState } from '../components/ui';
+import { SkillDonut, SkillLevelBars } from '../components/charts';
+import { toneFor } from '../utils/career';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import auth from '../utils/auth';
+
+const priorityTone = (p) => (p === 'High' ? 'bad' : p === 'Medium' ? 'warn' : 'good');
 
 export default function GapAnalysis() {
   const currentUser = auth.getUser();
@@ -64,189 +68,188 @@ export default function GapAnalysis() {
   });
   const missingSkills = rawMissing;
 
+  // Chart data: missing skills first, then matched skills (matched = meets the requirement)
+  const levelMax = Math.max(5, ...missingSkills.map((m) => Number(m.required_level) || 0));
+  const levelSkills = [
+    ...missingSkills.map((m) => ({
+      name: typeof m === 'string' ? m : m.name,
+      current: Number(m.current_level) || 0,
+      required: Number(m.required_level) || 4,
+    })),
+    ...matchedSkills.map((s) => ({ name: typeof s === 'string' ? s : s.name, current: 4, required: 4 })),
+  ].slice(0, 10);
+  const partialCount = missingSkills.filter((m) => (Number(m.current_level) || 0) > 0).length;
+  const coverage = {
+    have: matchedSkills.length,
+    partial: partialCount,
+    missing: missingSkills.length - partialCount,
+  };
+
+  const tone = toneFor(readinessScore);
+  const noData = matchedSkills.length === 0 && missingSkills.length === 0;
+
   return (
     <Layout>
       <Page
         title="Skill Gap Analysis"
         subtitle="Identify exact missing skills and critical prerequisites for your target career role"
+        action={
+          <div className="form-group" style={{ margin: 0, minWidth: 240 }}>
+            <label className="label" htmlFor="gap-role">Select Target Career Role</label>
+            <select
+              id="gap-role"
+              className="select"
+              value={selectedRoleId}
+              onChange={(e) => setSelectedRoleId(Number(e.target.value))}
+            >
+              {roles.length > 0 ? (
+                roles.map((r) => (
+                  <option key={r.career_role_id} value={r.career_role_id}>
+                    {r.role_name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value={1}>Data Analyst</option>
+                  <option value={2}>Data Scientist</option>
+                  <option value={3}>Machine Learning Engineer</option>
+                  <option value={4}>Full Stack Developer</option>
+                </>
+              )}
+            </select>
+          </div>
+        }
       >
-        <div className="card card-pad">
-          {/* Target Role Selector & Readiness Badge */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: 14,
-              marginBottom: 20,
-              paddingBottom: 16,
-              borderBottom: '1px solid #f1f5f9',
-            }}
-          >
-            <div>
-              <div className="label" style={{ marginBottom: 6, fontWeight: 700, color: '#475569' }}>
-                Select Target Career Role
-              </div>
-              <select
-                className="select"
-                style={{ width: 280, padding: '9px 12px', fontSize: 14 }}
-                value={selectedRoleId}
-                onChange={(e) => setSelectedRoleId(Number(e.target.value))}
-              >
-                {roles.length > 0 ? (
-                  roles.map((r) => (
-                    <option key={r.career_role_id} value={r.career_role_id}>
-                      {r.role_name}
-                    </option>
-                  ))
-                ) : (
-                  <>
-                    <option value={1}>Data Analyst</option>
-                    <option value={2}>Data Scientist</option>
-                    <option value={3}>Machine Learning Engineer</option>
-                    <option value={4}>Full Stack Developer</option>
-                  </>
-                )}
-              </select>
-            </div>
+        <JourneyBar current="gap" />
 
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <span className="pill blue" style={{ fontSize: 13, padding: '6px 14px' }}>
-                Role Readiness: <strong>{readinessScore}%</strong>
-              </span>
-              <span className={`pill ${missingSkills.length > 0 ? 'orange' : 'green'}`} style={{ fontSize: 13, padding: '6px 14px' }}>
-                {missingSkills.length} Skills to Develop
-              </span>
+        {/* If No Resume Uploaded Yet Prompt */}
+        {noData && !loading && (
+          <div className="card card-pad">
+            <EmptyState
+              icon={Sparkles}
+              title="No Skills Detected Yet"
+              text="Upload your resume so our AI engine can compare your verified skills against industry role benchmarks."
+              action={
+                <Link to="/resume" className="btn small">
+                  Upload Resume Now <ArrowRight size={14} />
+                </Link>
+              }
+            />
+          </div>
+        )}
+
+        <div className="ui-grid split">
+          {/* Skill coverage donut + readiness */}
+          <div className="card card-pad">
+            <div className="card-head">
+              <h3 className="card-title">Skill coverage</h3>
+              <div className="row-gap">
+                <span className={`pill ${tone}`}>
+                  Role Readiness: <strong>{readinessScore}%</strong>
+                </span>
+                <span className={`pill ${missingSkills.length > 0 ? 'warn' : 'good'}`}>
+                  {missingSkills.length} Skills to Develop
+                </span>
+              </div>
             </div>
+            <SkillDonut
+              counts={coverage}
+              score={readinessScore}
+              title={`Skill coverage for ${gapData?.target_role || 'target role'}`}
+            />
           </div>
 
-          {/* If No Resume Uploaded Yet Prompt */}
-          {matchedSkills.length === 0 && missingSkills.length === 0 && (
-            <div
-              style={{
-                background: '#eff6ff',
-                border: '1px solid #bfdbfe',
-                borderRadius: 12,
-                padding: '24px',
-                textAlign: 'center',
-                color: '#1e40af',
-                marginBottom: 20,
-              }}
-            >
-              <Sparkles size={32} style={{ margin: '0 auto 10px', color: '#2563eb' }} />
-              <h4 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700 }}>No Skills Detected Yet</h4>
-              <p style={{ margin: '0 0 16px', fontSize: 13, color: '#3b82f6', maxWidth: 480, marginInline: 'auto' }}>
-                Upload your resume so our AI engine can compare your verified skills against industry role benchmarks.
-              </p>
-              <Link to="/resume" className="btn small">
-                Upload Resume Now <ArrowRight size={14} />
+          {/* Missing + matched skills */}
+          <div className="card card-pad">
+            <div className="card-head">
+              <h3 className="card-title row-gap">
+                <XCircle size={18} className="text-bad" /> Missing / Skill Deficiencies ({missingSkills.length})
+              </h3>
+            </div>
+            {missingSkills.length === 0 ? (
+              <p className="muted text-sm">No missing skills found for this role!</p>
+            ) : (
+              <div>
+                {missingSkills.map((s) => (
+                  <div className="list-row" key={s.name}>
+                    <span className="list-icon bad"><XCircle size={18} /></span>
+                    <div className="list-main">
+                      <strong>{s.name}</strong>
+                      <span className="num">Level {s.current_level || 0} of {s.required_level}</span>
+                    </div>
+                    <div className="list-end">
+                      <span className={`pill ${priorityTone(s.priority)}`}>{s.priority} Priority</span>
+                      <Link to="/learning-resources" className="btn outline small" aria-label={`Learn ${s.name}`}>
+                        <BookOpen size={14} /> Learn
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="card-head" style={{ marginTop: 18 }}>
+              <h3 className="card-title row-gap">
+                <CheckCircle2 size={18} className="text-good" /> Verified Acquired Skills ({matchedSkills.length})
+              </h3>
+            </div>
+            {matchedSkills.length === 0 ? (
+              <p className="muted text-sm">0 skills matched from resume.</p>
+            ) : (
+              <div className="chips">
+                {matchedSkills.map((s) => (
+                  <span className="pill good" key={s}>✓ {s}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Your level vs required level */}
+        {levelSkills.length > 0 && (
+          <div className="card card-pad">
+            <div className="card-head">
+              <h3 className="card-title">Your level vs required level</h3>
+              <span className="muted text-xs">Hover a skill for details</span>
+            </div>
+            <SkillLevelBars
+              skills={levelSkills}
+              max={levelMax}
+              title={`Skill levels for ${gapData?.target_role || 'target role'}`}
+            />
+          </div>
+        )}
+
+        {/* Skill Priority preview */}
+        {missingSkills.length > 0 && (
+          <div className="card card-pad">
+            <div className="card-head">
+              <h3 className="card-title">Recommended Skill Learning Priorities</h3>
+              <Link to="/roadmap" className="link-btn">
+                Open Roadmap <ArrowRight size={14} />
               </Link>
             </div>
-          )}
-
-          {/* 2-Column Skill Comparison Grid */}
-          <div className="grid grid-2">
-            {/* Matched Skills */}
-            <div className="card" style={{ background: '#f8fafc', padding: 18 }}>
-              <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#0f766e', marginBottom: 14 }}>
-                <CheckCircle2 size={18} color="#10b981" /> Verified Acquired Skills ({matchedSkills.length})
-              </h3>
-              {matchedSkills.length === 0 ? (
-                <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>0 skills matched from resume.</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {matchedSkills.map((s) => (
-                    <div
-                      key={s}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        background: '#ffffff',
-                        padding: '10px 14px',
-                        borderRadius: 8,
-                        fontSize: 13,
-                        fontWeight: 600,
-                        border: '1px solid #e2e8f0',
-                      }}
-                    >
-                      <CheckCircle2 size={16} color="#10b981" />
-                      <span>{s}</span>
-                    </div>
-                  ))}
+            {missingSkills.map((s, i) => (
+              <div className="bar-row" key={s.name} style={{ gridTemplateColumns: 'minmax(0, 150px) minmax(0, 1fr) auto' }}>
+                <span className="bar-label">{i + 1}. {s.name}</span>
+                <div className="bar-bg">
+                  <div
+                    className={`bar ${s.priority === 'High' ? 'red' : s.priority === 'Medium' ? 'orange' : 'green'}`}
+                    style={{ width: `${Math.max(30, 100 - i * 18)}%` }}
+                  />
                 </div>
-              )}
-            </div>
-
-            {/* Missing Skills / Deficiencies */}
-            <div className="card" style={{ background: '#f8fafc', padding: 18 }}>
-              <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#be123c', marginBottom: 14 }}>
-                <XCircle size={18} color="#ef4444" /> Missing / Skill Deficiencies ({missingSkills.length})
-              </h3>
-              {missingSkills.length === 0 ? (
-                <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>No missing skills found for this role!</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {missingSkills.map((s) => (
-                    <div
-                      key={s.name}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        background: '#ffffff',
-                        padding: '10px 14px',
-                        borderRadius: 8,
-                        fontSize: 13,
-                        border: '1px solid #e2e8f0',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <XCircle size={16} color="#ef4444" />
-                        <strong>{s.name}</strong>
-                      </div>
-                      <span className={`pill ${s.priority === 'High' ? 'red' : s.priority === 'Medium' ? 'orange' : 'green'}`}>
-                        {s.priority} Priority
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Skill Priority Roadmap preview */}
-          {missingSkills.length > 0 && (
-            <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #f1f5f9' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h3 className="card-title" style={{ margin: 0 }}>
-                  Recommended Skill Learning Priorities
-                </h3>
-                <Link to="/roadmap" style={{ fontSize: 13, fontWeight: 700, color: 'var(--blue)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  Open Roadmap <ArrowRight size={14} />
-                </Link>
+                <span className={`pill ${priorityTone(s.priority)}`}>{s.priority}</span>
               </div>
+            ))}
+          </div>
+        )}
 
-              {missingSkills.map((s, i) => (
-                <div className="bar-row" key={s.name} style={{ marginBottom: 12 }}>
-                  <span className="bar-label" style={{ width: 140 }}>
-                    {i + 1}. {s.name}
-                  </span>
-                  <div className="bar-bg">
-                    <div
-                      className={`bar ${s.priority === 'High' ? 'red' : s.priority === 'Medium' ? 'orange' : 'green'}`}
-                      style={{ width: `${Math.max(30, 100 - i * 18)}%` }}
-                    />
-                  </div>
-                  <span className={`pill ${s.priority === 'High' ? 'red' : s.priority === 'Medium' ? 'orange' : 'green'}`}>
-                    {s.priority}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <NextStep
+          title="Next: close the gap with a plan"
+          text="Your roadmap turns these gaps into milestones."
+          to="/roadmap"
+          cta="Build my roadmap"
+        />
       </Page>
     </Layout>
   );

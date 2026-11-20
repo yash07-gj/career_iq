@@ -1,15 +1,17 @@
 import os
 import re
+import json
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
-from datetime import datetime
+from datetime import datetime, date
 from sqlalchemy.orm import Session
 
 import pypdf
 import docx
 
 from app.models import (
-    CandidateProfile, CandidateSkill, Resume, Skill, SkillAlias, User
+    CandidateProfile, CandidateSkill, Resume, Skill, SkillAlias, User,
+    Education, Experience, CandidatePreference, CareerRole
 )
 from app.services.matching_engine import evaluate_candidate_profile
 from app.config import UPLOAD_DIR
@@ -130,6 +132,125 @@ def extract_basic_info(text: str) -> Dict[str, str]:
     return info
 
 
+# -----------------------------------------------------------------------------
+# Section-based extraction (education / experience lines exactly as written)
+# -----------------------------------------------------------------------------
+EDUCATION_HEADINGS = ("education", "academic qualification", "academic qualifications",
+                      "qualification", "qualifications", "academic background")
+EXPERIENCE_HEADINGS = ("experience", "work experience", "professional experience", "employment",
+                       "employment history", "internship", "internships", "internship experience", "work history")
+
+BULLET_CHARS = "•●▪‣⁃�◦·"
+
+
+def _clean_lines(text: str) -> List[str]:
+    lines = []
+    for raw in (text or "").splitlines():
+        line = "".join(" " if ch in BULLET_CHARS else ch for ch in raw)
+        line = re.sub(r"\s+", " ", line).strip(" -–—|:\t")
+        if line:
+            lines.append(line)
+    return lines
+
+
+def _is_heading(line: str) -> bool:
+    letters = [c for c in line if c.isalpha()]
+    if not letters or len(line) > 60:
+        return False
+    upper_ratio = sum(1 for c in letters if c.isupper()) / len(letters)
+    return upper_ratio > 0.8 and len(line.split()) <= 6
+
+
+def _section_lines(lines: List[str], headings: Tuple[str, ...]) -> List[str]:
+    """Returns the content lines that follow the first matching section heading."""
+    for i, line in enumerate(lines):
+        norm = re.sub(r"[^a-z ]", "", line.lower()).strip()
+        if _is_heading(line) and any(norm == h or norm.startswith(h + " ") for h in headings):
+            out = []
+            for nxt in lines[i + 1:]:
+                if _is_heading(nxt):
+                    break
+                out.append(nxt)
+            return out
+    return []
+
+
+def extract_education_detail(text: str) -> Dict[str, Any]:
+    """Degree, college and graduation year as written in the EDUCATION section."""
+    body = _section_lines(_clean_lines(text), EDUCATION_HEADINGS)
+    if not body:
+        return {}
+    degree = body[0]
+    college_line = body[1] if len(body) > 1 else ""
+    # Skip detail lines such as "GPA: 9.5/10" or "Relevant Coursework: ..."
+    if re.match(r"^(gpa|cgpa|percentage|relevant|coursework|score)\b", college_line, re.IGNORECASE):
+        college_line = ""
+    college = college_line.split("|")[0].strip()
+    years = re.findall(r"(?:19|20)\d{2}", " ".join(body[:2]))
+    return {
+        "degree": degree[:150],
+        "college": college[:200],
+        "end_year": int(years[-1]) if years else None,
+    }
+
+
+def extract_experience_detail(text: str) -> Dict[str, str]:
+    """First role in the EXPERIENCE / INTERNSHIP section, e.g. 'Data Analyst Intern - ABC Ltd'."""
+    body = _section_lines(_clean_lines(text), EXPERIENCE_HEADINGS)
+    if not body:
+        return {}
+    first = body[0]
+    parts = re.split(r"\s+[–—-]\s+|\s+at\s+|\s*\|\s*|,\s+", first, maxsplit=2)
+    designation = parts[0].strip()
+    if len(parts) > 1:
+        company = parts[1].strip()
+    else:
+        company = body[1].split("|")[0].strip() if len(body) > 1 else ""
+    return {"designation": designation[:150], "company": company[:200]}
+
+
+def detect_resume_role(text: str, db: Session):
+    """Finds a known career role named in the resume header (first lines), e.g. 'Entry-Level Data Analyst'."""
+    header = " ".join(_clean_lines(text)[:6]).lower()
+    best = None
+    for role in db.query(CareerRole).filter(CareerRole.active_status == 1).all():
+        name = (role.role_name or "").lower()
+        if name and re.search(r"\b" + re.escape(name) + r"\b", header):
+            if best is None or len(name) > len(best.role_name):
+                best = role
+    return best
+
+
+def save_profile_details_from_resume(profile: CandidateProfile, raw_text: str, info: Dict[str, str], db: Session) -> Dict[str, str]:
+    """Stores education and experience from the resume so the Profile page shows them."""
+    edu = extract_education_detail(raw_text)
+    exp = extract_experience_detail(raw_text)
+
+    degree = edu.get("degree") or info.get("education", "")
+    college = edu.get("college", "")
+    edu_row = db.query(Education).filter(Education.profile_id == profile.profile_id).first()
+    if not edu_row:
+        edu_row = Education(profile_id=profile.profile_id, degree=degree, college=college)
+        db.add(edu_row)
+    edu_row.degree = degree
+    edu_row.college = college
+    edu_row.end_year = edu.get("end_year")
+
+    designation = exp.get("designation") or info.get("experience", "")
+    company = exp.get("company", "")
+    exp_row = db.query(Experience).filter(Experience.profile_id == profile.profile_id).first()
+    if not exp_row:
+        exp_row = Experience(profile_id=profile.profile_id, designation=designation, company=company, start_date=date.today())
+        db.add(exp_row)
+    exp_row.designation = designation
+    exp_row.company = company
+
+    return {
+        "education": f"{degree} — {college}" if college else degree,
+        "experience": f"{designation} at {company}" if company else designation,
+    }
+
+
 def process_resume_upload(
     user_id: int,
     original_filename: str,
@@ -207,6 +328,9 @@ def process_resume_upload(
 
     db.flush()
 
+    # 6b. Save education / experience shown on the Profile page
+    profile_details = save_profile_details_from_resume(profile, raw_text, info, db)
+
     # 7. Execute AI Evaluation / Matching Engine for this profile
     analysis_id = evaluate_candidate_profile(profile_id=profile.profile_id, db=db)
 
@@ -216,6 +340,25 @@ def process_resume_upload(
     top_rec = db.query(CareerRecommendation, CareerRole).join(
         CareerRole, CareerRecommendation.career_role_id == CareerRole.career_role_id
     ).filter(CareerRecommendation.analysis_id == analysis_id).order_by(CareerRecommendation.recommendation_rank.asc()).first()
+
+    # 8b. Target role: the role named in the resume header, else the top recommendation.
+    #     Only filled when the candidate has not chosen a target role yet.
+    pref = db.query(CandidatePreference).filter(CandidatePreference.profile_id == profile.profile_id).first()
+    if not pref:
+        pref = CandidatePreference(profile_id=profile.profile_id)
+        db.add(pref)
+    has_custom_role = False
+    if profile.settings_json:
+        try:
+            has_custom_role = bool(json.loads(profile.settings_json).get("custom_target_role"))
+        except Exception:
+            has_custom_role = False
+    if not pref.target_role_id and not has_custom_role:
+        resume_role = detect_resume_role(raw_text, db)
+        if resume_role:
+            pref.target_role_id = resume_role.career_role_id
+        elif top_rec:
+            pref.target_role_id = top_rec.CareerRole.career_role_id
 
     readiness_score = float(readiness.overall_score) if readiness else 75.0
     top_role_name = top_rec.CareerRole.role_name if top_rec else "Software Engineer"
@@ -235,7 +378,7 @@ def process_resume_upload(
         "analysis_id": analysis_id,
         "candidate_name": user.full_name,
         "candidate_email": info["email"] or user.email,
-        "education": info["education"],
-        "experience": info["experience"],
+        "education": profile_details["education"],
+        "experience": profile_details["experience"],
         "message": "Resume successfully analyzed! AI recommendations and readiness metrics generated."
     }

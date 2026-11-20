@@ -19,31 +19,50 @@ import {
 } from 'lucide-react';
 import auth from '../utils/auth';
 
-const Sidebar = ({ admin = false }) => {
+const Sidebar = ({ admin = false, open = false, onClose = () => {} }) => {
   const navigate = useNavigate();
 
-  const items = admin
+  // Navigation groups shown in the sidebar.
+  const groups = admin
     ? [
-        { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
-        { name: 'Users Table', path: '/admin/users', icon: Users },
-        { name: 'Jobs Manager', path: '/admin/jobs', icon: Briefcase },
-        { name: 'Applications', path: '/admin/applications', icon: FileCheck },
+        {
+          title: 'Admin Console',
+          items: [
+            { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
+            { name: 'Users Table', path: '/admin/users', icon: Users },
+            { name: 'Jobs Manager', path: '/admin/jobs', icon: Briefcase },
+            { name: 'Applications', path: '/admin/applications', icon: FileCheck },
+          ],
+        },
       ]
     : [
-        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-        { name: 'My Profile', path: '/profile', icon: User },
-        { name: 'Resume Analysis', path: '/resume-analysis', icon: FileText },
-        { name: 'Career Recommendations', path: '/recommendations', icon: Award },
-        { name: 'Job Matching', path: '/job-matching', icon: Briefcase },
-        { name: 'Skill Gap Analysis', path: '/gap-analysis', icon: ShieldAlert },
-        { name: 'Learning Resources', path: '/learning-resources', icon: BookOpen },
-        { name: 'Career Roadmap', path: '/roadmap', icon: GitBranch },
-        { name: 'What-If Simulation', path: '/simulation', icon: TrendingUp },
-        { name: 'Job Market Intelligence', path: '/market-intelligence', icon: BarChart3 },
+        {
+          title: 'Overview',
+          items: [
+            { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+            { name: 'My Profile', path: '/profile', icon: User },
+          ],
+        },
+        {
+          title: 'Career Journey',
+          items: [
+            { name: 'Resume Analysis', path: '/resume-analysis', icon: FileText },
+            { name: 'Career Recommendations', path: '/recommendations', icon: Award },
+            { name: 'Skill Gap Analysis', path: '/gap-analysis', icon: ShieldAlert },
+            { name: 'Career Roadmap', path: '/roadmap', icon: GitBranch },
+            { name: 'Learning Resources', path: '/learning-resources', icon: BookOpen },
+            { name: 'What-If Simulation', path: '/simulation', icon: TrendingUp },
+            { name: 'Job Matching', path: '/job-matching', icon: Briefcase },
+          ],
+        },
+        {
+          title: 'Insights',
+          items: [{ name: 'Job Market Intelligence', path: '/market-intelligence', icon: BarChart3 }],
+        },
       ];
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${open ? 'open' : ''}`}>
       {/* BRAND */}
       <div className="brand">
         <div className="sidebar-brand-icon">
@@ -57,16 +76,22 @@ const Sidebar = ({ admin = false }) => {
 
       {/* NAVIGATION ITEMS */}
       <nav className="nav">
-        <div className="nav-section">{admin ? 'Admin Console' : 'Career Workspace'}</div>
-        {items.map(({ name, path, icon: Icon }) => (
-          <NavLink
-            key={path}
-            to={path}
-            className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}
-          >
-            <Icon size={18} className="sidebar-nav-icon" />
-            <span>{name}</span>
-          </NavLink>
+        {groups.map((group) => (
+          <React.Fragment key={group.title}>
+            <div className="nav-section">{group.title}</div>
+            {group.items.map(({ name, path, icon: Icon }) => (
+              <NavLink
+                key={path}
+                to={path}
+                end={path === '/admin'}
+                onClick={onClose}
+                className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}
+              >
+                <Icon size={18} className="sidebar-nav-icon" />
+                <span>{name}</span>
+              </NavLink>
+            ))}
+          </React.Fragment>
         ))}
       </nav>
 
@@ -75,7 +100,8 @@ const Sidebar = ({ admin = false }) => {
         {!admin && (
           <NavLink
             to="/settings"
-            className="sidebar-bottom-btn settings-btn"
+            onClick={onClose}
+            className={({ isActive }) => `sidebar-bottom-btn settings-btn ${isActive ? 'active' : ''}`}
           >
             <Settings size={18} className="bottom-icon settings-icon" />
             <span>Settings</span>

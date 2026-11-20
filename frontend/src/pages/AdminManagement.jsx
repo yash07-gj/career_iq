@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Edit3, Plus, Search, UserCheck, RefreshCw, Users } from 'lucide-react';
+import { Trash2, Search, UserCheck, RefreshCw, Users } from 'lucide-react';
 import { Layout, Page } from '../components/Layout';
 import api from '../services/api';
+import { EmptyState } from '../components/ui';
 
 export default function AdminManagement() {
   const [users, setUsers] = useState([]);
@@ -77,23 +78,22 @@ export default function AdminManagement() {
         title="Manage Users"
         subtitle="View, monitor, and manage registered candidates and administrators in MySQL"
         action={
-          <button className="btn outline" onClick={() => fetchUsers(true)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <RefreshCw size={13} className={loading ? 'spin' : ''} />
+          <button className="btn outline" onClick={() => fetchUsers(true)}>
+            <RefreshCw size={14} className={loading ? 'spin' : ''} />
             <span>Refresh</span>
           </button>
         }
       >
         <div className="card card-pad">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <Search size={15} style={{ position: 'absolute', left: 10, color: '#94a3b8' }} />
+          <div className="row-between" style={{ marginBottom: 16 }}>
+            <div className="input-icon" style={{ flex: '1 1 220px', maxWidth: 320 }}>
+              <Search size={15} />
               <input
                 type="text"
                 className="input"
                 placeholder="Search users..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                style={{ paddingLeft: 32, fontSize: 13, height: 36, width: 240 }}
               />
             </div>
 
@@ -101,7 +101,7 @@ export default function AdminManagement() {
               className="select"
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              style={{ fontSize: 13, height: 36 }}
+              style={{ width: 'auto', minWidth: 160 }}
             >
               <option value="all">All Roles</option>
               <option value="candidate">Candidates</option>
@@ -110,26 +110,25 @@ export default function AdminManagement() {
           </div>
 
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '30px 0', color: '#64748b' }}>
-              Loading users from MySQL database...
+            <div className="empty-state">
+              <RefreshCw size={22} className="spin" />
+              <p>Loading users from MySQL database...</p>
             </div>
           ) : filtered.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '30px 0', color: '#64748b' }}>
-              No users found.
-            </div>
+            <EmptyState icon={Users} title="No users found." />
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div className="table-wrap">
+              <table className="table">
                 <thead>
-                  <tr style={{ background: '#f8fafc', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>
-                    <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>USER ID</th>
-                    <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>NAME</th>
-                    <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>EMAIL</th>
-                    <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>ROLE</th>
-                    <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>RESUME</th>
-                    <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>STATUS</th>
-                    <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>JOINED</th>
-                    <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569', textAlign: 'center' }}>ACTIONS</th>
+                  <tr>
+                    <th>USER ID</th>
+                    <th>NAME</th>
+                    <th>EMAIL</th>
+                    <th>ROLE</th>
+                    <th>RESUME</th>
+                    <th>STATUS</th>
+                    <th>JOINED</th>
+                    <th style={{ textAlign: 'center' }}>ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -141,71 +140,53 @@ export default function AdminManagement() {
                           year: 'numeric'
                         })
                       : '—';
+                    const isAdmin = u.account_role === 'admin';
                     return (
-                      <tr key={u.user_id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '12px', fontSize: 13, fontWeight: 700, color: '#64748b' }}>
-                          #{u.user_id}
-                        </td>
-                        <td style={{ padding: '12px', fontWeight: 600, color: 'var(--navy, #0f172a)' }}>
-                          {u.full_name}
-                        </td>
-                        <td style={{ padding: '12px', fontSize: 13, color: '#334155' }}>
-                          {u.email}
-                        </td>
-                        <td style={{ padding: '12px' }}>
-                          <span className={`pill ${u.account_role === 'admin' ? 'blue' : 'green'}`} style={{ fontSize: 11, padding: '3px 8px', textTransform: 'capitalize' }}>
+                      <tr key={u.user_id}>
+                        <td className="muted num" style={{ fontWeight: 700 }}>#{u.user_id}</td>
+                        <td style={{ fontWeight: 600 }}>{u.full_name}</td>
+                        <td>{u.email}</td>
+                        <td>
+                          <span className={`pill ${isAdmin ? 'info' : 'neutral'}`} style={{ textTransform: 'capitalize' }}>
                             {u.account_role}
                           </span>
                         </td>
-                        <td style={{ padding: '12px' }}>
+                        <td>
                           {u.has_resume ? (
-                            <span className="pill green" style={{ fontSize: 11, padding: '3px 8px' }}>✓ Uploaded</span>
+                            <span className="pill good">✓ Uploaded</span>
                           ) : (
-                            <span style={{ fontSize: 12, color: '#94a3b8' }}>None</span>
+                            <span className="muted text-xs">None</span>
                           )}
                         </td>
-                        <td style={{ padding: '12px' }}>
+                        <td>
                           <button
                             onClick={() => handleToggleStatus(u.user_id, u.active_status, u.account_role)}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              cursor: u.account_role === 'admin' ? 'default' : 'pointer',
-                              padding: 0
-                            }}
-                            title={u.account_role === 'admin' ? 'Admin status cannot be changed' : 'Click to toggle status'}
+                            style={{ background: 'transparent', border: 0, padding: 0, cursor: isAdmin ? 'default' : 'pointer' }}
+                            title={isAdmin ? 'Admin status cannot be changed' : 'Click to toggle status'}
                           >
-                            <span className={`pill ${u.active_status === 1 ? 'green' : 'red'}`} style={{ fontSize: 11, padding: '3px 8px' }}>
+                            <span className={`pill ${u.active_status === 1 ? 'good' : 'bad'}`}>
                               {u.active_status === 1 ? '● Active' : '○ Inactive'}
                             </span>
                           </button>
                         </td>
-                        <td style={{ padding: '12px', fontSize: 12, color: '#64748b' }}>
-                          {joined}
-                        </td>
-                        <td style={{ padding: '12px', textAlign: 'center' }}>
-                          <div style={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
+                        <td className="muted text-xs">{joined}</td>
+                        <td>
+                          <div className="row-gap" style={{ justifyContent: 'center', flexWrap: 'nowrap' }}>
                             <button
                               className="btn outline small"
                               onClick={() => handleToggleStatus(u.user_id, u.active_status, u.account_role)}
-                              disabled={u.account_role === 'admin'}
+                              disabled={isAdmin}
                               title="Toggle Status"
-                              style={{ padding: '4px 8px' }}
                             >
-                              <UserCheck size={12} />
+                              <UserCheck size={13} />
                             </button>
                             <button
-                              className="btn small"
+                              className="btn outline small danger"
                               onClick={() => handleDeleteUser(u.user_id, u.account_role)}
-                              disabled={u.account_role === 'admin'}
+                              disabled={isAdmin}
                               title="Delete User"
-                              style={{
-                                background: u.account_role === 'admin' ? '#f1f5f9' : '#fff0f2',
-                                color: u.account_role === 'admin' ? '#94a3b8' : '#ef4b5f',
-                                padding: '4px 8px'
-                              }}
                             >
-                              <Trash2 size={12} />
+                              <Trash2 size={13} />
                             </button>
                           </div>
                         </td>

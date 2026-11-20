@@ -161,6 +161,9 @@ export const api = {
 
   getResumeStatus: (userId) => fetchApi(`/resume/status/${userId}`),
 
+  // Removes the uploaded resume and the analysis built from it
+  deleteResume: (userId) => fetchApi(`/resume/${userId}`, { method: 'DELETE' }),
+
   // Profile
   getProfile: (userId) => fetchApi(`/profile/${userId}`),
   updateProfile: (userId, data) =>

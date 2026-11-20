@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Briefcase, Award, Eye, Building2, RefreshCw, Sparkles, Filter, X, Laptop, Calendar, Clock, AlertTriangle } from 'lucide-react';
+import { Search, MapPin, Briefcase, Eye, Building2, RefreshCw, Laptop, Calendar, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Layout, Page } from '../components/Layout';
+import { JourneyBar, EmptyState } from '../components/ui';
+import { toneFor } from '../utils/career';
 import api from '../services/api';
 
 export default function JobMatching() {
@@ -9,31 +11,13 @@ export default function JobMatching() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
 
-  // Read saved user preferences from Settings (localStorage)
-  const savedPrefs = (() => {
-    try {
-      const v = localStorage.getItem('careerIQ_preferences');
-      return v ? JSON.parse(v) : null;
-    } catch {
-      return null;
-    }
-  })();
-
-  const [selectedLocation, setSelectedLocation] = useState(
-    savedPrefs?.location && savedPrefs.location !== 'Any' ? savedPrefs.location : 'All'
-  );
+  // Filters start at "All". (Career Preferences were removed from Settings,
+  // so job filtering is controlled only by the filters on this page.)
+  const [selectedLocation, setSelectedLocation] = useState('All');
   const [selectedExp, setSelectedExp] = useState('All');
-  const [selectedType, setSelectedType] = useState(
-    savedPrefs?.workType && savedPrefs.workType !== 'Any' ? savedPrefs.workType : 'All'
-  );
-  const [remoteOnly, setRemoteOnly] = useState(Boolean(savedPrefs?.remoteOk));
-  const [selectedInterests, setSelectedInterests] = useState(savedPrefs?.interests || []);
-
-  const hasPreferencesActive =
-    (savedPrefs?.location && savedPrefs.location !== 'Any') ||
-    (savedPrefs?.workType && savedPrefs.workType !== 'Any') ||
-    savedPrefs?.remoteOk ||
-    (savedPrefs?.interests && savedPrefs.interests.length > 0);
+  const [selectedType, setSelectedType] = useState('All');
+  const [remoteOnly, setRemoteOnly] = useState(false);
+  const [selectedInterests, setSelectedInterests] = useState([]);
 
   const fetchJobs = async () => {
     setLoading(true);
@@ -154,122 +138,29 @@ export default function JobMatching() {
     return matchesSearch && matchesLoc && matchesType && matchesExp;
   });
 
+  const fmtDate = (d) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
   return (
     <Layout>
       <Page
         title="Job & Internship Matching"
         subtitle="Explore real opportunities live from the corporate database • Automatically updated daily with live deadlines"
         action={
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span
-              style={{
-                fontSize: 12,
-                color: '#059669',
-                background: '#ecfdf5',
-                border: '1px solid #a7f3d0',
-                padding: '4px 12px',
-                borderRadius: 20,
-                fontWeight: 600,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6
-              }}
-            >
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981' }} />
-              Live Daily Sync Active
-            </span>
-          </div>
+          <span className="pill good">
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--good)' }} />
+            Live Daily Sync Active
+          </span>
         }
       >
+        <JourneyBar current="jobs" />
+
         <div className="card card-pad">
-          {/* PREFERENCES ACTIVE BANNER */}
-          {hasPreferencesActive && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: 10,
-                padding: '10px 16px',
-                background: '#eff6ff',
-                border: '1px solid #bfdbfe',
-                borderRadius: 10,
-                marginBottom: 16,
-                fontSize: 12,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <Sparkles size={15} color="#2563eb" />
-                <span style={{ fontWeight: 700, color: '#1e40af' }}>Career Preferences Applied from Settings:</span>
-                {savedPrefs?.workType && savedPrefs.workType !== 'Any' && (
-                  <span className="pill blue" style={{ fontSize: 11, padding: '2px 8px' }}>
-                    Type: {savedPrefs.workType}
-                  </span>
-                )}
-                {savedPrefs?.location && savedPrefs.location !== 'Any' && (
-                  <span className="pill blue" style={{ fontSize: 11, padding: '2px 8px' }}>
-                    Location: {savedPrefs.location}
-                  </span>
-                )}
-                <span className={`pill ${savedPrefs?.remoteOk ? 'green' : 'neutral'}`} style={{ fontSize: 11, padding: '2px 8px' }}>
-                  Remote Work: {savedPrefs?.remoteOk ? 'ON (Only Remote)' : 'OFF (All Work Types)'}
-                </span>
-                {savedPrefs?.interests && savedPrefs.interests.length > 0 && (
-                  <span className="pill blue" style={{ fontSize: 11, padding: '2px 8px' }}>
-                    Interests: {savedPrefs.interests.join(', ')}
-                  </span>
-                )}
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#2563eb',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    textDecoration: 'underline',
-                  }}
-                >
-                  Show All Jobs
-                </button>
-                <Link
-                  to="/settings"
-                  style={{
-                    color: '#64748b',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                  }}
-                >
-                  Edit in Settings ↗
-                </Link>
-              </div>
-            </div>
-          )}
-
           {/* SEARCH & FILTERS HEADER */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1.4fr 1fr 1fr 1fr auto auto',
-              gap: 10,
-              marginBottom: 20
-            }}
-          >
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <Search
-                size={16}
-                style={{ position: 'absolute', left: 12, color: '#8ba0b6', pointerEvents: 'none' }}
-              />
+          <div className="ui-grid job-filters" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10, marginBottom: 14 }}>
+            <div className="input-icon" style={{ minWidth: 0 }}>
+              <Search size={16} />
               <input
                 className="input"
-                style={{ paddingLeft: 38, width: '100%' }}
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Search job title, company (Google, Oracle)..."
@@ -312,160 +203,120 @@ export default function JobMatching() {
               <option value="0-1 Years">0 - 1 Years / Fresher</option>
               <option value="1-3 Years">1 - 3 Years</option>
             </select>
+          </div>
 
-            <button
-              type="button"
-              onClick={() => setRemoteOnly(!remoteOnly)}
-              className="btn outline"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '0 14px',
-                background: remoteOnly ? '#10b981' : 'transparent',
-                borderColor: remoteOnly ? '#10b981' : 'var(--line, #cbd5e1)',
-                color: remoteOnly ? '#ffffff' : 'var(--text, #334155)',
-                fontWeight: 700,
-                fontSize: 13,
-                cursor: 'pointer',
-              }}
-              title="Toggle Remote Work Only"
-            >
-              <Laptop size={14} />
-              <span>{remoteOnly ? 'Remote Only: ON' : 'Remote: All'}</span>
-            </button>
-
-            <button
-              type="button"
-              className="btn outline"
-              onClick={fetchJobs}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0 16px' }}
-              title="Refresh from database"
-            >
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-              <span>Refresh</span>
-            </button>
+          <div className="row-between" style={{ marginBottom: 8 }}>
+            <div className="seg" role="group" aria-label="Remote work filter">
+              <button type="button" className={remoteOnly ? '' : 'on'} onClick={() => setRemoteOnly(false)}>
+                Remote: All
+              </button>
+              <button
+                type="button"
+                className={remoteOnly ? 'on' : ''}
+                onClick={() => setRemoteOnly(true)}
+                title="Toggle Remote Work Only"
+              >
+                <Laptop size={14} /> Remote Only: ON
+              </button>
+            </div>
+            <div className="row-gap">
+              <span className="muted text-xs num">{filteredJobs.length} of {jobs.length} jobs</span>
+              <button type="button" className="btn outline small" onClick={fetchJobs} title="Refresh from database">
+                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                <span>Refresh</span>
+              </button>
+            </div>
           </div>
 
           {/* JOBS LIST */}
           {loading ? (
-            <div style={{ padding: '60px 0', textAlign: 'center', color: '#64748b' }}>
-              <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 12px', display: 'block' }} />
-              <div>Fetching real-time opportunities from MySQL database...</div>
+            <div className="empty-state">
+              <RefreshCw size={24} className="animate-spin" />
+              <p>Fetching real-time opportunities from MySQL database...</p>
             </div>
           ) : filteredJobs.length === 0 ? (
-            <div style={{
-              padding: '48px 24px',
-              textAlign: 'center',
-              background: 'var(--bg-card, #f8fafc)',
-              borderRadius: 12,
-              border: '1px dashed var(--line, #cbd5e1)',
-            }}>
-              <Briefcase size={32} style={{ margin: '0 auto 10px', color: '#94a3b8' }} />
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--navy, #0f172a)', marginBottom: 6 }}>
-                No opportunities match these criteria
-              </div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted, #64748b)', maxWidth: 440, margin: '0 auto 16px' }}>
-                {remoteOnly
-                  ? 'Open to Remote Work is ON. Only remote positions are currently shown. Try turning Remote Only OFF to see Hybrid and Onsite jobs.'
-                  : 'Try selecting All Locations, All Job Types, or clearing your search keywords.'}
-              </div>
-              <button type="button" className="btn small" onClick={clearFilters}>
-                Clear All Filters
-              </button>
-            </div>
+            <EmptyState
+              icon={Briefcase}
+              title="No opportunities match these criteria"
+              text={remoteOnly
+                ? 'Open to Remote Work is ON. Only remote positions are currently shown. Try turning Remote Only OFF to see Hybrid and Onsite jobs.'
+                : 'Try selecting All Locations, All Job Types, or clearing your search keywords.'}
+              action={
+                <button type="button" className="btn small" onClick={clearFilters}>
+                  Clear All Filters
+                </button>
+              }
+            />
           ) : (
-            filteredJobs.map((j) => (
-              <div className="reco-item" key={j.job_id} style={{ alignItems: 'center' }}>
-                <div className="role-icon" style={{ background: '#eff6ff', color: '#2563eb' }}>
-                  <Building2 size={20} />
-                </div>
-                <div className="reco-main">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <strong style={{ fontSize: 16 }}>{j.job_title}</strong>
-                    <span className={`pill ${j.job_type === 'Internship' ? 'orange' : 'blue'}`} style={{ fontSize: 11 }}>
-                      {j.job_type || 'Full-time'}
-                    </span>
-                    {j.work_mode && (
-                      <span className={`pill ${j.work_mode.toLowerCase() === 'remote' ? 'green' : j.work_mode.toLowerCase() === 'hybrid' ? 'blue' : 'neutral'}`} style={{ fontSize: 11 }}>
-                        {j.work_mode}
-                      </span>
-                    )}
+            filteredJobs.map((j) => {
+              const matchVal = j.match || 85;
+              const overdue = j.due_date && new Date(j.due_date) < new Date();
+              return (
+                <div className="list-row" key={j.job_id} style={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                  <div className="list-icon">
+                    <Building2 size={20} />
                   </div>
-                  <span style={{ fontSize: 13, color: 'var(--text-muted, #64748b)', marginTop: 2 }}>
-                    <strong style={{ color: 'var(--navy, #0f172a)' }}>{j.company_name}</strong> ·{' '}
-                    <MapPin size={12} style={{ verticalAlign: -1 }} /> {j.location} ·{' '}
-                    <Briefcase size={12} style={{ verticalAlign: -1 }} /> {j.experience_requirement}
-                    {j.salary_range && (
-                      <span style={{ color: '#047857', fontWeight: 600, marginLeft: 8 }}>
-                        · {j.salary_range}
+                  <div className="list-main" style={{ minWidth: 200 }}>
+                    <div className="row-gap">
+                      <strong style={{ fontSize: 15.5 }}>{j.job_title}</strong>
+                      <span className={`pill ${j.job_type === 'Internship' ? 'warn' : 'info'}`}>
+                        {j.job_type || 'Full-time'}
                       </span>
-                    )}
-                  </span>
-                  <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {j.skills && j.skills.length > 0 ? (
-                      j.skills.map((s) => (
-                        <span key={s} className="pill blue" style={{ fontSize: 11, padding: '2px 8px' }}>
-                          {s}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="pill blue" style={{ fontSize: 11 }}>{j.role_name}</span>
-                    )}
-                  </div>
-
-                  {/* DATES: AVAILABLE FROM & APPLICATION DUE DATE */}
-                  {(j.posted_date || j.due_date) && (
-                    <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', fontSize: 12 }}>
-                      {j.posted_date && (
-                        <span style={{ color: '#64748b', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                          <Calendar size={13} color="#2563eb" />
-                          <span>Available From: <strong style={{ color: '#1e293b' }}>{new Date(j.posted_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</strong></span>
-                        </span>
-                      )}
-                      {j.due_date && (
-                        <span style={{ 
-                          color: new Date(j.due_date) < new Date() ? '#b91c1c' : '#b45309', 
-                          display: 'inline-flex', 
-                          alignItems: 'center', 
-                          gap: 5,
-                          background: new Date(j.due_date) < new Date() ? '#fef2f2' : '#fffbeb',
-                          padding: '3px 8px',
-                          borderRadius: 6,
-                          border: new Date(j.due_date) < new Date() ? '1px solid #fecaca' : '1px solid #fde68a',
-                          fontWeight: 600
-                        }}>
-                          <Clock size={13} />
-                          <span>Apply Due Date: {new Date(j.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      {j.work_mode && (
+                        <span className={`pill ${j.work_mode.toLowerCase() === 'remote' ? 'good' : j.work_mode.toLowerCase() === 'hybrid' ? 'info' : 'neutral'}`}>
+                          {j.work_mode}
                         </span>
                       )}
                     </div>
-                  )}
-                </div>
-                <div style={{ textAlign: 'right', marginRight: 16 }}>
-                  <div className="match" style={{ color: 'var(--blue, #2563eb)', fontWeight: 800, fontSize: 20 }}>
-                    {j.match || 85}%
+                    <span style={{ display: 'block', marginTop: 2 }}>
+                      <b style={{ color: 'var(--ink)' }}>{j.company_name}</b> ·{' '}
+                      <MapPin size={12} style={{ verticalAlign: -1 }} /> {j.location} ·{' '}
+                      <Briefcase size={12} style={{ verticalAlign: -1 }} /> {j.experience_requirement}
+                      {j.salary_range && (
+                        <span className="text-good" style={{ fontWeight: 600 }}> · {j.salary_range}</span>
+                      )}
+                    </span>
+                    <div className="chips" style={{ marginTop: 8, gap: 6 }}>
+                      {j.skills && j.skills.length > 0 ? (
+                        j.skills.map((s) => (
+                          <span key={s} className="pill neutral">{s}</span>
+                        ))
+                      ) : (
+                        <span className="pill neutral">{j.role_name}</span>
+                      )}
+                    </div>
+
+                    {/* DATES: AVAILABLE FROM & APPLICATION DUE DATE */}
+                    {(j.posted_date || j.due_date) && (
+                      <div className="row-gap text-xs" style={{ marginTop: 8, gap: 12 }}>
+                        {j.posted_date && (
+                          <span className="row-gap" style={{ gap: 5 }}>
+                            <Calendar size={13} color="var(--accent)" />
+                            <span>Available From: <b style={{ color: 'var(--ink)' }}>{fmtDate(j.posted_date)}</b></span>
+                          </span>
+                        )}
+                        {j.due_date && (
+                          <span className={`pill ${overdue ? 'bad' : 'warn'}`}>
+                            <Clock size={13} />
+                            Apply Due Date: {fmtDate(j.due_date)}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>AI Match</span>
+                  <div className="list-end" style={{ marginLeft: 'auto', alignSelf: 'center' }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <div className={`match-num text-${toneFor(matchVal)}`}>{matchVal}%</div>
+                      <span className="muted" style={{ fontSize: 11 }}>AI Match</span>
+                    </div>
+                    <Link to={`/job-details/${j.job_id}`} className="btn small">
+                      <Eye size={14} />
+                      <span>View Job</span>
+                    </Link>
+                  </div>
                 </div>
-                <Link
-                  to={`/job-details/${j.job_id}`}
-                  className="btn small"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    textDecoration: 'none',
-                    padding: '8px 16px',
-                    fontSize: 13,
-                    fontWeight: 700
-                  }}
-                >
-                  <Eye size={14} />
-                  <span>View Job</span>
-                </Link>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </Page>

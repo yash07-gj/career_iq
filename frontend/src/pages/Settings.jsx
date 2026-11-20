@@ -3,13 +3,9 @@ import {
   Sun,
   Moon,
   Monitor,
-  Bell,
-  Briefcase,
-  Brain,
   Shield,
   User,
   AlertTriangle,
-  ChevronDown,
   Database,
   Download,
   Key,
@@ -49,131 +45,53 @@ const writeLS = (key, value) => {
 // ─── sub-components ───────────────────────────────────────────────────────────
 
 /** Section card wrapper */
-const SettingsCard = ({ icon: Icon, iconColor = '#2563eb', iconBg = '#eff6ff', title, subtitle, children, danger = false }) => (
-  <div style={{
-    background: danger ? (document.documentElement.getAttribute('data-theme') === 'dark' ? '#2c0b0e' : '#fff5f5') : 'var(--bg-card, #ffffff)',
-    border: `1px solid ${danger ? '#ef4444' : 'var(--line, #e2e8f0)'}`,
-    borderRadius: '14px',
-    boxShadow: 'var(--shadow)',
-    marginBottom: '24px',
-    overflow: 'hidden',
-    transition: 'background 0.2s ease, border-color 0.2s ease',
-  }}>
+const SettingsCard = ({ icon: Icon, title, subtitle, children, danger = false, wide = false }) => (
+  <div
+    className="card card-pad"
+    style={{
+      ...(wide ? { gridColumn: '1 / -1' } : {}),
+      ...(danger ? { borderColor: 'var(--bad)' } : {}),
+    }}
+  >
     {/* Card header */}
-    <div style={{
-      padding: '20px 28px',
-      borderBottom: `1px solid ${danger ? '#ef4444' : 'var(--line, #f1f5f9)'}`,
-      display: 'flex',
-      alignItems: 'center',
-      gap: '14px',
-    }}>
-      <div style={{
-        width: '40px',
-        height: '40px',
-        borderRadius: '10px',
-        background: danger ? '#fee2e2' : (document.documentElement.getAttribute('data-theme') === 'dark' ? '#1e293b' : iconBg),
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-      }}>
-        <Icon size={20} color={danger ? '#ef4444' : iconColor} />
+    <div className="card-head" style={{ justifyContent: 'flex-start', gap: 14, flexWrap: 'nowrap' }}>
+      <div className={`list-icon ${danger ? 'bad' : ''}`}>
+        <Icon size={19} />
       </div>
-      <div>
-        <div style={{ fontSize: '16px', fontWeight: 800, color: danger ? '#ef4444' : 'var(--navy, #0f172a)', lineHeight: 1.2 }}>{title}</div>
-        {subtitle && <div style={{ fontSize: '13px', color: 'var(--text-muted, #64748b)', marginTop: '3px' }}>{subtitle}</div>}
+      <div style={{ minWidth: 0 }}>
+        <h3 className="card-title" style={danger ? { color: 'var(--bad)' } : undefined}>{title}</h3>
+        {subtitle && <p className="card-sub">{subtitle}</p>}
       </div>
     </div>
     {/* Card body */}
-    <div style={{ padding: '20px 28px' }}>{children}</div>
+    <div>{children}</div>
   </div>
 );
 
 /** Row with label + description on the left, control on the right */
-const SettingsRow = ({ label, description, children, noBorder = false }) => (
-  <div style={{
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: '24px',
-    padding: '14px 0',
-    borderBottom: noBorder ? 'none' : '1px solid var(--line, #f1f5f9)',
-  }}>
-    <div style={{ flex: 1 }}>
-      <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '2px' }}>{label}</div>
-      {description && <div style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)', lineHeight: 1.5 }}>{description}</div>}
+const SettingsRow = ({ label, description, children }) => (
+  <div className="set-row">
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <strong>{label}</strong>
+      {description && <p>{description}</p>}
     </div>
     <div style={{ flexShrink: 0 }}>{children}</div>
   </div>
-);
-
-/** Blue toggle switch */
-const Toggle = ({ checked, onChange }) => (
-  <button
-    type="button"
-    role="switch"
-    aria-checked={checked}
-    onClick={() => onChange(!checked)}
-    style={{
-      width: '44px',
-      height: '24px',
-      borderRadius: '12px',
-      border: 'none',
-      background: checked ? '#2563eb' : (document.documentElement.getAttribute('data-theme') === 'dark' ? '#334155' : '#cbd5e1'),
-      cursor: 'pointer',
-      position: 'relative',
-      transition: 'background 0.2s ease',
-      flexShrink: 0,
-      outline: 'none',
-    }}
-  >
-    <span style={{
-      position: 'absolute',
-      top: '2px',
-      left: checked ? '22px' : '2px',
-      width: '20px',
-      height: '20px',
-      borderRadius: '50%',
-      background: '#ffffff',
-      boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
-      transition: 'left 0.2s ease',
-    }} />
-  </button>
 );
 
 /** Modal overlay */
 const Modal = ({ show, onClose, title, children }) => {
   if (!show) return null;
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'rgba(15,23,42,0.6)',
-        backdropFilter: 'blur(4px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '20px',
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          background: 'var(--bg-card, #ffffff)',
-          border: '1px solid var(--line, #e2e8f0)',
-          borderRadius: '14px',
-          width: '100%', maxWidth: '480px',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
-          overflow: 'hidden',
-          color: 'var(--text, #1e293b)',
-        }}
-      >
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--line, #f1f5f9)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--navy, #0f172a)' }}>{title}</span>
-          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted, #64748b)', lineHeight: 1 }}>
+    <div className="modal-bg" onClick={onClose}>
+      <div className="modal" role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()}>
+        <div className="modal-head">
+          <h3>{title}</h3>
+          <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">
             <X size={20} />
           </button>
         </div>
-        <div style={{ padding: '20px 24px' }}>{children}</div>
+        <div>{children}</div>
       </div>
     </div>
   );
@@ -187,8 +105,9 @@ export default function Settings() {
   const userEmail = user?.email || '';
 
   // ── state ──────────────────────────────────────────────────────────────────
-  const [theme, setTheme] = useState(() => readLS(LS_THEME, 'light'));
-  const [compactMode, setCompactMode] = useState(() => readLS(LS_COMPACT, false));
+  const [theme, setTheme] = useState(() => readLS(LS_THEME, 'dark'));
+  // Compact mode was removed from Settings; keep it switched off everywhere.
+  const compactMode = false;
 
   const [notifications, setNotifications] = useState(() => readLS(LS_NOTIFICATIONS, {
     careerRecs: true,
@@ -294,11 +213,7 @@ export default function Settings() {
             writeLS(LS_THEME, data.theme);
             applyTheme(data.theme);
           }
-          if (data.compact_mode !== undefined) {
-            setCompactMode(data.compact_mode);
-            writeLS(LS_COMPACT, data.compact_mode);
-            applyCompact(data.compact_mode);
-          }
+          writeLS(LS_COMPACT, false);
           if (data.notifications) {
             setNotifications(data.notifications);
             writeLS(LS_NOTIFICATIONS, data.notifications);
@@ -355,61 +270,6 @@ export default function Settings() {
     applyTheme(newTheme);
     // Silent sync to backend without showing toast message
     syncSettingsToBackend({ theme: newTheme }, false);
-  };
-
-  // ── Compact Mode Selection Trigger (SILENT SYNC, NO TOAST MSG) ──────────────
-  const handleCompactChange = (val) => {
-    setCompactMode(val);
-    writeLS(LS_COMPACT, val);
-    applyCompact(val);
-    // Silent sync to backend without showing toast message
-    syncSettingsToBackend({ compactMode: val }, false);
-  };
-
-  const toggleNotif = (key) => {
-    const updated = { ...notifications, [key]: !notifications[key] };
-    setNotifications(updated);
-    writeLS(LS_NOTIFICATIONS, updated);
-    syncSettingsToBackend({ notifications: updated }, true);
-  };
-
-  const toggleAI = (key) => {
-    const updated = { ...aiSettings, [key]: !aiSettings[key] };
-    setAiSettings(updated);
-    writeLS(LS_AI_SETTINGS, updated);
-    syncSettingsToBackend({ aiSettings: updated }, true);
-  };
-
-  const handleWorkTypeChange = (val) => {
-    const updated = { ...preferences, workType: val };
-    setPreferences(updated);
-    writeLS(LS_PREFERENCES, updated);
-    syncSettingsToBackend({ preferences: updated }, true);
-  };
-
-  const handleLocationChange = (val) => {
-    const updated = { ...preferences, location: val };
-    setPreferences(updated);
-    writeLS(LS_PREFERENCES, updated);
-    syncSettingsToBackend({ preferences: updated }, true);
-  };
-
-  const toggleInterest = (interest) => {
-    const has = preferences.interests.includes(interest);
-    const updatedInterests = has
-      ? preferences.interests.filter(i => i !== interest)
-      : [...preferences.interests, interest];
-    const updated = { ...preferences, interests: updatedInterests };
-    setPreferences(updated);
-    writeLS(LS_PREFERENCES, updated);
-    syncSettingsToBackend({ preferences: updated }, true);
-  };
-
-  const handleRemoteChange = (val) => {
-    const updated = { ...preferences, remoteOk: val };
-    setPreferences(updated);
-    writeLS(LS_PREFERENCES, updated);
-    syncSettingsToBackend({ preferences: updated }, true);
   };
 
   // ── Password Change Action ──────────────────────────────────────────────────
@@ -533,12 +393,6 @@ export default function Settings() {
     { id: 'system', label: 'System', icon: Monitor },
   ];
 
-  const workTypes  = ['Internship', 'Full-time', 'Part-time', 'Contract', 'Hybrid', 'Any'];
-  const locations  = ['Ahmedabad', 'Mumbai', 'Bangalore', 'Delhi', 'Hyderabad', 'Pune', 'Remote', 'Any'];
-  const interestOptions = [
-    'Data Analytics', 'Data Science', 'Business Intelligence',
-    'Software Development', 'Web Development', 'Machine Learning', 'Cloud Computing',
-  ];
 
   // ── render ─────────────────────────────────────────────────────────────────
   return (
@@ -548,325 +402,127 @@ export default function Settings() {
         subtitle="Manage your application preferences, appearance, and account security"
         action={
           syncStatus ? (
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 14px',
-              background: '#ecfdf5',
-              border: '1px solid #a7f3d0',
-              borderRadius: '20px',
-              fontSize: '12px',
-              fontWeight: 700,
-              color: '#065f46',
-            }}>
-              <Check size={14} color="#10b981" />
+            <span className="pill good">
+              <Check size={14} />
               {syncStatus}
-            </div>
+            </span>
           ) : isSyncing ? (
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 14px',
-              background: '#eff6ff',
-              borderRadius: '20px',
-              fontSize: '12px',
-              color: '#2563eb',
-            }}>
+            <span className="pill info">
               <RefreshCw size={13} className="spin" />
               Saving...
-            </div>
+            </span>
           ) : null
         }
       >
+        <div className="ui-grid cols-2" style={{ alignItems: 'stretch' }}>
 
         {/* ── 1. APPEARANCE ─────────────────────────────────────────────── */}
         <SettingsCard
           icon={Sun}
           title="Appearance"
-          subtitle="Customize the theme and display density of CareerIQ"
+          subtitle="Choose how CareerIQ looks"
         >
           {/* Theme selector */}
-          <div style={{ paddingBottom: '16px', borderBottom: '1px solid var(--line, #f1f5f9)' }}>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '12px' }}>Theme</div>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <div className="set-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
+            <strong>Theme</strong>
+            <div className="seg" role="group" aria-label="Theme">
               {themeOptions.map(({ id, label, icon: Icon }) => {
                 const active = theme === id;
                 return (
                   <button
                     key={id}
                     type="button"
+                    className={active ? 'on' : ''}
+                    aria-pressed={active}
                     onClick={() => handleThemeChange(id)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '10px 18px',
-                      borderRadius: '9px',
-                      border: active ? '2px solid #2563eb' : '1.5px solid var(--line, #e2e8f0)',
-                      background: active ? '#2563eb' : 'var(--bg-card, #ffffff)',
-                      color: active ? '#ffffff' : 'var(--text-muted, #64748b)',
-                      fontSize: '13px',
-                      fontWeight: active ? 700 : 600,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      boxShadow: active ? '0 0 0 3px rgba(37,99,235,0.25)' : 'none',
-                    }}
                   >
-                    <Icon size={16} />
+                    <Icon size={15} />
                     {label}
-                    {active && <Check size={14} style={{ marginLeft: '2px' }} />}
+                    {active && <Check size={13} />}
                   </button>
                 );
               })}
             </div>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted, #94a3b8)', marginTop: '10px' }}>
+            <p style={{ margin: 0 }}>
               {theme === 'system' ? "CareerIQ dynamically matches your device operating system's color scheme." :
                theme === 'dark'   ? 'Dark mode is active. Dark surfaces and high contrast text are applied.' :
                                     'Light mode is active. Clean standard CareerIQ interface.'}
-            </div>
-          </div>
-
-          {/* Compact mode */}
-          <SettingsRow
-            label="Compact Mode"
-            description="Reduce layout padding, header sizes, and card spacing for a denser view"
-            noBorder
-          >
-            <Toggle checked={compactMode} onChange={handleCompactChange} />
-          </SettingsRow>
-        </SettingsCard>
-
-        {/* ── 2. NOTIFICATIONS ──────────────────────────────────────────── */}
-        <SettingsCard
-          icon={Bell}
-          title="Notifications"
-          subtitle="Manage the updates you receive"
-        >
-          <SettingsRow label="Career Recommendations" description="Get notified about new career recommendations">
-            <Toggle checked={notifications.careerRecs} onChange={() => toggleNotif('careerRecs')} />
-          </SettingsRow>
-          <SettingsRow label="Job Matches" description="Receive notifications about relevant job opportunities">
-            <Toggle checked={notifications.jobMatches} onChange={() => toggleNotif('jobMatches')} />
-          </SettingsRow>
-          <SettingsRow label="Learning Reminders" description="Get reminders about your personalised learning roadmap">
-            <Toggle checked={notifications.learningReminders} onChange={() => toggleNotif('learningReminders')} />
-          </SettingsRow>
-          <SettingsRow label="Market Updates" description="Receive updates about job-market trends in your field" noBorder>
-            <Toggle checked={notifications.marketUpdates} onChange={() => toggleNotif('marketUpdates')} />
-          </SettingsRow>
-        </SettingsCard>
-
-        {/* ── 3. CAREER PREFERENCES ─────────────────────────────────────── */}
-        <SettingsCard
-          icon={Briefcase}
-          title="Career Preferences"
-          subtitle="Set preferences synced with MySQL database and recommendation algorithms"
-        >
-          {/* Work type */}
-          <div style={{ paddingBottom: '16px', borderBottom: '1px solid var(--line, #f1f5f9)' }}>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '8px' }}>Preferred Work Type</div>
-            <div style={{ position: 'relative', maxWidth: '280px' }}>
-              <select
-                className="select"
-                value={preferences.workType}
-                onChange={e => handleWorkTypeChange(e.target.value)}
-                style={{ appearance: 'none', paddingRight: '36px', cursor: 'pointer', width: '100%' }}
-              >
-                {workTypes.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-              <ChevronDown size={16} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted, #64748b)', pointerEvents: 'none' }} />
-            </div>
-          </div>
-
-          {/* Location */}
-          <div style={{ paddingBottom: '16px', borderBottom: '1px solid var(--line, #f1f5f9)', paddingTop: '16px' }}>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '8px' }}>Preferred Location</div>
-            <div style={{ position: 'relative', maxWidth: '280px' }}>
-              <select
-                className="select"
-                value={preferences.location}
-                onChange={e => handleLocationChange(e.target.value)}
-                style={{ appearance: 'none', paddingRight: '36px', cursor: 'pointer', width: '100%' }}
-              >
-                {locations.map(l => <option key={l} value={l}>{l}</option>)}
-              </select>
-              <ChevronDown size={16} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted, #64748b)', pointerEvents: 'none' }} />
-            </div>
-          </div>
-
-          {/* Career interests */}
-          <div style={{ paddingBottom: '16px', borderBottom: '1px solid var(--line, #f1f5f9)', paddingTop: '16px' }}>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '4px' }}>Career Interests</div>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)', marginBottom: '12px' }}>Select all that apply</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {interestOptions.map(interest => {
-                const selected = preferences.interests.includes(interest);
-                return (
-                  <button
-                    key={interest}
-                    type="button"
-                    onClick={() => toggleInterest(interest)}
-                    style={{
-                      padding: '7px 14px',
-                      borderRadius: '20px',
-                      border: selected ? '1.5px solid #2563eb' : '1.5px solid var(--line, #e2e8f0)',
-                      background: selected ? '#2563eb' : 'var(--bg-card, #ffffff)',
-                      color: selected ? '#ffffff' : 'var(--text-muted, #475569)',
-                      fontSize: '13px',
-                      fontWeight: selected ? 700 : 600,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                    }}
-                  >
-                    {selected && <Check size={12} />}
-                    {interest}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Remote */}
-          <SettingsRow label="Open to Remote Work" description="Include remote positions in your job matches and recommendations" noBorder>
-            <Toggle checked={preferences.remoteOk} onChange={handleRemoteChange} />
-          </SettingsRow>
-        </SettingsCard>
-
-        {/* ── 4. AI & RECOMMENDATIONS ───────────────────────────────────── */}
-        <SettingsCard
-          icon={Brain}
-          title="AI & Recommendations"
-          subtitle="Control how CareerIQ uses your profile for personalised recommendations"
-        >
-          <div style={{
-            background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#0f2744' : '#f0f9ff',
-            border: '1px solid #0284c7',
-            borderRadius: '10px',
-            padding: '12px 16px',
-            marginBottom: '16px',
-            fontSize: '12px',
-            color: '#38bdf8',
-            lineHeight: 1.6,
-          }}>
-            <strong>Live AI Engine:</strong> Preferences are stored directly in MySQL and tune the matching and recommendation algorithms.
-          </div>
-
-          <SettingsRow label="Personalised Recommendations" description="Use my profile and skills to generate career recommendations">
-            <Toggle checked={aiSettings.personalizedRecs} onChange={() => toggleAI('personalizedRecs')} />
-          </SettingsRow>
-          <SettingsRow label="Job Matching" description="Use my candidate profile when calculating job match scores">
-            <Toggle checked={aiSettings.jobMatching} onChange={() => toggleAI('jobMatching')} />
-          </SettingsRow>
-          <SettingsRow label="Learning Recommendations" description="Use my skill gaps and career goals to recommend learning resources" noBorder>
-            <Toggle checked={aiSettings.learningRecs} onChange={() => toggleAI('learningRecs')} />
-          </SettingsRow>
-        </SettingsCard>
-
-        {/* ── 5. PRIVACY & DATA ─────────────────────────────────────────── */}
-        <SettingsCard
-          icon={Shield}
-          title="Privacy & Data"
-          subtitle="Manage your CareerIQ data, resume information, and PDF exports"
-        >
-          {/* Resume data */}
-          <div style={{ paddingBottom: '16px', borderBottom: '1px solid var(--line, #f1f5f9)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
-            <div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '2px' }}>Resume Data</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)' }}>Manage and upload information extracted from your resume</div>
-            </div>
-            <Link to="/resume-analysis" className="btn outline" style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '8px 16px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <Database size={14} />
-              Manage Resume Data
-            </Link>
-          </div>
-
-          {/* Download Data as PDF */}
-          <div style={{ paddingBottom: '16px', borderBottom: '1px solid var(--line, #f1f5f9)', paddingTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
-            <div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '2px' }}>Download My Data</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)' }}>Export an official PDF report of your candidate profile, skills, and intelligence data</div>
-            </div>
-            <button type="button" className="btn outline" style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '8px 16px' }} onClick={() => setDownloadModal(true)}>
-              <Download size={14} />
-              Download PDF
-            </button>
-          </div>
-
-          {/* Recommendation data */}
-          <div style={{ paddingTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
-            <div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '2px' }}>Recommendation Data</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)' }}>View details and manage recommendations stored in MySQL</div>
-            </div>
-            <button type="button" className="btn outline" style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '8px 16px' }} onClick={handleOpenRecModal}>
-              <Database size={14} />
-              Manage Data
-            </button>
+            </p>
           </div>
         </SettingsCard>
 
-        {/* ── 6. ACCOUNT ────────────────────────────────────────────────── */}
+        {/* ── 2. ACCOUNT ────────────────────────────────────────────────── */}
         <SettingsCard
           icon={User}
           title="Account"
           subtitle="Your account details and security settings"
         >
           {/* Email */}
-          <div style={{ paddingBottom: '16px', borderBottom: '1px solid var(--line, #f1f5f9)' }}>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted, #64748b)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Email Address</div>
-            <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--navy, #0f172a)' }}>
-              {userEmail || <span style={{ color: 'var(--text-muted, #94a3b8)', fontStyle: 'italic' }}>No email found — please log in again</span>}
-            </div>
+          <div className="set-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+            <span className="stat-label" style={{ textTransform: 'uppercase', letterSpacing: '.06em' }}>Email Address</span>
+            <strong style={{ fontSize: 15, wordBreak: 'break-all' }}>
+              {userEmail || <span className="muted" style={{ fontStyle: 'italic', fontWeight: 500 }}>No email found — please log in again</span>}
+            </strong>
           </div>
 
           {/* Change password */}
-          <div style={{ paddingTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
-            <div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text, #1e293b)', marginBottom: '2px' }}>Change Password</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)' }}>Update your account password stored securely in MySQL</div>
-            </div>
-            <button type="button" className="btn outline" style={{ whiteSpace: 'nowrap', fontSize: '12px', padding: '8px 16px' }} onClick={() => setPwModal(true)}>
+          <SettingsRow label="Change Password" description="Update your account password stored securely in MySQL">
+            <button type="button" className="btn outline small" onClick={() => setPwModal(true)}>
               <Key size={14} />
               Change Password
             </button>
-          </div>
+          </SettingsRow>
         </SettingsCard>
 
-        {/* ── 7. DANGER ZONE ────────────────────────────────────────────── */}
+        {/* ── 3. PRIVACY & DATA ─────────────────────────────────────────── */}
+        <SettingsCard
+          icon={Shield}
+          title="Privacy & Data"
+          wide
+          subtitle="Manage your CareerIQ data, resume information, and PDF exports"
+        >
+          {/* Resume data */}
+          <SettingsRow label="Resume Data" description="Manage and upload information extracted from your resume">
+            <Link to="/resume-analysis" className="btn outline small">
+              <Database size={14} />
+              Manage Resume Data
+            </Link>
+          </SettingsRow>
+
+          {/* Download Data as PDF */}
+          <SettingsRow label="Download My Data" description="Export an official PDF report of your candidate profile, skills, and intelligence data">
+            <button type="button" className="btn outline small" onClick={() => setDownloadModal(true)}>
+              <Download size={14} />
+              Download PDF
+            </button>
+          </SettingsRow>
+
+          {/* Recommendation data */}
+          <SettingsRow label="Recommendation Data" description="View details and manage recommendations stored in MySQL">
+            <button type="button" className="btn outline small" onClick={handleOpenRecModal}>
+              <Database size={14} />
+              Manage Data
+            </button>
+          </SettingsRow>
+        </SettingsCard>
+
+        {/* ── 4. DANGER ZONE ────────────────────────────────────────────── */}
         <SettingsCard
           icon={AlertTriangle}
           title="Danger Zone"
           subtitle="Irreversible actions — proceed with caution"
           danger
+          wide
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
-            <div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#ef4444', marginBottom: '2px' }}>Delete Account</div>
-              <div style={{ fontSize: '12px', color: '#f87171' }}>Permanently delete your CareerIQ account, resume, and MySQL records</div>
+          <div className="set-row">
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <strong className="text-bad">Delete Account</strong>
+              <p>Permanently delete your CareerIQ account, resume, and MySQL records</p>
             </div>
             <button
               type="button"
+              className="btn outline danger small"
               onClick={() => setDeleteModal(true)}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '8px',
-                padding: '9px 18px',
-                borderRadius: '8px',
-                border: '1.5px solid #fca5a5',
-                background: '#fff5f5',
-                color: '#dc2626',
-                fontSize: '13px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.borderColor = '#ef4444'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#fff5f5'; e.currentTarget.style.borderColor = '#fca5a5'; }}
             >
               <Trash2 size={14} />
               Delete Account
@@ -874,35 +530,30 @@ export default function Settings() {
           </div>
         </SettingsCard>
 
+        </div>
+
         {/* ════════════════════════════════════════════════════════════════
             MODALS
         ════════════════════════════════════════════════════════════════ */}
 
         {/* Download Data as PDF modal */}
         <Modal show={downloadModal} onClose={() => setDownloadModal(false)} title="Download My Data (PDF Report)">
-          <div style={{ textAlign: 'center', padding: '10px 0 16px' }}>
-            <div style={{
-              width: '54px', height: '54px', borderRadius: '14px',
-              background: '#eff6ff', color: '#2563eb', margin: '0 auto 14px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>
-              <FileText size={28} />
+          <div className="empty-state" style={{ padding: '4px 0 16px' }}>
+            <div className="empty-icon" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+              <FileText size={26} />
             </div>
-            <h4 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--navy, #0f172a)', margin: '0 0 8px' }}>
-              Candidate Intelligence Report (PDF)
-            </h4>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted, #64748b)', lineHeight: 1.6, margin: 0 }}>
+            <h4>Candidate Intelligence Report (PDF)</h4>
+            <p>
               Export an official formatted PDF document containing your complete account details, verified skills catalog, career preferences, and AI career recommendations.
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button type="button" className="btn outline" onClick={() => setDownloadModal(false)} style={{ flex: 1 }}>Cancel</button>
+          <div className="modal-actions">
+            <button type="button" className="btn outline" onClick={() => setDownloadModal(false)}>Cancel</button>
             <button
               type="button"
               className="btn"
               onClick={handleDownloadPdf}
               disabled={downloadLoading}
-              style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
             >
               <Download size={14} /> {downloadLoading ? 'Generating PDF...' : 'Download PDF'}
             </button>
@@ -912,44 +563,42 @@ export default function Settings() {
         {/* Recommendation Data modal */}
         <Modal show={recDataModal} onClose={() => setRecDataModal(false)} title="Recommendation Data">
           {recLoading ? (
-            <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted, #64748b)' }}>
-              <RefreshCw size={24} className="spin" style={{ margin: '0 auto 10px' }} />
-              <div>Loading recommendation records...</div>
+            <div className="empty-state">
+              <RefreshCw size={24} className="spin" />
+              <p>Loading recommendation records...</p>
             </div>
           ) : recDetails?.has_data ? (
-            <div>
+            <div className="stack">
               {recActionMsg && (
-                <div style={{ padding: '8px 12px', background: '#ecfdf5', color: '#065f46', borderRadius: 8, fontSize: 13, marginBottom: 14 }}>
-                  {recActionMsg}
-                </div>
+                <div className="notice good text-sm">{recActionMsg}</div>
               )}
-              <div style={{ fontSize: '13px', color: 'var(--text-muted, #64748b)', marginBottom: '14px' }}>
-                Latest Analysis Run: <strong>#{recDetails.analysis_id}</strong> ({new Date(recDetails.analysis_date).toLocaleDateString()})
+              <div className="muted text-sm">
+                Latest Analysis Run: <strong style={{ color: 'var(--ink)' }}>#{recDetails.analysis_id}</strong> ({new Date(recDetails.analysis_date).toLocaleDateString()})
               </div>
-              <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+              <div style={{ maxHeight: 220, overflowY: 'auto', paddingRight: 4 }}>
                 {recDetails.recommendations.map(r => (
-                  <div key={r.role} style={{ padding: '10px 14px', background: 'var(--bg, #f8fafc)', borderRadius: '8px', border: '1px solid var(--line, #e2e8f0)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy, #0f172a)' }}>#{r.rank} {r.role}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)' }}>{r.summary || 'AI role recommendation'}</div>
+                  <div key={r.role} className="list-row" style={{ margin: 0 }}>
+                    <div className="list-main">
+                      <strong>#{r.rank} {r.role}</strong>
+                      <span>{r.summary || 'AI role recommendation'}</span>
                     </div>
-                    <span className="pill blue" style={{ fontSize: '12px' }}>{r.match}% match</span>
+                    <span className="pill info">{r.match}% match</span>
                   </div>
                 ))}
               </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="button" className="btn outline" onClick={() => setRecDataModal(false)} style={{ flex: 1 }}>Close</button>
-                <button type="button" className="btn outline" onClick={handleClearRecData} style={{ flex: 1, borderColor: '#fca5a5', color: '#dc2626' }}>
+              <div className="modal-actions">
+                <button type="button" className="btn outline" onClick={() => setRecDataModal(false)}>Close</button>
+                <button type="button" className="btn outline danger" onClick={handleClearRecData}>
                   Reset Recommendations
                 </button>
               </div>
             </div>
           ) : (
-            <div>
-              <div style={{ fontSize: '14px', color: 'var(--text-muted, #64748b)', lineHeight: 1.6, marginBottom: '20px' }}>
+            <div className="stack">
+              <p className="muted text-sm" style={{ margin: 0, lineHeight: 1.6 }}>
                 {recActionMsg || 'No recommendation data found in the database. Upload a resume to generate fresh AI recommendations.'}
-              </div>
-              <button type="button" className="btn" onClick={() => setRecDataModal(false)} style={{ width: '100%' }}>Got it</button>
+              </p>
+              <button type="button" className="btn block" onClick={() => setRecDataModal(false)}>Got it</button>
             </div>
           )}
         </Modal>
@@ -958,23 +607,23 @@ export default function Settings() {
         <Modal show={pwModal} onClose={() => { setPwModal(false); setPwError(''); setPwSuccess(''); }} title="Change Password">
           <form onSubmit={handlePasswordSubmit}>
             {pwError && (
-              <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#dc2626', fontSize: 13, marginBottom: 14 }}>
-                {pwError}
-              </div>
+              <div className="notice bad text-sm" style={{ marginBottom: 14 }}>{pwError}</div>
             )}
             {pwSuccess && (
-              <div style={{ padding: '10px 14px', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 8, color: '#065f46', fontSize: 13, marginBottom: 14 }}>
-                {pwSuccess}
+              <div className="notice good text-sm" style={{ marginBottom: 14 }}>
+                <Check size={16} />
+                <span className="notice-main">{pwSuccess}</span>
               </div>
             )}
 
-            <div style={{ marginBottom: 14 }}>
-              <label className="label" style={{ display: 'block', marginBottom: 6, fontSize: 13, color: 'var(--text, #1e293b)' }}>Current Password</label>
-              <div style={{ position: 'relative' }}>
+            <div className="form-group">
+              <label className="label" htmlFor="pw-current">Current Password</label>
+              <div className="input-icon">
                 <input
+                  id="pw-current"
                   type={showPw ? 'text' : 'password'}
                   className="input"
-                  style={{ width: '100%', paddingRight: 40 }}
+                  style={{ paddingRight: 40 }}
                   value={currentPassword}
                   onChange={e => setCurrentPassword(e.target.value)}
                   placeholder="Enter current password"
@@ -982,20 +631,21 @@ export default function Settings() {
                 />
                 <button
                   type="button"
+                  className="input-action"
                   onClick={() => setShowPw(!showPw)}
-                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted, #64748b)' }}
+                  aria-label={showPw ? 'Hide passwords' : 'Show passwords'}
                 >
                   {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
-            <div style={{ marginBottom: 14 }}>
-              <label className="label" style={{ display: 'block', marginBottom: 6, fontSize: 13, color: 'var(--text, #1e293b)' }}>New Password</label>
+            <div className="form-group">
+              <label className="label" htmlFor="pw-new">New Password</label>
               <input
+                id="pw-new"
                 type={showPw ? 'text' : 'password'}
                 className="input"
-                style={{ width: '100%' }}
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
                 placeholder="At least 6 characters"
@@ -1003,12 +653,12 @@ export default function Settings() {
               />
             </div>
 
-            <div style={{ marginBottom: 20 }}>
-              <label className="label" style={{ display: 'block', marginBottom: 6, fontSize: 13, color: 'var(--text, #1e293b)' }}>Confirm New Password</label>
+            <div className="form-group" style={{ marginBottom: 20 }}>
+              <label className="label" htmlFor="pw-confirm">Confirm New Password</label>
               <input
+                id="pw-confirm"
                 type={showPw ? 'text' : 'password'}
                 className="input"
-                style={{ width: '100%' }}
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
                 placeholder="Re-enter new password"
@@ -1016,9 +666,9 @@ export default function Settings() {
               />
             </div>
 
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button type="button" className="btn outline" onClick={() => setPwModal(false)} style={{ flex: 1 }}>Cancel</button>
-              <button type="submit" className="btn" disabled={pwLoading} style={{ flex: 1 }}>
+            <div className="modal-actions">
+              <button type="button" className="btn outline" onClick={() => setPwModal(false)}>Cancel</button>
+              <button type="submit" className="btn" disabled={pwLoading}>
                 {pwLoading ? 'Updating...' : 'Save Password'}
               </button>
             </div>
@@ -1028,25 +678,23 @@ export default function Settings() {
         {/* Delete Account confirmation modal */}
         <Modal show={deleteModal} onClose={() => { setDeleteModal(false); setDeleteError(''); }} title="Delete Account?">
           <form onSubmit={handleDeleteAccountSubmit}>
-            <div style={{ fontSize: '14px', color: 'var(--text-muted, #475569)', lineHeight: 1.6, marginBottom: '8px' }}>
+            <p className="muted text-sm" style={{ margin: '0 0 8px', lineHeight: 1.6 }}>
               Are you sure you want to delete your account? All your profiles, uploaded resumes, and roadmap records will be permanently erased from MySQL.
-            </div>
-            <div style={{ fontSize: '13px', color: '#ef4444', fontWeight: 600, marginBottom: '16px' }}>
+            </p>
+            <p className="text-bad text-sm" style={{ margin: '0 0 16px', fontWeight: 600 }}>
               ⚠ This action is permanent and cannot be undone.
-            </div>
+            </p>
 
             {deleteError && (
-              <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#dc2626', fontSize: 13, marginBottom: 14 }}>
-                {deleteError}
-              </div>
+              <div className="notice bad text-sm" style={{ marginBottom: 14 }}>{deleteError}</div>
             )}
 
-            <div style={{ marginBottom: 20 }}>
-              <label className="label" style={{ display: 'block', marginBottom: 6, fontSize: 13, color: 'var(--text, #1e293b)' }}>Enter Password to Confirm</label>
+            <div className="form-group" style={{ marginBottom: 20 }}>
+              <label className="label" htmlFor="delete-password">Enter Password to Confirm</label>
               <input
+                id="delete-password"
                 type="password"
                 className="input"
-                style={{ width: '100%' }}
                 value={deletePassword}
                 onChange={e => setDeletePassword(e.target.value)}
                 placeholder="Your account password"
@@ -1054,17 +702,9 @@ export default function Settings() {
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button type="button" className="btn outline" style={{ flex: 1 }} onClick={() => setDeleteModal(false)}>Cancel</button>
-              <button
-                type="submit"
-                disabled={deleteLoading}
-                style={{
-                  flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                  padding: '10px 18px', borderRadius: '8px', border: 'none',
-                  background: '#ef4444', color: '#ffffff', fontSize: '13px', fontWeight: 700, cursor: deleteLoading ? 'not-allowed' : 'pointer',
-                }}
-              >
+            <div className="modal-actions">
+              <button type="button" className="btn outline" onClick={() => setDeleteModal(false)}>Cancel</button>
+              <button type="submit" className="btn danger" disabled={deleteLoading}>
                 <Trash2 size={14} />
                 {deleteLoading ? 'Deleting...' : 'Delete Permanently'}
               </button>

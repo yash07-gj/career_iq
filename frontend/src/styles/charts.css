@@ -1,0 +1,164 @@
+/* =============================================================================
+   CareerIQ — Chart styles (SkillDonut, SkillLevelBars)
+   Colours come from the design tokens, so both charts work in dark mode.
+============================================================================= */
+
+/* ---------- Donut ---------- */
+.donut-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 200px);
+  gap: 20px;
+  align-items: center;
+}
+
+.donut {
+  position: relative;
+  width: 100%;
+  max-width: 260px;
+  margin: 0 auto;
+  /* soft ambient glow behind the ring */
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 65%);
+}
+
+.donut svg { width: 100%; height: auto; overflow: visible; display: block; }
+
+.donut-seg {
+  cursor: pointer;
+  outline: none;
+  transition: stroke-width .25s cubic-bezier(.16, 1, .3, 1), opacity .25s;
+  animation: donutDraw 1.1s cubic-bezier(.16, 1, .3, 1) backwards;
+}
+.donut-seg.is-active { stroke-width: 24; }
+.donut-seg.is-dim { opacity: .35; }
+
+@keyframes donutDraw {
+  from { stroke-dasharray: 0 var(--c); }
+}
+
+.donut-value { font-family: var(--font-display); font-size: 30px; font-weight: 800; }
+.donut-cap { font-size: 11px; font-weight: 600; letter-spacing: .02em; }
+
+.donut-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.donut-legend li {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  font-size: 13.5px;
+  transition: transform .2s, box-shadow .2s;
+}
+.donut-legend li.is-active { transform: translateX(4px); box-shadow: var(--shadow); }
+.legend-dot { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
+.legend-label { color: var(--ink); font-weight: 500; }
+.legend-pct { font-size: 12px; min-width: 34px; text-align: right; }
+
+/* ---------- Level bars ---------- */
+.lvl { display: flex; flex-direction: column; gap: 4px; }
+
+.lvl-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.lvl-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.lvl-swatch { width: 14px; height: 8px; border-radius: 99px; display: inline-block; }
+.lvl-swatch.good { background: var(--good); }
+.lvl-swatch.warn { background: var(--warn); }
+.lvl-swatch.bad { background: var(--bad); }
+.lvl-marker-key { width: 2px; height: 12px; background: var(--ink); border-radius: 2px; display: inline-block; }
+
+.lvl-row {
+  display: grid;
+  grid-template-columns: minmax(0, 130px) minmax(0, 1fr) 40px;
+  gap: 12px;
+  align-items: center;
+  padding: 7px 8px;
+  margin: 0 -8px;
+  border-radius: 10px;
+  transition: background .15s;
+}
+.lvl-row.is-active { background: var(--surface-2); }
+
+.lvl-name { font-size: 13.5px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lvl-val { font-size: 12.5px; font-weight: 700; text-align: right; }
+
+.lvl-track {
+  position: relative;
+  height: 12px;
+  border-radius: 99px;
+  background: var(--surface-2);
+}
+
+.lvl-fill {
+  height: 100%;
+  border-radius: 99px;
+  transform-origin: left;
+  animation: lvlGrow .9s cubic-bezier(.16, 1, .3, 1) backwards;
+  transition: box-shadow .25s, filter .25s;
+}
+.lvl-fill.good { background: linear-gradient(90deg, color-mix(in srgb, var(--good) 55%, var(--surface)), var(--good)); }
+.lvl-fill.warn { background: linear-gradient(90deg, color-mix(in srgb, var(--warn) 55%, var(--surface)), var(--warn)); }
+.lvl-fill.bad { background: var(--bad); }
+.lvl-row.is-active .lvl-fill.good { box-shadow: 0 0 14px color-mix(in srgb, var(--good) 70%, transparent); }
+.lvl-row.is-active .lvl-fill.warn { box-shadow: 0 0 14px color-mix(in srgb, var(--warn) 70%, transparent); }
+.lvl-row.is-active .lvl-fill.bad { box-shadow: 0 0 14px color-mix(in srgb, var(--bad) 70%, transparent); }
+
+@keyframes lvlGrow { from { transform: scaleX(0); } }
+
+.lvl-marker {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 2px;
+  background: var(--ink);
+  opacity: .55;
+}
+
+.lvl-tip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
+  animation: lvlTip .18s ease-out both;
+}
+.lvl-tip strong { font-size: 12.5px; }
+.lvl-tip.left { transform: translateX(-90%); }
+@keyframes lvlTip { from { opacity: 0; translate: 0 4px; } }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 640px) {
+  .donut-wrap { grid-template-columns: minmax(0, 1fr); }
+  .donut { max-width: 220px; }
+  .lvl-row { grid-template-columns: minmax(0, 92px) minmax(0, 1fr) 36px; gap: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .donut-seg, .lvl-fill, .lvl-tip { animation: none; }
+}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Mail, GraduationCap, Briefcase, Save, Plus, X, Upload } from 'lucide-react';
+import { User, Mail, GraduationCap, Briefcase, Save, Plus, X, Upload, Target } from 'lucide-react';
 import { Layout, Page } from '../components/Layout';
 import auth from '../utils/auth';
 import api from '../services/api';
@@ -22,6 +22,21 @@ export default function Profile() {
   
   const fileInputRef = useRef(null);
   const [saved, setSaved] = useState(false);
+
+  // Suggested target roles (from the career roles table); users can also type their own
+  const [roleOptions, setRoleOptions] = useState([
+    'Data Scientist', 'Data Analyst', 'Business Analyst', 'BI Analyst', 'Frontend Developer',
+    'Backend Developer', 'Full Stack Developer', 'Machine Learning Engineer',
+  ]);
+  useEffect(() => {
+    api.getCareerRoles()
+      .then((roles) => {
+        if (Array.isArray(roles) && roles.length) {
+          setRoleOptions([...new Set(roles.map((r) => r.role_name).filter(Boolean))]);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (currentUser?.user_id) {
@@ -106,7 +121,19 @@ export default function Profile() {
     return (
       <Layout>
         <Page title="My Profile" subtitle="Manage your personal information and career preferences">
-          <div>Loading profile...</div>
+          <div className="ui-grid split-rev">
+            <div className="card card-pad stack">
+              <div className="skeleton" style={{ width: 96, height: 96, borderRadius: '50%', margin: '0 auto' }} />
+              <div className="skeleton" style={{ height: 16, width: '60%', margin: '0 auto' }} />
+              <div className="skeleton" style={{ height: 12, width: '40%', margin: '0 auto' }} />
+            </div>
+            <div className="card card-pad stack">
+              <div className="muted text-sm">Loading profile...</div>
+              <div className="skeleton" style={{ height: 40 }} />
+              <div className="skeleton" style={{ height: 40 }} />
+              <div className="skeleton" style={{ height: 40 }} />
+            </div>
+          </div>
         </Page>
       </Layout>
     );
@@ -115,53 +142,60 @@ export default function Profile() {
   return (
     <Layout>
       <Page title="My Profile" subtitle="Manage your personal information and career preferences">
-        <div className="profile-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
-          <div className="card profile-card" style={{ padding: '20px', textAlign: 'center' }}>
-            <div 
-              className="profile-avatar" 
-              style={{ 
-                width: 100, 
-                height: 100, 
-                borderRadius: '50%', 
-                margin: '0 auto 15px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 36,
-                backgroundColor: '#e2e8f0',
-                color: '#475569',
-                backgroundImage: fullPhotoUrl ? `url(${fullPhotoUrl})` : 'none',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
+        <div className="ui-grid split-rev">
+          {/* AVATAR + SKILLS CARD */}
+          <div className="card card-pad stack" style={{ alignItems: 'center', textAlign: 'center', alignSelf: 'start' }}>
+            <div
+              style={{
+                width: 96,
+                height: 96,
+                borderRadius: '50%',
+                display: 'grid',
+                placeItems: 'center',
+                fontSize: 34,
+                fontWeight: 800,
+                fontFamily: 'var(--font-display)',
+                color: '#ffffff',
+                background: fullPhotoUrl
+                  ? `center / cover no-repeat url(${fullPhotoUrl})`
+                  : 'linear-gradient(135deg, var(--accent), var(--accent-2))',
+                boxShadow: '0 0 0 4px var(--surface), 0 0 0 7px var(--accent-soft)',
               }}
+              aria-label={fullName}
             >
               {!fullPhotoUrl && initial}
             </div>
-            <div className="profile-name" style={{ fontSize: 20, fontWeight: 600 }}>{fullName}</div>
-            <div className="profile-role" style={{ color: '#64748b', marginBottom: 15 }}>Candidate Profile</div>
-            
-            <input 
-              type="file" 
-              accept="image/*" 
-              ref={fileInputRef} 
-              style={{ display: 'none' }} 
-              onChange={handlePhotoUpload} 
+            <div>
+              <h3 className="card-title" style={{ fontSize: 18 }}>{fullName}</h3>
+              <p className="muted text-sm" style={{ margin: '2px 0 0' }}>Candidate Profile</p>
+            </div>
+
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              onChange={handlePhotoUpload}
             />
-            <button className="btn outline small" onClick={() => fileInputRef.current?.click()}>
-              <Upload size={14} style={{ marginRight: 5 }}/> Change Photo
+            <button type="button" className="btn outline small" onClick={() => fileInputRef.current?.click()}>
+              <Upload size={14} /> Change Photo
             </button>
-            
-            <div style={{ textAlign: 'left', marginTop: 30 }}>
-              <div className="label" style={{ fontWeight: 600, marginBottom: 10 }}>Your Skills</div>
-              <div className="skill-tags" style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+
+            <div style={{ width: '100%', textAlign: 'left', marginTop: 8 }}>
+              <div className="label" style={{ marginBottom: 10 }}>Your Skills</div>
+              <div className="chips">
                 {skills.map((s) => (
-                  <span className="tag" key={s} style={{ backgroundColor: '#f1f5f9', padding: '4px 8px', borderRadius: 4, fontSize: 12 }}>
+                  <span className="pill info" key={s}>
                     {s}
-                    <X
-                      size={10}
-                      style={{ marginLeft: 5, cursor: 'pointer' }}
+                    <button
+                      type="button"
+                      className="link-btn"
                       onClick={() => setSkills(skills.filter((x) => x !== s))}
-                    />
+                      aria-label={`Remove ${s}`}
+                      style={{ color: 'inherit' }}
+                    >
+                      <X size={12} />
+                    </button>
                   </span>
                 ))}
               </div>
@@ -173,105 +207,113 @@ export default function Profile() {
                     setNewSkill('');
                   }
                 }}
-                style={{ display: 'flex', gap: 6, marginTop: 15 }}
+                style={{ display: 'flex', gap: 8, marginTop: 12 }}
               >
                 <input
                   className="input"
                   value={newSkill}
                   onChange={(e) => setNewSkill(e.target.value)}
                   placeholder="Add skill"
-                  style={{ flex: 1, padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 4 }}
+                  aria-label="Add skill"
+                  style={{ flex: 1 }}
                 />
-                <button type="submit" className="btn small" style={{ padding: '8px 12px' }}>
-                  <Plus size={14} />
+                <button type="submit" className="btn" aria-label="Add skill">
+                  <Plus size={16} />
                 </button>
               </form>
             </div>
           </div>
 
-          <form className="card card-pad" onSubmit={handleSave} style={{ padding: '24px' }}>
-            <h3 className="card-title" style={{ marginTop: 0, marginBottom: 20, fontSize: 18 }}>Personal Information</h3>
-            <div className="form-row" style={{ display: 'flex', gap: 15, marginBottom: 15 }}>
-              <div className="form-group" style={{ flex: 1 }}>
-                <label className="label" style={{ display: 'block', marginBottom: 5 }}>Full Name</label>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <User size={15} style={{ position: 'absolute', left: 12, color: '#94a3b8', pointerEvents: 'none' }} />
+          {/* PERSONAL INFORMATION */}
+          <form className="card card-pad" onSubmit={handleSave}>
+            <div className="card-head">
+              <h3 className="card-title">Personal Information</h3>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="label" htmlFor="profile-name">Full Name</label>
+                <div className="input-icon">
+                  <User size={15} />
                   <input
+                    id="profile-name"
                     className="input"
-                    style={{ paddingLeft: 36, width: '100%', padding: '8px 8px 8px 36px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: 4 }}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     required
                   />
                 </div>
               </div>
-              <div className="form-group" style={{ flex: 1 }}>
-                <label className="label" style={{ display: 'block', marginBottom: 5 }}>Email</label>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <Mail size={15} style={{ position: 'absolute', left: 12, color: '#94a3b8', pointerEvents: 'none' }} />
+              <div className="form-group">
+                <label className="label" htmlFor="profile-email">Email</label>
+                <div className="input-icon">
+                  <Mail size={15} />
                   <input
+                    id="profile-email"
                     className="input"
                     type="email"
-                    style={{ paddingLeft: 36, width: '100%', padding: '8px 8px 8px 36px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: 4 }}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    disabled // usually email shouldn't be casually changed without verification
+                    disabled // usually email should not be casually changed without verification
+                    style={{ background: 'var(--surface-2)' }}
                   />
                 </div>
               </div>
             </div>
-            
-            <div className="form-row" style={{ display: 'flex', gap: 15, marginBottom: 15 }}>
-              <div className="form-group" style={{ flex: 1 }}>
-                <label className="label" style={{ display: 'block', marginBottom: 5 }}>Education</label>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <GraduationCap size={15} style={{ position: 'absolute', left: 12, color: '#94a3b8', pointerEvents: 'none' }} />
-                  <input 
-                    className="input" 
+
+            <div className="ui-grid">
+              <div className="form-group">
+                <label className="label" htmlFor="profile-education">Education</label>
+                <div className="input-icon">
+                  <GraduationCap size={15} />
+                  <input
+                    id="profile-education"
+                    className="input"
                     value={education}
                     onChange={(e) => setEducation(e.target.value)}
                     placeholder="e.g. B.Tech in Computer Science"
-                    style={{ paddingLeft: 36, width: '100%', padding: '8px 8px 8px 36px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: 4 }} 
                   />
                 </div>
               </div>
-              <div className="form-group" style={{ flex: 1 }}>
-                <label className="label" style={{ display: 'block', marginBottom: 5 }}>Experience</label>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <Briefcase size={15} style={{ position: 'absolute', left: 12, color: '#94a3b8', pointerEvents: 'none' }} />
-                  <input 
-                    className="input" 
+              <div className="form-group">
+                <label className="label" htmlFor="profile-experience">Experience</label>
+                <div className="input-icon">
+                  <Briefcase size={15} />
+                  <input
+                    id="profile-experience"
+                    className="input"
                     value={experience}
                     onChange={(e) => setExperience(e.target.value)}
                     placeholder="e.g. 2 years as Developer"
-                    style={{ paddingLeft: 36, width: '100%', padding: '8px 8px 8px 36px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: 4 }} 
                   />
                 </div>
               </div>
             </div>
-            
-            <div className="form-group" style={{ marginBottom: 25 }}>
-              <label className="label" style={{ display: 'block', marginBottom: 5 }}>Target Career</label>
-              <select 
-                className="select" 
-                value={targetRole}
-                onChange={(e) => setTargetRole(e.target.value)}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 4 }}
-              >
-                <option value="">Select Target Career...</option>
-                <option value="Data Scientist">Data Scientist</option>
-                <option value="Data Analyst">Data Analyst</option>
-                <option value="Business Analyst">Business Analyst</option>
-                <option value="BI Analyst">BI Analyst</option>
-                <option value="Frontend Developer">Frontend Developer</option>
-                <option value="Backend Developer">Backend Developer</option>
-                <option value="Full Stack Developer">Full Stack Developer</option>
-                <option value="Machine Learning Engineer">Machine Learning Engineer</option>
-              </select>
+
+            <div className="form-group" style={{ marginBottom: 20 }}>
+              <label className="label" htmlFor="profile-target">Target Career</label>
+              <div className="input-icon">
+                <Target size={15} />
+                <input
+                  id="profile-target"
+                  className="input"
+                  list="profile-target-options"
+                  value={targetRole}
+                  onChange={(e) => setTargetRole(e.target.value)}
+                  placeholder="Choose from the list or type your own role"
+                  autoComplete="off"
+                />
+              </div>
+              <datalist id="profile-target-options">
+                {roleOptions.map((name) => (
+                  <option key={name} value={name} />
+                ))}
+              </datalist>
+              <span className="muted text-xs">Filled from your resume. Pick a suggested role or type a different one.</span>
             </div>
-            
-            <button type="submit" className="btn" disabled={saving} style={{ padding: '10px 20px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-              {saving ? 'Saving...' : (saved ? 'Saved ✓' : 'Save Changes')} 
+
+            <button type="submit" className={`btn ${saved ? 'green' : ''}`} disabled={saving}>
+              {saving ? 'Saving...' : (saved ? 'Saved ✓' : 'Save Changes')}
               {!saving && !saved && <Save size={16} />}
             </button>
           </form>

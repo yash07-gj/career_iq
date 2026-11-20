@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User, CandidateProfile, Resume, CandidateSkill, Skill
+from app.models import User, CandidateProfile, Resume, CandidateSkill, Skill, AnalysisRun
+from pathlib import Path
 from app.schemas import ResumeUploadResponse
 from app.services.resume_parser import process_resume_upload
 
@@ -72,3 +73,38 @@ def get_resume_status(user_id: int, db: Session = Depends(get_db)):
         "skills": skill_list,
         "total_skills": len(skill_list)
     }
+
+
+@router.delete("/{user_id}")
+def remove_resume(user_id: int, db: Session = Depends(get_db)):
+    """
+    Removes the candidate's uploaded resume(s): the files, the skills extracted
+    from them, and the analysis results built from them. Profile details
+    (education, experience, target role) and manually added skills are kept.
+    """
+    profile = db.query(CandidateProfile).filter(CandidateProfile.user_id == user_id).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    resumes = db.query(Resume).filter(Resume.profile_id == profile.profile_id).all()
+    if not resumes:
+        raise HTTPException(status_code=404, detail="No resume to remove")
+
+    for r in resumes:
+        try:
+            path = Path(r.storage_path)
+            if path.is_file():
+                path.unlink()
+        except OSError:
+            pass  # the database record is removed even if the file is already gone
+
+    # Analysis runs cascade to recommendations, job matches, readiness, gaps and roadmaps
+    db.query(AnalysisRun).filter(AnalysisRun.profile_id == profile.profile_id).delete(synchronize_session=False)
+    db.query(CandidateSkill).filter(
+        CandidateSkill.profile_id == profile.profile_id,
+        CandidateSkill.source == "resume"
+    ).delete(synchronize_session=False)
+    db.query(Resume).filter(Resume.profile_id == profile.profile_id).delete(synchronize_session=False)
+    db.commit()
+
+    return {"success": True, "message": "Resume removed. Upload a new resume to run a fresh analysis."}

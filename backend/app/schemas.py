@@ -67,7 +67,7 @@ class DeleteAccountRequest(BaseModel):
     password: str
 
 class SettingsPayload(BaseModel):
-    theme: Optional[str] = "light"
+    theme: Optional[str] = "dark"
     compact_mode: Optional[bool] = False
     notifications: Optional[dict] = None
     preferences: Optional[dict] = None
@@ -180,6 +180,8 @@ class DashboardResponse(BaseModel):
     metrics: MetricOverview
     recommendations: List[CareerRecommendationResponse]
     market_skills: List[dict]
+    missing_skills_list: List[str] = []
+    matched_skills_list: List[str] = []
     user_name: str
     has_resume: bool = False
     resume_filename: Optional[str] = None
