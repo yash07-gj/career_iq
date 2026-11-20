@@ -4,7 +4,6 @@ import {
   GraduationCap,
   Sparkles,
   ArrowRight,
-  CircleCheck,
   FileText,
   Search,
   BarChart3,
@@ -14,48 +13,76 @@ import {
   Target,
   LineChart,
   TrendingUp,
-  ShieldCheck,
   CheckCircle2,
   Zap,
-  Award,
-  Layers,
   ChevronRight,
-  Users,
-  Compass,
 } from "lucide-react";
+import "../styles/public.css";
+
+const FEATURES = [
+  {
+    icon: FileText, tone: "c1", title: "Resume Analysis", foot: "Instant extraction",
+    text: "Upload your resume and let advanced NLP extract skills, experience levels, and project depth within seconds.",
+  },
+  {
+    icon: Search, tone: "c2", title: "AI Job Matching", foot: "Smart ranking",
+    text: "Find optimal career matches tailored to your exact skillset, background, and target industry preferences.",
+  },
+  {
+    icon: BarChart3, tone: "c3", title: "Skill Gap Analysis", foot: "Direct gap map",
+    text: "Identify critical missing proficiencies and receive targeted suggestions to close the gap for your dream role.",
+  },
+  {
+    icon: Brain, tone: "c4", title: "Career Intelligence", foot: "Market analytics",
+    text: "Explore live industry trends, salary benchmarks, and demand shifts to stay ahead in a fast-moving job market.",
+  },
+];
+
+const STEPS = [
+  { num: "01", icon: UserRound, title: "Build Your Profile", text: "Set up your student or professional profile with your career goals and aspirations." },
+  { num: "02", icon: Upload, title: "Upload Resume", text: "Upload your CV in PDF or DOCX format for instant semantic parsing and evaluation." },
+  { num: "03", icon: Brain, title: "Analyze Your Career", text: "Our AI measures your readiness score, validates match percentages, and maps gaps." },
+  { num: "04", icon: Target, title: "Get Your Roadmap", text: "Receive step-by-step milestones, top learning resources, and simulator actions." },
+];
+
+const BENEFITS = [
+  { title: "Precision NLP Skill Extraction", text: "Detects hidden skills, libraries, frameworks, and domain expertise automatically." },
+  { title: 'Interactive "What-If" Simulation', text: "Experiment with new certifications or skills to see your readiness surge in real time." },
+  { title: "Targeted Learning Resource Directory", text: "Curated documentation, courses, and tutorials linked directly to each gap node." },
+];
+
+const STATS = [
+  { num: "10,000+", label: "Resumes Analyzed", sub: "Across 40+ Tech Disciplines" },
+  { num: "94%", label: "Match Accuracy", sub: "Validated against live market data" },
+  { num: "500+", label: "Career Roadmaps", sub: "Curated step-by-step learning paths" },
+  { num: "2.5x", label: "Faster Career Growth", sub: "From skill gap to job readiness" },
+];
+
+function Logo() {
+  return (
+    <Link to="/" className="lp-logo">
+      <span className="lp-logo-mark"><GraduationCap size={20} strokeWidth={2.5} /></span>
+      <span>Career<b>IQ</b></span>
+    </Link>
+  );
+}
 
 export default function Home() {
   return (
-    <div className="home-container">
-      {/* =====================================================
-          HEADER / NAVBAR
-      ===================================================== */}
-      <header className="home-nav">
-        <div className="nav-inner">
-          {/* LOGO */}
-          <Link to="/" className="home-logo">
-            <div className="logo-icon-box">
-              <GraduationCap size={22} strokeWidth={2.5} />
-            </div>
-            <div className="logo-text">
-              Career<span>IQ</span>
-            </div>
-          </Link>
-
-          {/* NAVIGATION LINKS */}
-          <nav className="nav-menu">
-            <a href="#hero" className="nav-item active">Home</a>
-            <a href="#features" className="nav-item">Features</a>
-            <a href="#how-it-works" className="nav-item">How It Works</a>
-            <a href="#benefits" className="nav-item">Why CareerIQ</a>
+    <div className="lp">
+      {/* ================= NAVBAR ================= */}
+      <header className="lp-nav">
+        <div className="lp-nav-in">
+          <Logo />
+          <nav className="lp-nav-links" aria-label="Page sections">
+            <a href="#hero">Home</a>
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How It Works</a>
+            <a href="#benefits">Why CareerIQ</a>
           </nav>
-
-          {/* RIGHT AUTH BUTTONS */}
-          <div className="nav-actions">
-            <Link to="/login" className="nav-btn-login">
-              Login
-            </Link>
-            <Link to="/register" className="nav-btn-primary">
+          <div className="lp-nav-actions">
+            <Link to="/login" className="lp-nav-login">Login</Link>
+            <Link to="/register" className="lp-btn primary small">
               <span>Get Started</span>
               <ArrowRight size={15} />
             </Link>
@@ -63,531 +90,329 @@ export default function Home() {
         </div>
       </header>
 
-      {/* =====================================================
-          HERO SECTION
-      ===================================================== */}
-      <section id="hero" className="hero-section">
-        <div className="hero-bg-glow"></div>
-        <div className="hero-bg-grid"></div>
+      {/* ================= HERO ================= */}
+      <section id="hero" className="lp-hero">
+        <div className="lp-orb one" />
+        <div className="lp-orb two" />
+        <div className="lp-orb three" />
+        <div className="lp-grid-bg" />
 
-        <div className="hero-content-wrapper">
-          {/* LEFT HERO COLUMN */}
-          <div className="hero-left">
-            <div className="hero-badge">
-              <Sparkles size={14} className="badge-sparkle" />
+        <div className="lp-hero-in">
+          <div className="lp-hero-left">
+            <div className="lp-badge">
+              <Sparkles size={14} />
               <span>AI-Powered Career Intelligence</span>
-              <span className="badge-pulse"></span>
+              <span className="lp-live-dot" />
             </div>
 
-            <h1 className="hero-title">
+            <h1>
               Build Your Career <br />
-              <span className="text-gradient">With Intelligence.</span>
+              <span className="lp-grad-text">With Intelligence.</span>
             </h1>
 
-            <p className="hero-subtitle">
+            <p className="lp-hero-sub">
               Discover suitable career opportunities, understand your skill gaps,
               measure your career readiness, and get a personalized roadmap powered by AI.
             </p>
 
-            {/* HERO CTA BUTTONS */}
-            <div className="hero-cta-group">
-              <Link to="/register" className="btn-hero-primary">
+            <div className="lp-hero-cta">
+              <Link to="/register" className="lp-btn primary">
                 <span>Get Started Free</span>
                 <ArrowRight size={17} />
               </Link>
-              <a href="#how-it-works" className="btn-hero-secondary">
+              <a href="#how-it-works" className="lp-btn glass">
                 <span>How It Works</span>
               </a>
             </div>
 
-            {/* MINI FEATURE PILLS */}
-            <div className="hero-mini-features">
-              <div className="mini-pill">
-                <CheckCircle2 size={16} className="pill-icon" />
-                <span>AI Skill Analysis</span>
-              </div>
-              <div className="mini-pill">
-                <CheckCircle2 size={16} className="pill-icon" />
-                <span>Smart Job Matching</span>
-              </div>
-              <div className="mini-pill">
-                <CheckCircle2 size={16} className="pill-icon" />
-                <span>Personalized Roadmap</span>
-              </div>
+            <div className="lp-hero-pills">
+              <span><CheckCircle2 size={15} /> AI Skill Analysis</span>
+              <span><CheckCircle2 size={15} /> Smart Job Matching</span>
+              <span><CheckCircle2 size={15} /> Personalized Roadmap</span>
             </div>
           </div>
 
-          {/* RIGHT HERO COLUMN - INTERACTIVE PREVIEW CARD */}
-          <div className="hero-right">
-            <div className="hero-card-container">
-              {/* Decorative floating badges */}
-              <div className="floating-badge badge-top-right">
-                <Zap size={14} className="icon-pulse" />
+          {/* Preview card */}
+          <div className="lp-hero-right">
+            <div className="lp-float tr lp-glass">
+              <span className="ic"><Zap size={15} /></span>
+              <div>
+                <strong>AI Match Score</strong>
+                <span>94% Fit Identified</span>
+              </div>
+            </div>
+
+            <div className="lp-float bl lp-glass">
+              <span className="ic"><TrendingUp size={15} /></span>
+              <div>
+                <strong>Market Demand</strong>
+                <span>+28% High Growth</span>
+              </div>
+            </div>
+
+            <div className="lp-preview lp-glass">
+              <div className="lp-pv-head">
                 <div>
-                  <strong>AI Match Score</strong>
-                  <span>94% Fit Identified</span>
+                  <span className="lp-pv-label">Career Readiness</span>
+                  <div className="lp-pv-big">78%</div>
+                </div>
+                <svg className="lp-ring" viewBox="0 0 100 100" role="img" aria-label="Career readiness 78">
+                  <defs>
+                    <linearGradient id="lpRingGrad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#8fb0ff" />
+                      <stop offset="100%" stopColor="#7ee0c3" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="9" />
+                  <circle
+                    className="arc" cx="50" cy="50" r="42" fill="none" stroke="url(#lpRingGrad)" strokeWidth="9"
+                    strokeLinecap="round" strokeDasharray="264" strokeDashoffset="58" transform="rotate(-90 50 50)"
+                  />
+                  <text x="50" y="57" textAnchor="middle" fontSize="22" fontWeight="800" fill="#ffffff">78</text>
+                </svg>
+              </div>
+
+              <div className="lp-pv-match">
+                <div>
+                  <small><Target size={14} /> Top Career Match</small>
+                  <strong>Data Analyst</strong>
+                </div>
+                <div className="lp-pv-tag">
+                  <b>89% Match</b>
+                  <span>Excellent</span>
                 </div>
               </div>
 
-              <div className="floating-badge badge-bottom-left">
-                <TrendingUp size={14} />
-                <div>
-                  <strong>Market Demand</strong>
-                  <span>+28% High Growth</span>
-                </div>
+              <div className="lp-chips">
+                <span>Python</span>
+                <span>SQL</span>
+                <span>Power BI</span>
+                <span>Excel</span>
+                <span className="more">+3 More</span>
               </div>
 
-              {/* MAIN HERO CARD */}
-              <div className="hero-card">
-                {/* READINESS HEADER */}
-                <div className="card-header-flex">
-                  <div>
-                    <span className="card-sub-label">Career Readiness</span>
-                    <div className="readiness-score-val">78%</div>
+              <div className="lp-pv-bars">
+                <div className="lp-pv-bars-title"><LineChart size={15} /> Skill Progress</div>
+                {[["Python", 95, "a"], ["SQL", 88, "b"], ["Power BI", 78, "c"]].map(([name, val, tone]) => (
+                  <div key={name}>
+                    <div className="lp-bar-info"><span>{name}</span><strong>{val}%</strong></div>
+                    <div className="lp-bar-track"><div className={`lp-bar-fill ${tone}`} style={{ width: `${val}%` }} /></div>
                   </div>
-                  <div className="readiness-circle-badge">
-                    <div className="circle-inner">78</div>
-                  </div>
-                </div>
+                ))}
+              </div>
 
-                {/* TOP CAREER MATCH SECTION */}
-                <div className="career-match-box">
-                  <div className="match-title-row">
-                    <Target size={15} className="match-icon" />
-                    <span>Top Career Match</span>
-                  </div>
-
-                  <div className="match-role-row">
-                    <strong className="role-title">Data Analyst</strong>
-                    <div className="match-tag-container">
-                      <span className="match-badge">89% Match</span>
-                      <span className="match-sub-text">Excellent</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* SKILLS CHIP LIST */}
-                <div className="skill-chips-row">
-                  <span className="skill-chip">Python</span>
-                  <span className="skill-chip">SQL</span>
-                  <span className="skill-chip">Power BI</span>
-                  <span className="skill-chip">Excel</span>
-                  <span className="skill-chip more">+3 More</span>
-                </div>
-
-                {/* SKILL PROGRESS SECTION */}
-                <div className="skill-progress-section">
-                  <div className="progress-section-header">
-                    <LineChart size={15} />
-                    <span>Skill Progress</span>
-                  </div>
-
-                  <div className="skill-bar-item">
-                    <div className="bar-info">
-                      <span>Python</span>
-                      <strong>95%</strong>
-                    </div>
-                    <div className="bar-track">
-                      <div className="bar-fill blue" style={{ width: "95%" }}></div>
-                    </div>
-                  </div>
-
-                  <div className="skill-bar-item">
-                    <div className="bar-info">
-                      <span>SQL</span>
-                      <strong>88%</strong>
-                    </div>
-                    <div className="bar-track">
-                      <div className="bar-fill cyan" style={{ width: "88%" }}></div>
-                    </div>
-                  </div>
-
-                  <div className="skill-bar-item">
-                    <div className="bar-info">
-                      <span>Power BI</span>
-                      <strong>78%</strong>
-                    </div>
-                    <div className="bar-track">
-                      <div className="bar-fill indigo" style={{ width: "78%" }}></div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* BOTTOM QUICK ACTION */}
-                <div className="card-bottom-pill">
-                  <Sparkles size={13} />
-                  <span>Next recommendation: Complete Power BI Advanced Module</span>
-                </div>
+              <div className="lp-pv-next">
+                <Sparkles size={14} />
+                <span>Next recommendation: Complete Power BI Advanced Module</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* =====================================================
-          STATS / IMPACT BAR (BRIDGES THE HERO GAP)
-      ===================================================== */}
-      <section className="stats-section">
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-number">10,000+</div>
-            <div className="stat-label">Resumes Analyzed</div>
-            <div className="stat-sub">Across 40+ Tech Disciplines</div>
-          </div>
-          <div className="stat-divider"></div>
-
-          <div className="stat-card">
-            <div className="stat-number">94%</div>
-            <div className="stat-label">Match Accuracy</div>
-            <div className="stat-sub">Validated against live market data</div>
-          </div>
-          <div className="stat-divider"></div>
-
-          <div className="stat-card">
-            <div className="stat-number">500+</div>
-            <div className="stat-label">Career Roadmaps</div>
-            <div className="stat-sub">Curated step-by-step learning paths</div>
-          </div>
-          <div className="stat-divider"></div>
-
-          <div className="stat-card">
-            <div className="stat-number">2.5x</div>
-            <div className="stat-label">Faster Career Growth</div>
-            <div className="stat-sub">From skill gap to job readiness</div>
-          </div>
+      {/* ================= STATS ================= */}
+      <div className="lp-stats-wrap">
+        <div className="lp-stats">
+          {STATS.map((s) => (
+            <div className="lp-stat" key={s.label}>
+              <div className="lp-stat-num">{s.num}</div>
+              <div className="lp-stat-label">{s.label}</div>
+              <div className="lp-stat-sub">{s.sub}</div>
+            </div>
+          ))}
         </div>
-      </section>
+      </div>
 
-      {/* =====================================================
-          POWERFUL FEATURES SECTION
-      ===================================================== */}
-      <section id="features" className="features-section">
-        <div className="section-container">
-          <div className="section-header">
-            <div className="section-badge">POWERFUL FEATURES</div>
-            <h2 className="section-title">
+      {/* ================= FEATURES ================= */}
+      <section id="features" className="lp-section">
+        <div className="lp-container">
+          <div className="lp-head">
+            <span className="lp-eyebrow">POWERFUL FEATURES</span>
+            <h2>
               Everything You Need to <br />
-              <span className="text-gradient">Plan Your Career.</span>
+              <span className="lp-accent">Plan Your Career.</span>
             </h2>
-            <p className="section-description">
+            <p>
               CareerIQ combines AI, resume analysis, and real-time job-market intelligence
               to help you make data-driven career choices.
             </p>
           </div>
 
-          <div className="features-grid">
-            {/* FEATURE 1 */}
-            <div className="feature-card">
-              <div className="feature-icon-box icon-blue">
-                <FileText size={24} />
+          <div className="lp-features">
+            {FEATURES.map(({ icon: Icon, tone, title, text, foot }) => (
+              <div className="lp-feature" key={title}>
+                <div className={`lp-feature-ic ${tone}`}><Icon size={24} /></div>
+                <h3>{title}</h3>
+                <p>{text}</p>
+                <div className="lp-feature-foot">
+                  <span>{foot}</span>
+                  <ChevronRight size={15} />
+                </div>
               </div>
-              <h3 className="feature-title">Resume Analysis</h3>
-              <p className="feature-text">
-                Upload your resume and let advanced NLP extract skills, experience levels,
-                and project depth within seconds.
-              </p>
-              <div className="feature-footer">
-                <span>Instant extraction</span>
-                <ChevronRight size={14} />
-              </div>
-            </div>
-
-            {/* FEATURE 2 */}
-            <div className="feature-card">
-              <div className="feature-icon-box icon-indigo">
-                <Search size={24} />
-              </div>
-              <h3 className="feature-title">AI Job Matching</h3>
-              <p className="feature-text">
-                Find optimal career matches tailored to your exact skillset, background,
-                and target industry preferences.
-              </p>
-              <div className="feature-footer">
-                <span>Smart ranking</span>
-                <ChevronRight size={14} />
-              </div>
-            </div>
-
-            {/* FEATURE 3 */}
-            <div className="feature-card">
-              <div className="feature-icon-box icon-purple">
-                <BarChart3 size={24} />
-              </div>
-              <h3 className="feature-title">Skill Gap Analysis</h3>
-              <p className="feature-text">
-                Identify critical missing proficiencies and receive targeted suggestions
-                to close the gap for your dream role.
-              </p>
-              <div className="feature-footer">
-                <span>Direct gap map</span>
-                <ChevronRight size={14} />
-              </div>
-            </div>
-
-            {/* FEATURE 4 */}
-            <div className="feature-card">
-              <div className="feature-icon-box icon-cyan">
-                <Brain size={24} />
-              </div>
-              <h3 className="feature-title">Career Intelligence</h3>
-              <p className="feature-text">
-                Explore live industry trends, salary benchmarks, and demand shifts
-                to stay ahead in a fast-moving job market.
-              </p>
-              <div className="feature-footer">
-                <span>Market analytics</span>
-                <ChevronRight size={14} />
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* =====================================================
-          HOW IT WORKS SECTION
-      ===================================================== */}
-      <section id="how-it-works" className="how-section">
-        <div className="section-container">
-          <div className="section-header">
-            <div className="section-badge">HOW IT WORKS</div>
-            <h2 className="section-title">
-              From Resume to <span className="text-gradient">Career Roadmap.</span>
+      {/* ================= HOW IT WORKS ================= */}
+      <section id="how-it-works" className="lp-section alt">
+        <div className="lp-container">
+          <div className="lp-head">
+            <span className="lp-eyebrow">HOW IT WORKS</span>
+            <h2>
+              From Resume to <span className="lp-accent">Career Roadmap.</span>
             </h2>
-            <p className="section-description">
-              Four simple steps to transform your career trajectory with data and intelligence.
-            </p>
+            <p>Four simple steps to transform your career trajectory with data and intelligence.</p>
           </div>
 
-          <div className="steps-container">
-            <div className="steps-connector-line"></div>
-
-            <div className="steps-grid">
-              {/* STEP 1 */}
-              <div className="step-card">
-                <div className="step-num-badge">01</div>
-                <div className="step-icon-wrapper">
-                  <UserRound size={22} />
+          <div className="lp-steps">
+            {STEPS.map(({ num, icon: Icon, title, text }) => (
+              <div className="lp-step" key={num}>
+                <div className="lp-step-ic">
+                  <Icon size={24} />
+                  <span className="lp-step-num">{num}</span>
                 </div>
-                <h3 className="step-title">Build Your Profile</h3>
-                <p className="step-text">
-                  Set up your student or professional profile with your career goals and aspirations.
-                </p>
+                <h3>{title}</h3>
+                <p>{text}</p>
               </div>
-
-              {/* STEP 2 */}
-              <div className="step-card">
-                <div className="step-num-badge">02</div>
-                <div className="step-icon-wrapper">
-                  <Upload size={22} />
-                </div>
-                <h3 className="step-title">Upload Resume</h3>
-                <p className="step-text">
-                  Upload your CV in PDF or DOCX format for instant semantic parsing and evaluation.
-                </p>
-              </div>
-
-              {/* STEP 3 */}
-              <div className="step-card">
-                <div className="step-num-badge">03</div>
-                <div className="step-icon-wrapper">
-                  <Brain size={22} />
-                </div>
-                <h3 className="step-title">Analyze Your Career</h3>
-                <p className="step-text">
-                  Our AI measures your readiness score, validates match percentages, and maps gaps.
-                </p>
-              </div>
-
-              {/* STEP 4 */}
-              <div className="step-card">
-                <div className="step-num-badge">04</div>
-                <div className="step-icon-wrapper">
-                  <Target size={22} />
-                </div>
-                <h3 className="step-title">Get Your Roadmap</h3>
-                <p className="step-text">
-                  Receive step-by-step milestones, top learning resources, and simulator actions.
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* =====================================================
-          WHY CAREERIQ / HIGHLIGHT SECTION
-      ===================================================== */}
-      <section id="benefits" className="benefits-section">
-        <div className="section-container">
-          <div className="benefits-grid-layout">
-            <div className="benefits-left">
-              <div className="section-badge">THE CAREERIQ ADVANTAGE</div>
-              <h2 className="section-title text-left">
+      {/* ================= WHY CAREERIQ ================= */}
+      <section id="benefits" className="lp-section">
+        <div className="lp-container lp-benefits">
+          <div>
+            <div className="lp-head left">
+              <span className="lp-eyebrow">THE CAREERIQ ADVANTAGE</span>
+              <h2>
                 Why Top Performers Choose <br />
-                <span className="text-gradient">CareerIQ.</span>
+                <span className="lp-accent">CareerIQ.</span>
               </h2>
-              <p className="section-description text-left">
+              <p>
                 Traditional career guidance is generic and outdated. CareerIQ utilizes
                 continuous market telemetry and AI modeling to give you an unfair advantage.
               </p>
-
-              <div className="benefit-list">
-                <div className="benefit-row">
-                  <div className="benefit-check">
-                    <CheckCircle2 size={18} />
-                  </div>
-                  <div>
-                    <strong>Precision NLP Skill Extraction</strong>
-                    <p>Detects hidden skills, libraries, frameworks, and domain expertise automatically.</p>
-                  </div>
-                </div>
-
-                <div className="benefit-row">
-                  <div className="benefit-check">
-                    <CheckCircle2 size={18} />
-                  </div>
-                  <div>
-                    <strong>Interactive "What-If" Simulation</strong>
-                    <p>Experiment with new certifications or skills to see your readiness surge in real time.</p>
-                  </div>
-                </div>
-
-                <div className="benefit-row">
-                  <div className="benefit-check">
-                    <CheckCircle2 size={18} />
-                  </div>
-                  <div>
-                    <strong>Targeted Learning Resource Directory</strong>
-                    <p>Curated documentation, courses, and tutorials linked directly to each gap node.</p>
-                  </div>
-                </div>
-              </div>
             </div>
 
-            <div className="benefits-right">
-              <div className="simulation-preview-card">
-                <div className="sim-header">
-                  <div className="sim-pill">
-                    <Sparkles size={13} />
-                    <span>Real-time What-If Simulation</span>
-                  </div>
-                  <span className="sim-status">Live Dynamic Engine</span>
-                </div>
-
-                <div className="sim-body">
-                  <div className="sim-stat-box">
-                    <span className="sim-label">Target Role</span>
-                    <strong className="sim-val">Full Stack AI Developer</strong>
-                  </div>
-
-                  <div className="sim-meter-box">
-                    <div className="sim-meter-header">
-                      <span>Simulated Career Readiness</span>
-                      <strong className="text-green">+14% Growth (88%)</strong>
-                    </div>
-                    <div className="sim-bar-bg">
-                      <div className="sim-bar-fill" style={{ width: "88%" }}></div>
-                    </div>
-                  </div>
-
-                  <div className="sim-tags">
-                    <div className="sim-tag active">✓ React & TypeScript (+5%)</div>
-                    <div className="sim-tag active">✓ FastApi & Python (+6%)</div>
-                    <div className="sim-tag pending">+ Vector Databases (+3%)</div>
+            <div className="lp-benefit-list">
+              {BENEFITS.map((b) => (
+                <div className="lp-benefit" key={b.title}>
+                  <div className="lp-benefit-ic"><CheckCircle2 size={18} /></div>
+                  <div>
+                    <strong>{b.title}</strong>
+                    <p>{b.text}</p>
                   </div>
                 </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="lp-sim">
+            <div className="lp-orb two" style={{ width: 280, height: 280, bottom: -120, right: -80 }} />
+            <div className="lp-sim-head">
+              <span className="lp-sim-pill"><Sparkles size={13} /> Real-time What-If Simulation</span>
+              <span className="lp-sim-status"><span className="lp-live-dot" /> Live Dynamic Engine</span>
+            </div>
+
+            <div className="lp-sim-box">
+              <span>Target Role</span>
+              <strong>Full Stack AI Developer</strong>
+            </div>
+
+            <div>
+              <div className="lp-sim-meter-head">
+                <span>Simulated Career Readiness</span>
+                <strong>+14% Growth (88%)</strong>
               </div>
+              <div className="lp-sim-track"><div className="lp-sim-fill" style={{ width: "88%" }} /></div>
+            </div>
+
+            <div className="lp-sim-tags">
+              <div className="lp-sim-tag on">✓ React & TypeScript (+5%)</div>
+              <div className="lp-sim-tag on">✓ FastApi & Python (+6%)</div>
+              <div className="lp-sim-tag off">+ Vector Databases (+3%)</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* =====================================================
-          CALL TO ACTION (CTA)
-      ===================================================== */}
-      <section className="cta-section">
-        <div className="section-container">
-          <div className="cta-card">
-            <div className="cta-bg-glow"></div>
-            <div className="cta-content">
-              <div className="cta-badge">
-                <GraduationCap size={16} />
-                <span>Ready to level up?</span>
-              </div>
-              <h2 className="cta-title">
-                Understand Your Career Path. <br />
-                Start Your Journey Today.
-              </h2>
-              <p className="cta-description">
-                Join thousands of students and professionals using CareerIQ to master their
-                skills, beat the competition, and land their dream roles.
-              </p>
-              <div className="cta-actions">
-                <Link to="/register" className="btn-cta-primary">
-                  <span>Get Started for Free</span>
-                  <ArrowRight size={17} />
-                </Link>
-                <Link to="/dashboard" className="btn-cta-secondary">
-                  <span>Explore Dashboard Preview</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =====================================================
-          FOOTER
-      ===================================================== */}
-      <footer className="home-footer">
-        <div className="footer-top">
-          <div className="footer-brand">
-            <div className="home-logo">
-              <div className="logo-icon-box">
-                <GraduationCap size={20} strokeWidth={2.5} />
-              </div>
-              <div className="logo-text">
-                Career<span>IQ</span>
-              </div>
-            </div>
-            <p className="footer-about">
-              Empowering next-generation professionals with AI-driven skill gap intelligence,
-              personalized roadmaps, and career matching.
+      {/* ================= CTA ================= */}
+      <section className="lp-container">
+        <div className="lp-cta">
+          <div className="lp-orb one" style={{ top: -180, left: "10%" }} />
+          <div className="lp-orb two" style={{ bottom: -200, right: "5%" }} />
+          <div className="lp-grid-bg" />
+          <div className="lp-cta-in">
+            <span className="lp-badge">
+              <GraduationCap size={15} />
+              <span>Ready to level up?</span>
+            </span>
+            <h2>
+              Understand Your Career Path. <br />
+              Start Your Journey Today.
+            </h2>
+            <p>
+              Join thousands of students and professionals using CareerIQ to master their
+              skills, beat the competition, and land their dream roles.
             </p>
-          </div>
-
-          <div className="footer-links-group">
-            <div className="footer-col">
-              <h4>Platform</h4>
-              <Link to="/dashboard">Dashboard</Link>
-              <Link to="/resume-analysis">Resume Analysis</Link>
-              <Link to="/gap-analysis">Skill Gap Analyzer</Link>
-              <Link to="/roadmap">Career Roadmap</Link>
-            </div>
-
-            <div className="footer-col">
-              <h4>Intelligence</h4>
-              <Link to="/job-matching">Job Matching</Link>
-              <Link to="/market-intelligence">Market Trends</Link>
-              <Link to="/simulation">What-If Simulator</Link>
-              <Link to="/learning-resources">Learning Resources</Link>
-            </div>
-
-            <div className="footer-col">
-              <h4>Account</h4>
-              <Link to="/login">Sign In</Link>
-              <Link to="/register">Create Account</Link>
-              <Link to="/profile">User Profile</Link>
-              <Link to="/admin">Admin Portal</Link>
+            <div className="lp-cta-actions">
+              <Link to="/register" className="lp-btn primary">
+                <span>Get Started for Free</span>
+                <ArrowRight size={17} />
+              </Link>
+              <Link to="/dashboard" className="lp-btn glass">
+                <span>Explore Dashboard Preview</span>
+              </Link>
             </div>
           </div>
         </div>
+      </section>
 
-        <div className="footer-bottom">
-          <div>© 2026 CareerIQ — AI Career Intelligence Platform. All rights reserved.</div>
-          <div className="footer-status">
-            <span className="status-dot"></span>
-            <span>All AI systems operational</span>
+      {/* ================= FOOTER ================= */}
+      <footer className="lp-footer">
+        <div className="lp-container">
+          <div className="lp-footer-top">
+            <div>
+              <Logo />
+              <p className="lp-footer-about">
+                Empowering next-generation professionals with AI-driven skill gap intelligence,
+                personalized roadmaps, and career matching.
+              </p>
+            </div>
+
+            <div className="lp-footer-cols">
+              <div className="lp-footer-col">
+                <h4>Platform</h4>
+                <Link to="/dashboard">Dashboard</Link>
+                <Link to="/resume-analysis">Resume Analysis</Link>
+                <Link to="/gap-analysis">Skill Gap Analyzer</Link>
+                <Link to="/roadmap">Career Roadmap</Link>
+              </div>
+              <div className="lp-footer-col">
+                <h4>Intelligence</h4>
+                <Link to="/job-matching">Job Matching</Link>
+                <Link to="/market-intelligence">Market Trends</Link>
+                <Link to="/simulation">What-If Simulator</Link>
+                <Link to="/learning-resources">Learning Resources</Link>
+              </div>
+              <div className="lp-footer-col">
+                <h4>Account</h4>
+                <Link to="/login">Sign In</Link>
+                <Link to="/register">Create Account</Link>
+                <Link to="/profile">User Profile</Link>
+                <Link to="/admin">Admin Portal</Link>
+              </div>
+            </div>
+          </div>
+
+          <div className="lp-footer-bottom">
+            <div>© 2026 CareerIQ — AI Career Intelligence Platform. All rights reserved.</div>
+            <div className="lp-footer-status">
+              <span className="lp-live-dot" />
+              <span>All AI systems operational</span>
+            </div>
           </div>
         </div>
       </footer>

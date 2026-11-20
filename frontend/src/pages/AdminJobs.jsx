@@ -1,23 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Briefcase,
-  Plus,
-  Trash2,
-  Edit3,
-  Building2,
-  MapPin,
-  RefreshCw,
-  X,
-  CheckCircle2,
-  AlertCircle,
-  Eye,
-  ExternalLink,
-  Calendar,
-  Clock
-} from 'lucide-react';
+import { Briefcase, Plus, Trash2, Edit3, Building2, RefreshCw, X, CheckCircle2, AlertCircle, Eye, Calendar, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Layout, Page } from '../components/Layout';
 import api from '../services/api';
+import { EmptyState } from '../components/ui';
 
 export default function AdminJobs() {
   const [jobs, setJobs] = useState([]);
@@ -154,47 +140,34 @@ export default function AdminJobs() {
         title="Job & Internship Management"
         subtitle="Manage live opportunities stored directly in MySQL — changes appear instantly across CareerIQ"
         action={
-          <button
-            type="button"
-            className="btn"
-            onClick={handleOpenAddModal}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-          >
+          <button type="button" className="btn" onClick={handleOpenAddModal}>
             <Plus size={16} />
             <span>Add New Job</span>
           </button>
         }
       >
         <div className="card card-pad">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div className="card-head">
             <div>
-              <strong>Active Openings ({jobs.length})</strong>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                Real corporate and internship data linked with MySQL
-              </div>
+              <h3 className="card-title">Active Openings ({jobs.length})</h3>
+              <p className="card-sub">Real corporate and internship data linked with MySQL</p>
             </div>
-            <button
-              type="button"
-              className="btn outline small"
-              onClick={fetchJobs}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-            >
+            <button type="button" className="btn outline small" onClick={fetchJobs}>
               <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
               <span>Refresh</span>
             </button>
           </div>
 
           {loading ? (
-            <div style={{ padding: '40px 0', textAlign: 'center', color: '#64748b' }}>
-              Loading jobs from MySQL...
+            <div className="empty-state">
+              <RefreshCw size={22} className="spin" />
+              <p>Loading jobs from MySQL...</p>
             </div>
           ) : jobs.length === 0 ? (
-            <div style={{ padding: '40px 0', textAlign: 'center', color: '#64748b' }}>
-              No jobs found. Click "Add New Job" to post an opportunity.
-            </div>
+            <EmptyState icon={Briefcase} title='No jobs found. Click "Add New Job" to post an opportunity.' />
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table className="table" style={{ width: '100%' }}>
+            <div className="table-wrap">
+              <table className="table">
                 <thead>
                   <tr>
                     <th>ID</th>
@@ -210,43 +183,40 @@ export default function AdminJobs() {
                 <tbody>
                   {jobs.map((j) => (
                     <tr key={j.job_id}>
-                      <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>#{j.job_id}</td>
+                      <td className="muted text-xs num">#{j.job_id}</td>
                       <td>
-                        <strong style={{ color: 'var(--navy, #0f172a)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <Building2 size={14} color="var(--blue, #2563eb)" />
+                        <strong className="row-gap" style={{ gap: 6, flexWrap: 'nowrap' }}>
+                          <Building2 size={14} style={{ color: 'var(--accent)', flexShrink: 0 }} />
                           {j.company_name}
                         </strong>
                       </td>
                       <td>
                         <div style={{ fontWeight: 700 }}>{j.job_title}</div>
-                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{j.role_name}</span>
+                        <span className="muted text-xs">{j.role_name}</span>
                       </td>
                       <td>
-                        <span className={`pill ${j.job_type === 'Internship' ? 'orange' : 'blue'}`} style={{ fontSize: 11 }}>
+                        <span className={`pill ${j.job_type === 'Internship' ? 'warn' : 'info'}`}>
                           {j.job_type || 'Full-time'}
                         </span>
                       </td>
                       <td>
                         <div>{j.location}</div>
-                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{j.work_mode}</span>
+                        <span className="muted text-xs">{j.work_mode}</span>
                       </td>
-                      <td style={{ color: '#047857', fontWeight: 600 }}>{j.salary_range || 'Competitive'}</td>
+                      <td className="text-good" style={{ fontWeight: 600 }}>{j.salary_range || 'Competitive'}</td>
                       <td>
-                        <div style={{ fontSize: 12, color: '#475569', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        <div className="stack text-xs" style={{ gap: 3 }}>
                           {j.posted_date && (
-                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <Calendar size={12} color="#2563eb" />
+                            <span className="row-gap muted" style={{ gap: 4, flexWrap: 'nowrap' }}>
+                              <Calendar size={12} style={{ color: 'var(--accent)' }} />
                               <span>From: {new Date(j.posted_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
                             </span>
                           )}
                           {j.due_date && (
-                            <span style={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              gap: 4, 
-                              color: new Date(j.due_date) < new Date() ? '#b91c1c' : '#b45309',
-                              fontWeight: 600
-                            }}>
+                            <span
+                              className={`row-gap ${new Date(j.due_date) < new Date() ? 'text-bad' : 'text-warn'}`}
+                              style={{ gap: 4, fontWeight: 600, flexWrap: 'nowrap' }}
+                            >
                               <Clock size={12} />
                               <span>Due: {new Date(j.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                             </span>
@@ -254,32 +224,25 @@ export default function AdminJobs() {
                         </div>
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', gap: 6 }}>
-                          <Link
-                            to={`/job-details/${j.job_id}`}
-                            className="btn outline small"
-                            style={{ padding: '6px 10px', textDecoration: 'none' }}
-                            title="View Public Details"
-                          >
-                            <Eye size={12} />
+                        <div className="row-gap" style={{ justifyContent: 'flex-end', flexWrap: 'nowrap', gap: 6 }}>
+                          <Link to={`/job-details/${j.job_id}`} className="btn outline small" title="View Public Details">
+                            <Eye size={13} />
                           </Link>
                           <button
                             type="button"
                             className="btn outline small"
                             onClick={() => handleOpenEditModal(j)}
-                            style={{ padding: '6px 10px' }}
                             title="Edit Job"
                           >
-                            <Edit3 size={12} />
+                            <Edit3 size={13} />
                           </button>
                           <button
                             type="button"
-                            className="btn small"
+                            className="btn outline small danger"
                             onClick={() => handleDeleteJob(j.job_id)}
-                            style={{ background: '#fee2e2', color: '#dc2626', padding: '6px 10px' }}
                             title="Delete Job"
                           >
-                            <Trash2 size={12} />
+                            <Trash2 size={13} />
                           </button>
                         </div>
                       </td>
@@ -293,73 +256,32 @@ export default function AdminJobs() {
 
         {/* MODAL: ADD / EDIT JOB */}
         {showModal && (
-          <div
-            onClick={() => setShowModal(false)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 9999,
-              background: 'rgba(15,23,42,0.6)',
-              backdropFilter: 'blur(4px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 20
-            }}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                background: 'var(--bg-card, #ffffff)',
-                border: '1px solid var(--line, #e2e8f0)',
-                borderRadius: 16,
-                width: '100%',
-                maxWidth: 600,
-                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)',
-                overflow: 'hidden',
-                maxHeight: '90vh',
-                display: 'flex',
-                flexDirection: 'column'
-              }}
-            >
-              <div
-                style={{
-                  padding: '18px 24px',
-                  borderBottom: '1px solid var(--line, #e2e8f0)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-              >
-                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: 'var(--navy, #0f172a)' }}>
-                  {editingJob ? `Edit Job #${editingJob.job_id}` : 'Add New Corporate Job / Internship'}
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}
-                >
+          <div className="modal-bg" onClick={() => setShowModal(false)}>
+            <div className="modal wide" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+              <div className="modal-head">
+                <h3>{editingJob ? `Edit Job #${editingJob.job_id}` : 'Add New Corporate Job / Internship'}</h3>
+                <button type="button" className="icon-btn" onClick={() => setShowModal(false)} aria-label="Close">
                   <X size={20} />
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} style={{ padding: 24, overflowY: 'auto' }}>
+              <form onSubmit={handleSubmit} className="stack">
                 {feedback.error && (
-                  <div style={{ display: 'flex', gap: 8, padding: 10, background: '#fee2e2', color: '#991b1b', borderRadius: 8, marginBottom: 14, fontSize: 13 }}>
+                  <div className="notice bad">
                     <AlertCircle size={16} />
-                    <span>{feedback.error}</span>
+                    <span className="notice-main">{feedback.error}</span>
                   </div>
                 )}
                 {feedback.success && (
-                  <div style={{ display: 'flex', gap: 8, padding: 10, background: '#ecfdf5', color: '#065f46', borderRadius: 8, marginBottom: 14, fontSize: 13, fontWeight: 600 }}>
-                    <CheckCircle2 size={16} color="#10b981" />
-                    <span>{feedback.success}</span>
+                  <div className="notice good">
+                    <CheckCircle2 size={16} />
+                    <span className="notice-main" style={{ fontWeight: 600 }}>{feedback.success}</span>
                   </div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div className="form-row">
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label" style={{ fontSize: 12 }}>Job Title *</label>
+                    <label className="label">Job Title *</label>
                     <input
                       className="input"
                       type="text"
@@ -370,7 +292,7 @@ export default function AdminJobs() {
                     />
                   </div>
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label" style={{ fontSize: 12 }}>Company Name *</label>
+                    <label className="label">Company Name *</label>
                     <input
                       className="input"
                       type="text"
@@ -382,9 +304,9 @@ export default function AdminJobs() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div className="form-row">
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label" style={{ fontSize: 12 }}>Career Category Role</label>
+                    <label className="label">Career Category Role</label>
                     <select
                       className="select"
                       value={careerRoleId}
@@ -398,7 +320,7 @@ export default function AdminJobs() {
                     </select>
                   </div>
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label" style={{ fontSize: 12 }}>Employment Type</label>
+                    <label className="label">Employment Type</label>
                     <select className="select" value={jobType} onChange={(e) => setJobType(e.target.value)}>
                       <option value="Full-time">Full-time</option>
                       <option value="Internship">Internship</option>
@@ -408,9 +330,9 @@ export default function AdminJobs() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div className="form-row">
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label" style={{ fontSize: 12 }}>Location</label>
+                    <label className="label">Location</label>
                     <input
                       className="input"
                       type="text"
@@ -420,7 +342,7 @@ export default function AdminJobs() {
                     />
                   </div>
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label" style={{ fontSize: 12 }}>Work Mode</label>
+                    <label className="label">Work Mode</label>
                     <select className="select" value={workMode} onChange={(e) => setWorkMode(e.target.value)}>
                       <option value="Hybrid">Hybrid</option>
                       <option value="Onsite">Onsite</option>
@@ -429,9 +351,9 @@ export default function AdminJobs() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div className="form-row">
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label" style={{ fontSize: 12 }}>Experience Required</label>
+                    <label className="label">Experience Required</label>
                     <input
                       className="input"
                       type="text"
@@ -441,7 +363,7 @@ export default function AdminJobs() {
                     />
                   </div>
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label" style={{ fontSize: 12 }}>Salary / Stipend Range</label>
+                    <label className="label">Salary / Stipend Range</label>
                     <input
                       className="input"
                       type="text"
@@ -452,9 +374,9 @@ export default function AdminJobs() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div className="form-row">
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label" style={{ fontSize: 12 }}>Available / Opening Date</label>
+                    <label className="label">Available / Opening Date</label>
                     <input
                       className="input"
                       type="date"
@@ -463,7 +385,7 @@ export default function AdminJobs() {
                     />
                   </div>
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label" style={{ fontSize: 12 }}>Application Due Date (Deadline)</label>
+                    <label className="label">Application Due Date (Deadline)</label>
                     <input
                       className="input"
                       type="date"
@@ -473,31 +395,29 @@ export default function AdminJobs() {
                   </div>
                 </div>
 
-                <div className="form-group" style={{ marginBottom: 12 }}>
-                  <label className="label" style={{ fontSize: 12 }}>Job Description</label>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="label">Job Description</label>
                   <textarea
                     className="input"
                     rows={3}
                     placeholder="Summary of what the candidate will be doing..."
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    style={{ height: 'auto', padding: 8 }}
                   />
                 </div>
 
-                <div className="form-group" style={{ marginBottom: 18 }}>
-                  <label className="label" style={{ fontSize: 12 }}>Key Duties & Responsibilities (one per line)</label>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="label">Key Duties & Responsibilities (one per line)</label>
                   <textarea
                     className="input"
                     rows={3}
                     placeholder="Analyze datasets using SQL&#10;Build interactive dashboards&#10;Collaborate with product team"
                     value={responsibilities}
                     onChange={(e) => setResponsibilities(e.target.value)}
-                    style={{ height: 'auto', padding: 8 }}
                   />
                 </div>
 
-                <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <div className="modal-actions">
                   <button type="button" className="btn outline" onClick={() => setShowModal(false)}>
                     Cancel
                   </button>

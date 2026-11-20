@@ -67,7 +67,7 @@ class DeleteAccountRequest(BaseModel):
     password: str
 
 class SettingsPayload(BaseModel):
-    theme: Optional[str] = "light"
+    theme: Optional[str] = "dark"
     compact_mode: Optional[bool] = False
     notifications: Optional[dict] = None
     preferences: Optional[dict] = None

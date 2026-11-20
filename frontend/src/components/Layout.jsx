@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GraduationCap, Bell, User as UserIcon, FileText, Settings, LogOut } from 'lucide-react';
+import { GraduationCap, Bell, User as UserIcon, FileText, Settings, LogOut, Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import auth from '../utils/auth';
 import api from '../services/api';
+import { setTheme } from '../utils/theme';
 
 export const Layout = ({ children, admin = false }) => {
   const nav = useNavigate();
@@ -15,6 +16,18 @@ export const Layout = ({ children, admin = false }) => {
 
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // Mobile / tablet sidebar drawer
+  // (Each sidebar link also closes the drawer when clicked — see Sidebar.jsx)
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Close the drawer with the Escape key
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const onKey = (e) => { if (e.key === 'Escape') setSidebarOpen(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [sidebarOpen]);
   
   const photoUrl = user?.profile_picture_url ? `http://127.0.0.1:8000${user.profile_picture_url}` : null;
 
@@ -40,6 +53,13 @@ export const Layout = ({ children, admin = false }) => {
           };
           setUser(updatedUser);
           auth.setUser(updatedUser);
+
+          // Apply this account's theme (dark by default for new accounts)
+          if (!admin) {
+            api.getSettings(stored.user_id)
+              .then((settings) => setTheme(settings?.theme || 'dark'))
+              .catch(() => {});
+          }
         }
       } catch (err) {
         console.warn('Session expired or user deleted from database. Logging out...', err);
@@ -49,7 +69,7 @@ export const Layout = ({ children, admin = false }) => {
       }
     }
     checkSession();
-  }, [nav]);
+  }, [nav, admin]);
   
   // Listen for custom authChange event (fired by profile updates)
   useEffect(() => {
@@ -88,20 +108,39 @@ export const Layout = ({ children, admin = false }) => {
 
   return (
     <div className="app">
-      <Sidebar admin={admin} />
+      <Sidebar admin={admin} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* Dark overlay behind the sidebar drawer (tablet / mobile only) */}
+      <div
+        className={`sidebar-overlay ${sidebarOpen ? 'show' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+        aria-hidden="true"
+      />
+
       <main className="main">
         <div className="topbar">
+          {/* Hamburger button (visible only on tablet / mobile via CSS) */}
+          <button
+            type="button"
+            className="menu-toggle"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={sidebarOpen}
+          >
+            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+
           {!admin && <Bell size={15} color="#7890aa" />}
           {!admin && <span className="hello">Hi, {displayName}</span>}
-          
-          <div ref={dropdownRef} style={{ position: 'relative' }}>
-            <div 
-              className="avatar" 
+
+          <div ref={dropdownRef} className="profile-menu-wrap">
+            <div
+              className="avatar"
               onClick={() => setProfileOpen(!profileOpen)}
-              style={{ 
-                cursor: 'pointer', 
+              style={{
+                cursor: 'pointer',
                 userSelect: 'none',
-                backgroundImage: photoUrl ? `url(${photoUrl})` : 'none',
+                backgroundImage: photoUrl ? `url(${photoUrl})` : undefined,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 color: photoUrl ? 'transparent' : undefined
@@ -112,171 +151,53 @@ export const Layout = ({ children, admin = false }) => {
             </div>
 
             {profileOpen && (
-              <div 
-                style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 12px)',
-                  right: 0,
-                  width: '250px',
-                  background: '#ffffff',
-                  borderRadius: '12px',
-                  border: '1px solid #e2e8f0',
-                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05)',
-                  zIndex: 1000,
-                  overflow: 'hidden',
-                }}
-              >
+              <div className="profile-menu">
                 {/* User Header */}
-                <div style={{ padding: '14px 16px', display: 'flex', gap: '12px', alignItems: 'center', borderBottom: '1px solid #f1f5f9' }}>
-                  <div 
-                    style={{ 
-                      width: '38px', 
-                      height: '38px', 
-                      borderRadius: '50%', 
-                      background: '#dbeafe', 
-                      color: 'var(--blue, #2563eb)', 
-                      display: 'grid', 
-                      placeItems: 'center', 
-                      fontSize: '15px', 
-                      fontWeight: 800,
-                      flexShrink: 0,
-                      backgroundImage: photoUrl ? `url(${photoUrl})` : 'none',
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                    }}
+                <div className="profile-menu-header">
+                  <div
+                    className="profile-menu-avatar"
+                    style={{ backgroundImage: photoUrl ? `url(${photoUrl})` : undefined }}
                   >
                     {!photoUrl && initial}
                   </div>
-                  <div style={{ overflow: 'hidden', lineHeight: 1.3 }}>
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--navy, #0f172a)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                  <div className="profile-menu-info">
+                    <div className="profile-menu-name">
                       {admin ? 'Administrator' : displayName}
                     </div>
-                    {!admin && (
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--blue, #2563eb)', marginTop: '2px' }}>
-                        {role}
-                      </div>
-                    )}
-                    {!admin && (
-                      <div style={{ fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', marginTop: '1px' }}>
-                        {email}
-                      </div>
-                    )}
+                    {!admin && <div className="profile-menu-role">{role}</div>}
+                    {!admin && <div className="profile-menu-email">{email}</div>}
                   </div>
                 </div>
 
                 {/* Menu Actions */}
                 {!admin && (
                   <>
-                    <div style={{ padding: '6px' }}>
-                      <button
-                        type="button"
-                        onClick={() => handleNavigate('/profile')}
-                        style={{
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          padding: '8px 12px',
-                          borderRadius: '8px',
-                          background: 'transparent',
-                          border: 'none',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          fontWeight: 500,
-                          color: '#334155',
-                          textAlign: 'left',
-                          transition: 'background 0.15s ease, color 0.15s ease'
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#2563eb'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#334155'; }}
-                      >
-                        <UserIcon size={16} color="#64748b" />
+                    <div className="profile-menu-group">
+                      <button type="button" className="profile-menu-item" onClick={() => handleNavigate('/profile')}>
+                        <UserIcon size={16} />
                         <span>My Profile</span>
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handleNavigate('/resume-analysis')}
-                        style={{
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          padding: '8px 12px',
-                          borderRadius: '8px',
-                          background: 'transparent',
-                          border: 'none',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          fontWeight: 500,
-                          color: '#334155',
-                          textAlign: 'left',
-                          transition: 'background 0.15s ease, color 0.15s ease'
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#2563eb'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#334155'; }}
-                      >
-                        <FileText size={16} color="#64748b" />
+                      <button type="button" className="profile-menu-item" onClick={() => handleNavigate('/resume-analysis')}>
+                        <FileText size={16} />
                         <span>Resume</span>
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handleNavigate('/settings')}
-                        style={{
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          padding: '8px 12px',
-                          borderRadius: '8px',
-                          background: 'transparent',
-                          border: 'none',
-                          cursor: 'pointer',
-                          fontSize: '13px',
-                          fontWeight: 500,
-                          color: '#334155',
-                          textAlign: 'left',
-                          transition: 'background 0.15s ease, color 0.15s ease'
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#2563eb'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#334155'; }}
-                      >
-                        <Settings size={16} color="#64748b" />
+                      <button type="button" className="profile-menu-item" onClick={() => handleNavigate('/settings')}>
+                        <Settings size={16} />
                         <span>Settings</span>
                       </button>
                     </div>
 
                     {/* Divider */}
-                    <div style={{ height: '1px', background: '#f1f5f9', margin: '2px 0' }} />
+                    <div className="profile-menu-divider" />
                   </>
                 )}
 
                 {/* Logout Action */}
-                <div style={{ padding: '6px' }}>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      color: '#ef4444',
-                      textAlign: 'left',
-                      transition: 'background 0.15s ease'
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                  >
-                    <LogOut size={16} color="#ef4444" />
+                <div className="profile-menu-group">
+                  <button type="button" className="profile-menu-item danger" onClick={handleLogout}>
+                    <LogOut size={16} />
                     <span>Logout</span>
                   </button>
                 </div>

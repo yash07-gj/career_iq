@@ -1,8 +1,16 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { GraduationCap, CheckCircle2, ArrowRight, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
+import { GraduationCap, CheckCircle2, ArrowRight, AlertCircle, Loader2, Eye, EyeOff, Target, Award, TrendingUp } from 'lucide-react';
 import api from '../services/api';
+import '../styles/public.css';
 import auth from '../utils/auth';
+
+const LOGIN_POINTS = [
+  'Personalized AI career recommendations',
+  'Real-time skill gap tracking',
+  'Targeted learning resource directory',
+  'Dynamic step-by-step career roadmaps',
+];
 
 export default function Login() {
   const nav = useNavigate();
@@ -44,138 +52,139 @@ export default function Login() {
   };
 
   return (
-    <div className="auth">
-      <div className="auth-card">
-        <div className="auth-side">
-          <div className="logo-icon-box" style={{ width: 48, height: 48, marginBottom: 24, background: 'rgba(255,255,255,0.2)' }}>
-            <GraduationCap size={28} />
-          </div>
-          <h1>Welcome Back!</h1>
-          <p>Login to your account and continue your personalized career journey.</p>
-          <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {[
-              'Personalized AI career recommendations',
-              'Real-time skill gap tracking',
-              'Targeted learning resource directory',
-              'Dynamic step-by-step career roadmaps',
-            ].map((x) => (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }} key={x}>
-                <CheckCircle2 size={16} color="#6ee7b7" />
-                <span>{x}</span>
+    <div className="au">
+      {/* Left: dark animated panel */}
+      <aside className="au-side">
+        <div className="lp-orb one" />
+        <div className="lp-orb two" />
+        <div className="lp-grid-bg" />
+        <div className="au-side-in">
+          <Link to="/" className="lp-logo">
+            <span className="lp-logo-mark"><GraduationCap size={20} strokeWidth={2.5} /></span>
+            <span>Career<b>IQ</b></span>
+          </Link>
+          <div className="au-side-body">
+            <h1>Welcome Back!</h1>
+            <p>Login to your account and continue your personalized career journey.</p>
+            <div className="au-checks">
+              {LOGIN_POINTS.map((x) => (
+                <div className="au-check" key={x}>
+                  <CheckCircle2 size={17} />
+                  <span>{x}</span>
+                </div>
+              ))}
+            </div>
+            <div className="au-cards" aria-hidden="true">
+              <div className="au-card c1 lp-glass">
+                <span className="ic"><Target size={18} /></span>
+                <div><small>Career Readiness</small><strong>78%</strong></div>
               </div>
-            ))}
+              <div className="au-card c2 good lp-glass">
+                <span className="ic"><Award size={18} /></span>
+                <div><small>Top Career Match</small><strong>Data Analyst · 89%</strong></div>
+              </div>
+              <div className="au-card c3 violet lp-glass">
+                <span className="ic"><TrendingUp size={18} /></span>
+                <div><small>Market Demand</small><strong>+28% High Growth</strong></div>
+              </div>
+            </div>
           </div>
         </div>
+      </aside>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <div className="auth-logo">
-            <div className="logo-icon-box" style={{ width: 34, height: 34 }}>
-              <GraduationCap size={20} />
-            </div>
-            <strong>CareerIQ</strong>
-          </div>
-          <h2>Login</h2>
-          <p>Access your AI Career Intelligence Dashboard</p>
-
-          {error && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#fee2e2', color: '#991b1b', borderRadius: 8, fontSize: 13, marginBottom: 16 }}>
-              <AlertCircle size={16} />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <div className="form-group">
-            <label className="label">Username or Email Address</label>
-            <input
-              className="input"
-              type="text"
-              placeholder="e.g. admin or name@example.com"
-              required
-              autoCapitalize="none"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="label">Password</label>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <input
-                className="input"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                style={{ paddingRight: password ? '42px' : undefined, width: '100%' }}
-              />
-              {password.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    background: 'transparent',
-                    border: 'none',
-                    padding: '4px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#64748b',
-                    borderRadius: '4px',
-                    transition: 'color 0.15s ease'
-                  }}
-                  title={showPassword ? 'Hide password' : 'Show password'}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '16px 0 20px', fontSize: 13, color: '#475569' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-                style={{ accentColor: 'var(--blue)', width: 16, height: 16 }}
-              />
-              <span>Remember me</span>
-            </label>
-            <Link to="/forgot-password" style={{ color: 'var(--blue)', fontWeight: 600 }}>Forgot password?</Link>
-          </div>
-
-          <button
-            type="submit"
-            className="btn"
-            disabled={loading}
-            style={{ width: '100%', padding: '12px', fontSize: 14 }}
-          >
-            {loading ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                <span>Logging In...</span>
-              </>
-            ) : (
-              <>
-                <span>Login to Dashboard</span>
-                <ArrowRight size={16} />
-              </>
-            )}
-          </button>
-
-          <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--text-muted)' }}>
-            Don't have an account?{' '}
-            <Link to="/register" style={{ color: 'var(--blue)', fontWeight: 700 }}>
-              Create Account
+      {/* Right: form */}
+      <main className="au-main">
+          <form className="au-form" onSubmit={handleSubmit}>
+            <Link to="/" className="au-brand">
+              <span className="lp-logo-mark"><GraduationCap size={18} strokeWidth={2.5} /></span>
+              <span>Career<b>IQ</b></span>
             </Link>
-          </p>
-        </form>
-      </div>
+            <div className="au-title">
+              <h2>Login</h2>
+              <p>Access your AI Career Intelligence Dashboard</p>
+            </div>
+
+            {error && (
+              <div className="notice bad" role="alert">
+                <AlertCircle size={16} />
+                <span className="notice-main">{error}</span>
+              </div>
+            )}
+
+            <div className="form-group">
+              <label className="label" htmlFor="login-email">Username or Email Address</label>
+              <input
+                id="login-email"
+                className="input"
+                type="text"
+                placeholder="e.g. admin or name@example.com"
+                required
+                autoCapitalize="none"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="label" htmlFor="login-password">Password</label>
+              <div className="input-icon">
+                <input
+                  id="login-password"
+                  className="input"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                {password.length > 0 && (
+                  <button
+                    type="button"
+                    className="input-action"
+                    onClick={() => setShowPassword(!showPassword)}
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="au-row">
+              <label className="au-remember">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                />
+                <span>Remember me</span>
+              </label>
+              <Link to="/forgot-password" className="link-btn">Forgot password?</Link>
+            </div>
+
+            <button type="submit" className="lp-btn primary" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Logging In...</span>
+                </>
+              ) : (
+                <>
+                  <span>Login to Dashboard</span>
+                  <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+
+            <p className="au-foot">
+              Don't have an account?{' '}
+              <Link to="/register" className="link-btn">
+                Create Account
+              </Link>
+            </p>
+          </form>
+      </main>
     </div>
   );
 }

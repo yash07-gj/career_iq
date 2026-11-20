@@ -9,9 +9,19 @@ import {
   Eye,
   EyeOff,
   Mail,
+  Target, Award, TrendingUp
 } from 'lucide-react';
 import api from '../services/api';
+import '../styles/public.css';
 import auth from '../utils/auth';
+
+const REGISTER_POINTS = [
+  'Instant account setup & secure login',
+  'AI-powered resume parsing and analysis',
+  'Personalized matching algorithms',
+  'Real-time skill gap analysis',
+  'Tailored learning milestones and roadmaps',
+];
 
 export default function Register() {
   const nav = useNavigate();
@@ -55,100 +65,77 @@ export default function Register() {
   };
 
   return (
-    <div className="auth">
-      <div className="auth-card">
-        {/* Left Informational Sidebar */}
-        <div className="auth-side">
-          <div
-            className="logo-icon-box"
-            style={{
-              width: 48,
-              height: 48,
-              marginBottom: 24,
-              background: 'rgba(255,255,255,0.2)',
-            }}
-          >
-            <GraduationCap size={28} />
-          </div>
-          <h1>Create Your Account</h1>
-          <p>
-            Join thousands of students and professionals advancing their careers with
-            CareerIQ.
-          </p>
-          <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {[
-              'Instant account setup & secure login',
-              'AI-powered resume parsing and analysis',
-              'Personalized matching algorithms',
-              'Real-time skill gap analysis',
-              'Tailored learning milestones and roadmaps',
-            ].map((x) => (
-              <div
-                style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}
-                key={x}
-              >
-                <CheckCircle2 size={16} color="#6ee7b7" />
-                <span>{x}</span>
+    <div className="au">
+      {/* Left: dark animated panel */}
+      <aside className="au-side">
+        <div className="lp-orb one" />
+        <div className="lp-orb two" />
+        <div className="lp-grid-bg" />
+        <div className="au-side-in">
+          <Link to="/" className="lp-logo">
+            <span className="lp-logo-mark"><GraduationCap size={20} strokeWidth={2.5} /></span>
+            <span>Career<b>IQ</b></span>
+          </Link>
+          <div className="au-side-body">
+            <h1>Create Your Account</h1>
+            <p>Join thousands of students and professionals advancing their careers with CareerIQ.</p>
+            <div className="au-checks">
+              {REGISTER_POINTS.map((x) => (
+                <div className="au-check" key={x}>
+                  <CheckCircle2 size={17} />
+                  <span>{x}</span>
+                </div>
+              ))}
+            </div>
+            <div className="au-cards" aria-hidden="true">
+              <div className="au-card c1 lp-glass">
+                <span className="ic"><Target size={18} /></span>
+                <div><small>Career Readiness</small><strong>78%</strong></div>
               </div>
-            ))}
+              <div className="au-card c2 good lp-glass">
+                <span className="ic"><Award size={18} /></span>
+                <div><small>Top Career Match</small><strong>Data Analyst · 89%</strong></div>
+              </div>
+              <div className="au-card c3 violet lp-glass">
+                <span className="ic"><TrendingUp size={18} /></span>
+                <div><small>Market Demand</small><strong>+28% High Growth</strong></div>
+              </div>
+            </div>
           </div>
         </div>
+      </aside>
 
-        {/* Right Form Card */}
-        <div className="auth-form" style={{ maxWidth: 420 }}>
-          <div className="auth-logo">
-            <div className="logo-icon-box" style={{ width: 34, height: 34 }}>
-              <GraduationCap size={20} />
+      {/* Right: form */}
+      <main className="au-main">
+          <form className="au-form" onSubmit={handleRegister}>
+            <Link to="/" className="au-brand">
+              <span className="lp-logo-mark"><GraduationCap size={18} strokeWidth={2.5} /></span>
+              <span>Career<b>IQ</b></span>
+            </Link>
+
+            <div className="au-title">
+              <h2>Get Started Free</h2>
+              <p>Create your account in seconds</p>
             </div>
-            <strong>CareerIQ</strong>
-          </div>
-
-          <form onSubmit={handleRegister}>
-            <h2>Get Started Free</h2>
-            <p>Create your account in seconds</p>
 
             {error && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '10px 14px',
-                  background: '#fee2e2',
-                  color: '#991b1b',
-                  borderRadius: 8,
-                  fontSize: 13,
-                  marginBottom: 16,
-                }}
-              >
-                <AlertCircle size={16} style={{ flexShrink: 0 }} />
-                <span>{error}</span>
+              <div className="notice bad" role="alert">
+                <AlertCircle size={16} />
+                <span className="notice-main">{error}</span>
               </div>
             )}
 
             {done && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '10px 14px',
-                  background: '#ecfdf5',
-                  color: '#065f46',
-                  borderRadius: 8,
-                  fontSize: 13,
-                  marginBottom: 16,
-                  border: '1px solid #a7f3d0',
-                }}
-              >
-                <CheckCircle2 size={16} style={{ flexShrink: 0, color: '#10b981' }} />
-                <span>Account created successfully! Redirecting...</span>
+              <div className="notice good" role="status">
+                <CheckCircle2 size={16} />
+                <span className="notice-main">Account created successfully! Redirecting...</span>
               </div>
             )}
 
             <div className="form-group">
-              <label className="label">Full Name</label>
+              <label className="label" htmlFor="reg-name">Full Name</label>
               <input
+                id="reg-name"
                 className="input"
                 required
                 type="text"
@@ -159,55 +146,40 @@ export default function Register() {
             </div>
 
             <div className="form-group">
-              <label className="label">Email Address</label>
-              <div style={{ position: 'relative' }}>
+              <label className="label" htmlFor="reg-email">Email Address</label>
+              <div className="input-icon">
+                <Mail size={16} />
                 <input
+                  id="reg-email"
                   className="input"
                   required
                   type="email"
                   placeholder="e.g. yash@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  style={{ paddingLeft: '36px' }}
-                />
-                <Mail
-                  size={16}
-                  color="#94a3b8"
-                  style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
                 />
               </div>
             </div>
 
             <div className="form-group">
-              <label className="label">Password</label>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <label className="label" htmlFor="reg-password">Password</label>
+              <div className="input-icon">
                 <input
+                  id="reg-password"
                   className="input"
                   required
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Create a strong password (min 6 characters)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  style={{ paddingRight: '42px', width: '100%' }}
                 />
                 {password.length > 0 && (
                   <button
                     type="button"
+                    className="input-action"
                     onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: '12px',
-                      background: 'transparent',
-                      border: 'none',
-                      padding: '4px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#64748b',
-                      borderRadius: '4px',
-                    }}
                     title={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -215,12 +187,7 @@ export default function Register() {
               </div>
             </div>
 
-            <button
-              type="submit"
-              className="btn"
-              disabled={loading || done}
-              style={{ width: '100%', padding: '12px', fontSize: 14, marginTop: 12 }}
-            >
+            <button type="submit" className="lp-btn primary" disabled={loading || done}>
               {loading ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
@@ -228,7 +195,7 @@ export default function Register() {
                 </>
               ) : done ? (
                 <>
-                  <CheckCircle2 size={16} color="#ffffff" />
+                  <CheckCircle2 size={16} />
                   <span>Account Created! Redirecting...</span>
                 </>
               ) : (
@@ -239,22 +206,14 @@ export default function Register() {
               )}
             </button>
 
-            <p
-              style={{
-                textAlign: 'center',
-                marginTop: 20,
-                fontSize: 13,
-                color: 'var(--text-muted)',
-              }}
-            >
+            <p className="au-foot">
               Already have an account?{' '}
-              <Link to="/login" style={{ color: 'var(--blue)', fontWeight: 700 }}>
+              <Link to="/login" className="link-btn">
                 Sign In
               </Link>
             </p>
           </form>
-        </div>
-      </div>
+      </main>
     </div>
   );
 }

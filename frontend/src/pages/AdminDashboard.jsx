@@ -3,20 +3,16 @@ import {
   Users,
   Briefcase,
   FileText,
-  TrendingUp,
   Search,
   Plus,
   Trash2,
   Edit3,
   CheckCircle2,
-  XCircle,
   RefreshCw,
   Building2,
   MapPin,
   ExternalLink,
-  ShieldCheck,
   UserCheck,
-  Filter,
   X,
   AlertCircle,
   FileCheck,
@@ -28,6 +24,7 @@ import {
 import { Link } from 'react-router-dom';
 import { Layout, Page } from '../components/Layout';
 import api from '../services/api';
+import { EmptyState, StatTile } from '../components/ui';
 
 export default function AdminDashboard({ initialTab = 'all' }) {
   const [activeTab, setActiveTab] = useState(initialTab); // 'all', 'users', 'jobs', 'applications'
@@ -331,37 +328,39 @@ export default function AdminDashboard({ initialTab = 'all' }) {
     return matchesSearch && matchesStatus;
   });
 
+  const statusTextColor = (status) =>
+    status === 'Shortlisted' || status === 'Hired'
+      ? 'var(--good)'
+      : status === 'Rejected'
+      ? 'var(--bad)'
+      : status === 'Under Review'
+      ? 'var(--warn)'
+      : 'var(--accent)';
+
+  const formatDate = (value) =>
+    new Date(value).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
   return (
     <Layout admin>
       <Page
         title="Admin Control Center"
         subtitle="Manage platform users, available jobs & internships, and candidate job applications in MySQL"
         action={
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div className="row-gap">
             <button
               className="btn outline"
               onClick={handleSyncDailyJobs}
               disabled={syncingDaily}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, borderColor: '#7c3aed', color: '#7c3aed' }}
               title="Automatically refresh available dates and extend application deadlines"
             >
               <RefreshCw size={14} className={syncingDaily ? 'spin' : ''} />
               <span>{syncingDaily ? 'Syncing Daily...' : '⚡ Daily Job Sync'}</span>
             </button>
-            <button
-              className="btn outline"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-            >
+            <button className="btn outline" onClick={handleRefresh} disabled={refreshing}>
               <RefreshCw size={14} className={refreshing ? 'spin' : ''} />
               <span>{refreshing ? 'Syncing...' : 'Sync Database'}</span>
             </button>
-            <button
-              className="btn"
-              onClick={() => handleOpenJobModal()}
-              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-            >
+            <button className="btn" onClick={() => handleOpenJobModal()}>
               <Plus size={15} />
               <span>Post New Job</span>
             </button>
@@ -369,250 +368,75 @@ export default function AdminDashboard({ initialTab = 'all' }) {
         }
       >
         {syncBanner && (
-          <div
-            style={{
-              padding: '12px 18px',
-              borderRadius: 10,
-              background: '#ecfdf5',
-              border: '1px solid #a7f3d0',
-              color: '#065f46',
-              fontSize: 13,
-              fontWeight: 600,
-              marginBottom: 20,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8
-            }}
-          >
+          <div className="notice good">
             <CheckCircle2 size={16} />
-            <span>{syncBanner}</span>
+            <span className="notice-main" style={{ fontWeight: 600 }}>{syncBanner}</span>
           </div>
         )}
+
         {/* STATS OVERVIEW CARDS */}
-        <div className="grid grid-4" style={{ marginBottom: 24, gap: 16 }}>
-          {/* Card 1: Users */}
-          <div
-            className="card"
-            style={{
-              padding: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              borderRadius: 14,
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-              background: '#ffffff'
-            }}
-          >
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                background: '#eff6ff',
-                display: 'grid',
-                placeItems: 'center',
-                flexShrink: 0
-              }}
-            >
-              <Users size={24} color="#2563eb" />
-            </div>
-            <div>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>
-                Total Registered Users
-              </span>
-              <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--navy, #0f172a)', lineHeight: 1.2 }}>
-                {stats.total_users}
-              </div>
-              <span style={{ fontSize: 12, color: '#10b981', fontWeight: 600, marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                ✓ {stats.active_users} Active Accounts
-              </span>
-            </div>
-          </div>
-
-          {/* Card 2: Opportunities */}
-          <div
-            className="card"
-            style={{
-              padding: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              borderRadius: 14,
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-              background: '#ffffff'
-            }}
-          >
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                background: '#ecfdf5',
-                display: 'grid',
-                placeItems: 'center',
-                flexShrink: 0
-              }}
-            >
-              <Briefcase size={24} color="#059669" />
-            </div>
-            <div>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>
-                Available Opportunities
-              </span>
-              <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--navy, #0f172a)', lineHeight: 1.2 }}>
-                {stats.total_jobs}
-              </div>
-              <span style={{ fontSize: 12, color: '#64748b', marginTop: 4, display: 'block' }}>
-                Corporate Jobs & Internships
-              </span>
-            </div>
-          </div>
-
-          {/* Card 3: Resumes */}
-          <div
-            className="card"
-            style={{
-              padding: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              borderRadius: 14,
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-              background: '#ffffff'
-            }}
-          >
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                background: '#fffbeb',
-                display: 'grid',
-                placeItems: 'center',
-                flexShrink: 0
-              }}
-            >
-              <FileText size={24} color="#d97706" />
-            </div>
-            <div>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>
-                Candidate Resumes
-              </span>
-              <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--navy, #0f172a)', lineHeight: 1.2 }}>
-                {stats.total_resumes}
-              </div>
-              <span style={{ fontSize: 12, color: '#64748b', marginTop: 4, display: 'block' }}>
-                Processed for AI matching
-              </span>
-            </div>
-          </div>
-
-          {/* Card 4: Applications */}
-          <div
-            className="card"
-            style={{
-              padding: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              borderRadius: 14,
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-              background: '#ffffff'
-            }}
-          >
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                background: '#f5f3ff',
-                display: 'grid',
-                placeItems: 'center',
-                flexShrink: 0
-              }}
-            >
-              <FileCheck size={24} color="#7c3aed" />
-            </div>
-            <div>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>
-                Candidate Applications
-              </span>
-              <div style={{ fontSize: 24, fontWeight: 800, color: '#7c3aed', lineHeight: 1.2 }}>
-                {stats.total_applications}
-              </div>
-              <span style={{ fontSize: 12, color: '#059669', fontWeight: 600, marginTop: 4, display: 'block' }}>
-                ✓ Saved in job_applications
-              </span>
-            </div>
-          </div>
+        <div className="ui-grid cols-4">
+          <StatTile
+            label="Total Registered Users"
+            value={stats.total_users}
+            sub={<span className="text-good" style={{ fontWeight: 600 }}>✓ {stats.active_users} Active Accounts</span>}
+          />
+          <StatTile label="Available Opportunities" value={stats.total_jobs} sub="Corporate Jobs & Internships" />
+          <StatTile label="Candidate Resumes" value={stats.total_resumes} sub="Processed for AI matching" />
+          <StatTile
+            label="Candidate Applications"
+            value={stats.total_applications}
+            sub={<span className="text-good" style={{ fontWeight: 600 }}>✓ Saved in job_applications</span>}
+          />
         </div>
 
         {/* SECTION NAVIGATION TABS */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 20, borderBottom: '1px solid #e2e8f0', paddingBottom: 12, flexWrap: 'wrap' }}>
-          <button
-            className={`btn ${activeTab === 'all' ? '' : 'outline'}`}
-            onClick={() => setActiveTab('all')}
-            style={{ fontSize: 13, padding: '7px 16px' }}
-          >
-            All Sections
-          </button>
-          <button
-            className={`btn ${activeTab === 'applications' ? '' : 'outline'}`}
-            onClick={() => setActiveTab('applications')}
-            style={{ fontSize: 13, padding: '7px 16px', display: 'flex', alignItems: 'center', gap: 6 }}
-          >
-            <FileCheck size={14} />
-            <span>Job Applications ({applications.length})</span>
-          </button>
-          <button
-            className={`btn ${activeTab === 'users' ? '' : 'outline'}`}
-            onClick={() => setActiveTab('users')}
-            style={{ fontSize: 13, padding: '7px 16px', display: 'flex', alignItems: 'center', gap: 6 }}
-          >
-            <Users size={14} />
-            <span>Users Table ({users.length})</span>
-          </button>
-          <button
-            className={`btn ${activeTab === 'jobs' ? '' : 'outline'}`}
-            onClick={() => setActiveTab('jobs')}
-            style={{ fontSize: 13, padding: '7px 16px', display: 'flex', alignItems: 'center', gap: 6 }}
-          >
-            <Briefcase size={14} />
-            <span>Available Jobs ({jobs.length})</span>
-          </button>
+        <div>
+          <div className="seg" role="tablist" aria-label="Admin sections">
+            <button className={activeTab === 'all' ? 'on' : ''} onClick={() => setActiveTab('all')}>
+              All Sections
+            </button>
+            <button className={activeTab === 'applications' ? 'on' : ''} onClick={() => setActiveTab('applications')}>
+              <FileCheck size={14} />
+              <span>Job Applications ({applications.length})</span>
+            </button>
+            <button className={activeTab === 'users' ? 'on' : ''} onClick={() => setActiveTab('users')}>
+              <Users size={14} />
+              <span>Users Table ({users.length})</span>
+            </button>
+            <button className={activeTab === 'jobs' ? 'on' : ''} onClick={() => setActiveTab('jobs')}>
+              <Briefcase size={14} />
+              <span>Available Jobs ({jobs.length})</span>
+            </button>
+          </div>
         </div>
 
         {/* ============================================================== */}
         {/* JOB APPLICATIONS TABLE SECTION                                 */}
         {/* ============================================================== */}
         {(activeTab === 'all' || activeTab === 'applications') && (
-          <div className="card card-pad" style={{ marginBottom: 24 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+          <div className="card card-pad">
+            <div className="card-head">
               <div>
-                <h3 className="card-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <FileCheck size={18} color="#7c3aed" />
+                <h3 className="card-title row-gap">
+                  <FileCheck size={18} style={{ color: 'var(--accent)' }} />
                   <span>Candidate Job Applications ({filteredApplications.length})</span>
                 </h3>
-                <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>
+                <p className="card-sub">
                   Live candidate applications recorded in MySQL <code>job_applications</code> table
                 </p>
               </div>
 
               {/* Application search & filter */}
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <Search size={15} style={{ position: 'absolute', left: 10, color: '#94a3b8' }} />
+              <div className="row-gap">
+                <div className="input-icon" style={{ width: 250, maxWidth: '100%' }}>
+                  <Search size={15} />
                   <input
                     type="text"
                     className="input"
                     placeholder="Search candidate, job, or email..."
                     value={appSearch}
                     onChange={(e) => setAppSearch(e.target.value)}
-                    style={{ paddingLeft: 32, fontSize: 13, height: 36, width: 250 }}
                   />
                 </div>
 
@@ -620,7 +444,7 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                   className="select"
                   value={appStatusFilter}
                   onChange={(e) => setAppStatusFilter(e.target.value)}
-                  style={{ fontSize: 13, height: 36, padding: '0 10px' }}
+                  style={{ width: 'auto' }}
                 >
                   <option value="all">All Application Statuses</option>
                   <option value="Applied">Applied</option>
@@ -634,61 +458,50 @@ export default function AdminDashboard({ initialTab = 'all' }) {
             </div>
 
             {loading ? (
-              <div style={{ textAlign: 'center', padding: '30px 0', color: '#64748b' }}>
-                Loading applications from database...
+              <div className="empty-state">
+                <RefreshCw size={22} className="spin" />
+                <p>Loading applications from database...</p>
               </div>
             ) : filteredApplications.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '30px 0', color: '#64748b' }}>
-                No candidate job applications found.
-              </div>
+              <EmptyState icon={FileCheck} title="No candidate job applications found." />
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <div className="table-wrap">
+                <table className="table">
                   <thead>
-                    <tr style={{ background: '#f8fafc', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>
-                      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>APP ID</th>
-                      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>CANDIDATE INFO</th>
-                      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>JOB APPLIED FOR</th>
-                      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>COVER NOTE</th>
-                      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>RESUME</th>
-                      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>STATUS</th>
-                      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>APPLIED DATE</th>
-                      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569', textAlign: 'center' }}>ACTIONS</th>
+                    <tr>
+                      <th>APP ID</th>
+                      <th>CANDIDATE INFO</th>
+                      <th>JOB APPLIED FOR</th>
+                      <th>COVER NOTE</th>
+                      <th>RESUME</th>
+                      <th>STATUS</th>
+                      <th>APPLIED DATE</th>
+                      <th style={{ textAlign: 'center' }}>ACTIONS</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredApplications.map((app) => {
                       const isInternship = (app.job_type || '').toLowerCase().includes('intern');
-                      const appliedDate = app.created_at
-                        ? new Date(app.created_at).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric'
-                          })
-                        : '—';
+                      const appliedDate = app.created_at ? formatDate(app.created_at) : '—';
 
                       return (
-                        <tr key={app.application_id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '12px', fontSize: 13, fontWeight: 700, color: '#64748b' }}>
-                            #{app.application_id}
-                          </td>
+                        <tr key={app.application_id}>
+                          <td className="muted num" style={{ fontWeight: 700 }}>#{app.application_id}</td>
 
                           {/* Candidate info */}
-                          <td style={{ padding: '12px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              <strong style={{ fontSize: 13, color: 'var(--navy, #0f172a)' }}>
-                                {app.full_name}
-                              </strong>
-                              <span style={{ fontSize: 12, color: '#475569', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                <Mail size={12} color="#64748b" /> {app.email}
+                          <td>
+                            <div className="stack" style={{ gap: 2 }}>
+                              <strong style={{ fontSize: 13.5 }}>{app.full_name}</strong>
+                              <span className="muted text-xs row-gap" style={{ gap: 4 }}>
+                                <Mail size={12} /> {app.email}
                               </span>
                               {app.phone && (
-                                <span style={{ fontSize: 12, color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                  <Phone size={12} color="#64748b" /> {app.phone}
+                                <span className="muted text-xs row-gap" style={{ gap: 4 }}>
+                                  <Phone size={12} /> {app.phone}
                                 </span>
                               )}
                               {app.experience_level && (
-                                <span style={{ fontSize: 11, color: '#0369a1', fontWeight: 600 }}>
+                                <span className="text-xs" style={{ color: 'var(--accent)', fontWeight: 600 }}>
                                   Exp: {app.experience_level}
                                 </span>
                               )}
@@ -696,50 +509,35 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                           </td>
 
                           {/* Job info */}
-                          <td style={{ padding: '12px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <span
-                                  className={`pill ${isInternship ? 'orange' : 'blue'}`}
-                                  style={{ fontSize: 10, padding: '2px 7px', fontWeight: 700 }}
-                                >
-                                  {app.job_type}
-                                </span>
-                                <strong style={{ fontSize: 13, color: 'var(--navy, #0f172a)' }}>
-                                  {app.job_title}
-                                </strong>
+                          <td>
+                            <div className="stack" style={{ gap: 4 }}>
+                              <div className="row-gap" style={{ gap: 6 }}>
+                                <span className={`pill ${isInternship ? 'warn' : 'info'}`}>{app.job_type}</span>
+                                <strong style={{ fontSize: 13.5 }}>{app.job_title}</strong>
                               </div>
-                              <span style={{ fontSize: 12, color: '#475569', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                <Building2 size={12} color="#64748b" /> {app.company_name} • {app.location}
+                              <span className="muted text-xs row-gap" style={{ gap: 4 }}>
+                                <Building2 size={12} /> {app.company_name} • {app.location}
                               </span>
                             </div>
                           </td>
 
                           {/* Cover Note & Portfolio */}
-                          <td style={{ padding: '12px', maxWidth: 220 }}>
+                          <td style={{ maxWidth: 220 }}>
                             {app.cover_note ? (
                               <div>
-                                <p
-                                  style={{
-                                    margin: 0,
-                                    fontSize: 12,
-                                    color: '#334155',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis'
-                                  }}
-                                >
+                                <p className="text-xs" style={{ margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                   {app.cover_note}
                                 </p>
                                 <button
+                                  className="link-btn"
                                   onClick={() => setSelectedNote({ title: `${app.full_name} - ${app.job_title}`, note: app.cover_note })}
-                                  style={{ background: 'transparent', border: 'none', color: 'var(--blue, #2563eb)', fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: 0, marginTop: 2 }}
+                                  style={{ marginTop: 2, fontSize: 12 }}
                                 >
                                   Read full note
                                 </button>
                               </div>
                             ) : (
-                              <span style={{ fontSize: 12, color: '#94a3b8' }}>None</span>
+                              <span className="muted text-xs">None</span>
                             )}
                             {app.portfolio_url && (
                               <div style={{ marginTop: 4 }}>
@@ -747,55 +545,40 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                                   href={app.portfolio_url.startsWith('http') ? app.portfolio_url : `https://${app.portfolio_url}`}
                                   target="_blank"
                                   rel="noreferrer"
-                                  style={{ fontSize: 11, color: '#2563eb', display: 'inline-flex', alignItems: 'center', gap: 3, fontWeight: 600 }}
+                                  className="link-btn"
+                                  style={{ fontSize: 12 }}
                                 >
-                                  <ExternalLink size={10} /> Portfolio
+                                  <ExternalLink size={11} /> Portfolio
                                 </a>
                               </div>
                             )}
                           </td>
 
                           {/* Resume */}
-                          <td style={{ padding: '12px' }}>
+                          <td>
                             {app.resume_file_url ? (
                               <a
                                 href={`http://127.0.0.1:8000${app.resume_file_url}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="btn outline small"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 8px', fontSize: 11 }}
                               >
-                                <FileText size={12} />
+                                <FileText size={13} />
                                 <span>View PDF</span>
                               </a>
                             ) : (
-                              <span style={{ fontSize: 12, color: '#94a3b8' }}>Profile Resume</span>
+                              <span className="muted text-xs">Profile Resume</span>
                             )}
                           </td>
 
                           {/* Status */}
-                          <td style={{ padding: '12px' }}>
+                          <td>
                             <select
                               className="select"
                               value={app.status || 'Applied'}
                               onChange={(e) => handleApplicationStatus(app.application_id, e.target.value)}
-                              style={{
-                                fontSize: 12,
-                                padding: '4px 8px',
-                                height: 30,
-                                borderRadius: 6,
-                                fontWeight: 700,
-                                color:
-                                  app.status === 'Shortlisted' || app.status === 'Hired'
-                                    ? '#047857'
-                                    : app.status === 'Rejected'
-                                    ? '#b91c1c'
-                                    : app.status === 'Under Review'
-                                    ? '#b45309'
-                                    : '#1d4ed8',
-                                background: '#f8fafc',
-                                border: '1px solid #cbd5e1'
-                              }}
+                              aria-label={`Status for application ${app.application_id}`}
+                              style={{ width: 'auto', padding: '6px 32px 6px 10px', fontSize: 13, fontWeight: 700, color: statusTextColor(app.status) }}
                             >
                               <option value="Applied">Applied</option>
                               <option value="Under Review">Under Review</option>
@@ -807,19 +590,16 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                           </td>
 
                           {/* Applied Date */}
-                          <td style={{ padding: '12px', fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>
-                            {appliedDate}
-                          </td>
+                          <td className="muted text-xs" style={{ whiteSpace: 'nowrap' }}>{appliedDate}</td>
 
                           {/* Action */}
-                          <td style={{ padding: '12px', textAlign: 'center' }}>
+                          <td style={{ textAlign: 'center' }}>
                             <button
-                              className="btn small"
+                              className="btn outline small danger"
                               onClick={() => handleDeleteApplication(app.application_id, app.full_name)}
                               title="Delete Application"
-                              style={{ background: '#fff0f2', color: '#ef4b5f', padding: '6px 8px' }}
                             >
-                              <Trash2 size={12} />
+                              <Trash2 size={13} />
                             </button>
                           </td>
                         </tr>
@@ -836,29 +616,28 @@ export default function AdminDashboard({ initialTab = 'all' }) {
         {/* USERS TABLE SECTION                                            */}
         {/* ============================================================== */}
         {(activeTab === 'all' || activeTab === 'users') && (
-          <div className="card card-pad" style={{ marginBottom: 24 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+          <div className="card card-pad">
+            <div className="card-head">
               <div>
-                <h3 className="card-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Users size={18} color="var(--blue, #2563eb)" />
+                <h3 className="card-title row-gap">
+                  <Users size={18} style={{ color: 'var(--accent)' }} />
                   <span>Registered Users ({filteredUsers.length})</span>
                 </h3>
-                <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>
+                <p className="card-sub">
                   Live candidate and administrator records directly from MySQL <code>users</code> table
                 </p>
               </div>
 
               {/* User search & filter */}
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <Search size={15} style={{ position: 'absolute', left: 10, color: '#94a3b8' }} />
+              <div className="row-gap">
+                <div className="input-icon" style={{ width: 230, maxWidth: '100%' }}>
+                  <Search size={15} />
                   <input
                     type="text"
                     className="input"
                     placeholder="Search by name or email..."
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
-                    style={{ paddingLeft: 32, fontSize: 13, height: 36, width: 220 }}
                   />
                 </div>
 
@@ -866,7 +645,7 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                   className="select"
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value)}
-                  style={{ fontSize: 13, height: 36, padding: '0 10px' }}
+                  style={{ width: 'auto' }}
                 >
                   <option value="all">All Roles</option>
                   <option value="candidate">Candidates</option>
@@ -876,137 +655,89 @@ export default function AdminDashboard({ initialTab = 'all' }) {
             </div>
 
             {loading ? (
-              <div style={{ textAlign: 'center', padding: '30px 0', color: '#64748b' }}>
-                Loading users from database...
+              <div className="empty-state">
+                <RefreshCw size={22} className="spin" />
+                <p>Loading users from database...</p>
               </div>
             ) : filteredUsers.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '30px 0', color: '#64748b' }}>
-                No users found matching your search.
-              </div>
+              <EmptyState icon={Users} title="No users found matching your search." />
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <div className="table-wrap">
+                <table className="table">
                   <thead>
-                    <tr style={{ background: '#f8fafc', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>
-                      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>USER ID</th>
-                      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>CANDIDATE / USER</th>
-                      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>EMAIL</th>
-                      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>ROLE</th>
-                      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>RESUME</th>
-                      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>STATUS</th>
-                      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569' }}>JOINED</th>
-                      <th style={{ padding: '10px 12px', fontSize: 12, fontWeight: 700, color: '#475569', textAlign: 'center' }}>ACTIONS</th>
+                    <tr>
+                      <th>USER ID</th>
+                      <th>CANDIDATE / USER</th>
+                      <th>EMAIL</th>
+                      <th>ROLE</th>
+                      <th>RESUME</th>
+                      <th>STATUS</th>
+                      <th>JOINED</th>
+                      <th style={{ textAlign: 'center' }}>ACTIONS</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredUsers.map((u) => {
                       const initial = (u.full_name || 'U').charAt(0).toUpperCase();
-                      const joinedDate = u.created_at
-                        ? new Date(u.created_at).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric'
-                          })
-                        : '—';
+                      const joinedDate = u.created_at ? formatDate(u.created_at) : '—';
+                      const isAdmin = u.account_role === 'admin';
 
                       return (
-                        <tr key={u.user_id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '12px', fontSize: 13, fontWeight: 700, color: '#64748b' }}>
-                            #{u.user_id}
-                          </td>
-                          <td style={{ padding: '12px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                              <div
-                                style={{
-                                  width: 32,
-                                  height: 32,
-                                  borderRadius: '50%',
-                                  background: u.account_role === 'admin' ? '#fef3c7' : '#e0e7ff',
-                                  color: u.account_role === 'admin' ? '#b45309' : '#3730a3',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  fontSize: 13,
-                                  fontWeight: 700
-                                }}
-                              >
+                        <tr key={u.user_id}>
+                          <td className="muted num" style={{ fontWeight: 700 }}>#{u.user_id}</td>
+                          <td>
+                            <div className="row-gap" style={{ gap: 10, flexWrap: 'nowrap' }}>
+                              <div className={`list-icon ${isAdmin ? 'warn' : ''}`} style={{ width: 32, height: 32, borderRadius: '50%', fontSize: 13 }}>
                                 {initial}
                               </div>
                               <div>
-                                <strong style={{ fontSize: 13, color: 'var(--navy, #0f172a)' }}>
-                                  {u.full_name}
-                                </strong>
-                                {u.city && (
-                                  <div style={{ fontSize: 11, color: '#64748b' }}>{u.city}</div>
-                                )}
+                                <strong style={{ fontSize: 13.5 }}>{u.full_name}</strong>
+                                {u.city && <div className="muted text-xs">{u.city}</div>}
                               </div>
                             </div>
                           </td>
-                          <td style={{ padding: '12px', fontSize: 13, color: '#334155' }}>
-                            {u.email}
-                          </td>
-                          <td style={{ padding: '12px' }}>
-                            <span
-                              className={`pill ${u.account_role === 'admin' ? 'blue' : 'green'}`}
-                              style={{ fontSize: 11, padding: '3px 9px', textTransform: 'capitalize' }}
-                            >
+                          <td>{u.email}</td>
+                          <td>
+                            <span className={`pill ${isAdmin ? 'info' : 'neutral'}`} style={{ textTransform: 'capitalize' }}>
                               {u.account_role}
                             </span>
                           </td>
-                          <td style={{ padding: '12px' }}>
+                          <td>
                             {u.has_resume ? (
-                              <span className="pill green" style={{ fontSize: 11, padding: '3px 8px' }}>
-                                ✓ Uploaded
-                              </span>
+                              <span className="pill good">✓ Uploaded</span>
                             ) : (
-                              <span style={{ fontSize: 12, color: '#94a3b8' }}>None</span>
+                              <span className="muted text-xs">None</span>
                             )}
                           </td>
-                          <td style={{ padding: '12px' }}>
+                          <td>
                             <button
                               onClick={() => handleToggleStatus(u.user_id, u.active_status, u.account_role)}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                cursor: u.account_role === 'admin' ? 'default' : 'pointer',
-                                padding: 0
-                              }}
-                              title={u.account_role === 'admin' ? 'Admin status cannot be changed' : 'Click to toggle status'}
+                              style={{ background: 'transparent', border: 0, padding: 0, cursor: isAdmin ? 'default' : 'pointer' }}
+                              title={isAdmin ? 'Admin status cannot be changed' : 'Click to toggle status'}
                             >
-                              <span
-                                className={`pill ${u.active_status === 1 ? 'green' : 'red'}`}
-                                style={{ fontSize: 11, padding: '3px 9px' }}
-                              >
+                              <span className={`pill ${u.active_status === 1 ? 'good' : 'bad'}`}>
                                 {u.active_status === 1 ? '● Active' : '○ Inactive'}
                               </span>
                             </button>
                           </td>
-                          <td style={{ padding: '12px', fontSize: 12, color: '#64748b' }}>
-                            {joinedDate}
-                          </td>
-                          <td style={{ padding: '12px', textAlign: 'center' }}>
-                            <div style={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
+                          <td className="muted text-xs">{joinedDate}</td>
+                          <td>
+                            <div className="row-gap" style={{ justifyContent: 'center', flexWrap: 'nowrap', gap: 6 }}>
                               <button
                                 className="btn outline small"
                                 onClick={() => handleToggleStatus(u.user_id, u.active_status, u.account_role)}
-                                disabled={u.account_role === 'admin'}
+                                disabled={isAdmin}
                                 title="Toggle Status"
-                                style={{ padding: '4px 8px' }}
                               >
-                                <UserCheck size={12} />
+                                <UserCheck size={13} />
                               </button>
                               <button
-                                className="btn small"
+                                className="btn outline small danger"
                                 onClick={() => handleDeleteUser(u.user_id, u.account_role)}
-                                disabled={u.account_role === 'admin'}
+                                disabled={isAdmin}
                                 title="Delete User"
-                                style={{
-                                  background: u.account_role === 'admin' ? '#f1f5f9' : '#fff0f2',
-                                  color: u.account_role === 'admin' ? '#94a3b8' : '#ef4b5f',
-                                  padding: '4px 8px'
-                                }}
                               >
-                                <Trash2 size={12} />
+                                <Trash2 size={13} />
                               </button>
                             </div>
                           </td>
@@ -1024,29 +755,28 @@ export default function AdminDashboard({ initialTab = 'all' }) {
         {/* JOBS SECTION (All Available Jobs Mentioned)                     */}
         {/* ============================================================== */}
         {(activeTab === 'all' || activeTab === 'jobs') && (
-          <div className="card card-pad" style={{ marginBottom: 24 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+          <div className="card card-pad">
+            <div className="card-head">
               <div>
-                <h3 className="card-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Briefcase size={18} color="#059669" />
+                <h3 className="card-title row-gap">
+                  <Briefcase size={18} style={{ color: 'var(--good)' }} />
                   <span>Available Corporate Jobs & Internships ({filteredJobs.length})</span>
                 </h3>
-                <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>
+                <p className="card-sub">
                   All real corporate openings in MySQL <code>jobs</code> table available for MCA candidates
                 </p>
               </div>
 
               {/* Job search & filter */}
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <Search size={15} style={{ position: 'absolute', left: 10, color: '#94a3b8' }} />
+              <div className="row-gap">
+                <div className="input-icon" style={{ width: 240, maxWidth: '100%' }}>
+                  <Search size={15} />
                   <input
                     type="text"
                     className="input"
                     placeholder="Search by company, role or city..."
                     value={jobSearch}
                     onChange={(e) => setJobSearch(e.target.value)}
-                    style={{ paddingLeft: 32, fontSize: 13, height: 36, width: 240 }}
                   />
                 </div>
 
@@ -1054,108 +784,75 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                   className="select"
                   value={jobTypeFilter}
                   onChange={(e) => setJobTypeFilter(e.target.value)}
-                  style={{ fontSize: 13, height: 36, padding: '0 10px' }}
+                  style={{ width: 'auto' }}
                 >
                   <option value="all">All Types</option>
                   <option value="full-time">Full-time Only</option>
                   <option value="internship">Internships Only</option>
                 </select>
 
-                <button
-                  className="btn small"
-                  onClick={() => handleOpenJobModal()}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36 }}
-                >
+                <button className="btn small" onClick={() => handleOpenJobModal()}>
                   <Plus size={14} /> Add Job
                 </button>
               </div>
             </div>
 
             {loading ? (
-              <div style={{ textAlign: 'center', padding: '30px 0', color: '#64748b' }}>
-                Loading jobs from database...
+              <div className="empty-state">
+                <RefreshCw size={22} className="spin" />
+                <p>Loading jobs from database...</p>
               </div>
             ) : filteredJobs.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '30px 0', color: '#64748b' }}>
-                No jobs match the current filter.
-              </div>
+              <EmptyState icon={Briefcase} title="No jobs match the current filter." />
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
                 {filteredJobs.map((job) => {
                   const isInternship = (job.job_type || '').toLowerCase().includes('intern');
+                  const overdue = job.due_date && new Date(job.due_date) < new Date();
                   return (
-                    <div
-                      key={job.job_id}
-                      style={{
-                        background: '#ffffff',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: 10,
-                        padding: '16px 20px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        flexWrap: 'wrap',
-                        gap: 14,
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
+                    <div key={job.job_id} className="list-row" style={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                      <div className="list-icon">
+                        <Briefcase size={18} />
+                      </div>
+
                       {/* Left: Job Meta */}
-                      <div style={{ flex: '1 1 360px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                          <span
-                            className={`pill ${isInternship ? 'orange' : 'blue'}`}
-                            style={{ fontSize: 11, padding: '2px 8px', fontWeight: 700 }}
-                          >
-                            {job.job_type || 'Full-time'}
-                          </span>
-                          <span className="pill green" style={{ fontSize: 11, padding: '2px 8px' }}>
-                            {job.role_name || 'Tech'}
-                          </span>
-                          <span style={{ fontSize: 12, color: '#94a3b8' }}>ID: #{job.job_id}</span>
+                      <div className="list-main stack" style={{ gap: 6, flex: '1 1 300px' }}>
+                        <div className="row-gap" style={{ gap: 6 }}>
+                          <span className={`pill ${isInternship ? 'warn' : 'info'}`}>{job.job_type || 'Full-time'}</span>
+                          <span className="pill good">{job.role_name || 'Tech'}</span>
+                          <span className="muted text-xs num">ID: #{job.job_id}</span>
                         </div>
 
-                        <h4 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: 'var(--navy, #0f172a)' }}>
-                          {job.job_title}
-                        </h4>
+                        <strong style={{ fontSize: 15.5 }}>{job.job_title}</strong>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', fontSize: 13, color: '#475569' }}>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
-                            <Building2 size={14} color="#64748b" /> {job.company_name}
+                        <div className="row-gap text-sm muted" style={{ gap: 14, fontSize: 13 }}>
+                          <span className="row-gap" style={{ gap: 5, fontWeight: 600, fontSize: 13 }}>
+                            <Building2 size={14} /> {job.company_name}
                           </span>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                            <MapPin size={14} color="#64748b" /> {job.location || 'India'} ({job.work_mode || 'Hybrid'})
+                          <span className="row-gap" style={{ gap: 5, fontSize: 13 }}>
+                            <MapPin size={14} /> {job.location || 'India'} ({job.work_mode || 'Hybrid'})
                           </span>
                           {job.salary_range && (
-                            <span style={{ fontWeight: 700, color: '#047857' }}>
-                              💰 {job.salary_range}
-                            </span>
+                            <span className="text-good" style={{ fontWeight: 700, fontSize: 13 }}>💰 {job.salary_range}</span>
                           )}
-                          <span>⏳ {job.experience_requirement || 'Fresher'}</span>
+                          <span style={{ fontSize: 13 }}>⏳ {job.experience_requirement || 'Fresher'}</span>
                         </div>
 
                         {/* Dates row: Available From & Due Date */}
                         {(job.posted_date || job.due_date) && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', fontSize: 12, marginTop: 6 }}>
+                          <div className="row-gap" style={{ gap: 10 }}>
                             {job.posted_date && (
-                              <span style={{ color: '#475569', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                <Calendar size={13} color="#2563eb" />
-                                <span>Available: <strong style={{ color: '#0f172a' }}>{new Date(job.posted_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</strong></span>
+                              <span className="row-gap muted text-xs" style={{ gap: 4, fontSize: 12.5 }}>
+                                <Calendar size={13} style={{ color: 'var(--accent)' }} />
+                                <span>
+                                  Available: <strong style={{ color: 'var(--ink)' }}>{formatDate(job.posted_date)}</strong>
+                                </span>
                               </span>
                             )}
                             {job.due_date && (
-                              <span style={{ 
-                                color: new Date(job.due_date) < new Date() ? '#b91c1c' : '#b45309',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 4,
-                                background: new Date(job.due_date) < new Date() ? '#fef2f2' : '#fffbeb',
-                                padding: '2px 8px',
-                                borderRadius: 4,
-                                fontWeight: 600,
-                                border: new Date(job.due_date) < new Date() ? '1px solid #fecaca' : '1px solid #fde68a'
-                              }}>
-                                <Clock size={13} />
-                                <span>Due Date: {new Date(job.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                              <span className={`pill ${overdue ? 'bad' : 'warn'}`}>
+                                <Clock size={12} />
+                                <span>Due Date: {formatDate(job.due_date)}</span>
                               </span>
                             )}
                           </div>
@@ -1163,56 +860,31 @@ export default function AdminDashboard({ initialTab = 'all' }) {
 
                         {/* Skills preview */}
                         {job.skills && job.skills.length > 0 && (
-                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                          <div className="chips" style={{ gap: 6 }}>
                             {job.skills.slice(0, 5).map((s) => (
-                              <span
-                                key={s}
-                                style={{
-                                  background: '#f1f5f9',
-                                  color: '#334155',
-                                  padding: '2px 8px',
-                                  borderRadius: 4,
-                                  fontSize: 11,
-                                  fontWeight: 600
-                                }}
-                              >
-                                {s}
-                              </span>
+                              <span key={s} className="pill neutral">{s}</span>
                             ))}
                             {job.skills.length > 5 && (
-                              <span style={{ fontSize: 11, color: '#64748b' }}>
-                                +{job.skills.length - 5} more
-                              </span>
+                              <span className="muted text-xs">+{job.skills.length - 5} more</span>
                             )}
                           </div>
                         )}
                       </div>
 
                       {/* Right: Actions */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Link
-                          to={`/job-details/${job.job_id}`}
-                          className="btn outline small"
-                          title="View Live Listing"
-                          style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-                        >
-                          <ExternalLink size={12} />
+                      <div className="list-end">
+                        <Link to={`/job-details/${job.job_id}`} className="btn outline small" title="View Live Listing">
+                          <ExternalLink size={13} />
                           <span>View</span>
                         </Link>
-                        <button
-                          className="btn outline small"
-                          onClick={() => handleOpenJobModal(job)}
-                          title="Edit Job"
-                          style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-                        >
-                          <Edit3 size={12} />
+                        <button className="btn outline small" onClick={() => handleOpenJobModal(job)} title="Edit Job">
+                          <Edit3 size={13} />
                           <span>Edit</span>
                         </button>
                         <button
-                          className="btn small"
+                          className="btn outline small danger"
                           onClick={() => handleDeleteJob(job.job_id, job.job_title)}
                           title="Delete Job"
-                          style={{ background: '#fff0f2', color: '#ef4b5f', padding: '6px 10px' }}
                         >
                           <Trash2 size={13} />
                         </button>
@@ -1229,54 +901,31 @@ export default function AdminDashboard({ initialTab = 'all' }) {
         {/* ADD / EDIT JOB MODAL                                           */}
         {/* ============================================================== */}
         {showJobModal && (
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(15, 23, 42, 0.65)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1000,
-              padding: 16
-            }}
-          >
-            <div
-              className="card card-pad"
-              style={{
-                width: '100%',
-                maxWidth: 620,
-                maxHeight: '90vh',
-                overflowY: 'auto',
-                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h3 className="card-title" style={{ margin: 0 }}>
-                  {editingJob ? `Edit Job #${editingJob.job_id}` : 'Post New Job / Internship'}
-                </h3>
-                <button
-                  onClick={() => setShowJobModal(false)}
-                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
-                >
+          <div className="modal-bg">
+            <div className="modal wide" role="dialog" aria-modal="true">
+              <div className="modal-head">
+                <h3>{editingJob ? `Edit Job #${editingJob.job_id}` : 'Post New Job / Internship'}</h3>
+                <button className="icon-btn" onClick={() => setShowJobModal(false)} aria-label="Close">
                   <X size={20} />
                 </button>
               </div>
 
               {jobFeedback.error && (
-                <div style={{ padding: '10px 14px', background: '#fee2e2', color: '#991b1b', borderRadius: 8, fontSize: 13, marginBottom: 14 }}>
-                  {jobFeedback.error}
+                <div className="notice bad">
+                  <AlertCircle size={16} />
+                  <span className="notice-main">{jobFeedback.error}</span>
                 </div>
               )}
               {jobFeedback.success && (
-                <div style={{ padding: '10px 14px', background: '#d1fae5', color: '#065f46', borderRadius: 8, fontSize: 13, marginBottom: 14 }}>
-                  {jobFeedback.success}
+                <div className="notice good">
+                  <CheckCircle2 size={16} />
+                  <span className="notice-main">{jobFeedback.success}</span>
                 </div>
               )}
 
-              <form onSubmit={handleSaveJob} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div className="grid grid-2" style={{ gap: 12 }}>
-                  <div className="form-group">
+              <form onSubmit={handleSaveJob} className="stack">
+                <div className="form-row">
+                  <div className="form-group" style={{ margin: 0 }}>
                     <label className="label">Job Title *</label>
                     <input
                       className="input"
@@ -1288,7 +937,7 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                     />
                   </div>
 
-                  <div className="form-group">
+                  <div className="form-group" style={{ margin: 0 }}>
                     <label className="label">Company Name *</label>
                     <input
                       className="input"
@@ -1301,8 +950,8 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                   </div>
                 </div>
 
-                <div className="grid grid-3" style={{ gap: 12 }}>
-                  <div className="form-group">
+                <div className="ui-grid cols-3" style={{ gap: 14 }}>
+                  <div className="form-group" style={{ margin: 0 }}>
                     <label className="label">Target Career Role</label>
                     <select
                       className="select"
@@ -1317,7 +966,7 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                     </select>
                   </div>
 
-                  <div className="form-group">
+                  <div className="form-group" style={{ margin: 0 }}>
                     <label className="label">Job Type</label>
                     <select
                       className="select"
@@ -1331,7 +980,7 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                     </select>
                   </div>
 
-                  <div className="form-group">
+                  <div className="form-group" style={{ margin: 0 }}>
                     <label className="label">Work Mode</label>
                     <select
                       className="select"
@@ -1345,8 +994,8 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                   </div>
                 </div>
 
-                <div className="grid grid-2" style={{ gap: 12 }}>
-                  <div className="form-group">
+                <div className="form-row">
+                  <div className="form-group" style={{ margin: 0 }}>
                     <label className="label">Location</label>
                     <input
                       className="input"
@@ -1357,7 +1006,7 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                     />
                   </div>
 
-                  <div className="form-group">
+                  <div className="form-group" style={{ margin: 0 }}>
                     <label className="label">Salary / Stipend</label>
                     <input
                       className="input"
@@ -1369,8 +1018,8 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                   </div>
                 </div>
 
-                <div className="grid grid-2" style={{ gap: 12 }}>
-                  <div className="form-group">
+                <div className="form-row">
+                  <div className="form-group" style={{ margin: 0 }}>
                     <label className="label">Available / Opening Date</label>
                     <input
                       className="input"
@@ -1380,7 +1029,7 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                     />
                   </div>
 
-                  <div className="form-group">
+                  <div className="form-group" style={{ margin: 0 }}>
                     <label className="label">Application Due Date (Deadline)</label>
                     <input
                       className="input"
@@ -1391,7 +1040,7 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                   </div>
                 </div>
 
-                <div className="form-group">
+                <div className="form-group" style={{ margin: 0 }}>
                   <label className="label">Experience Requirement</label>
                   <input
                     className="input"
@@ -1402,7 +1051,7 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                   />
                 </div>
 
-                <div className="form-group">
+                <div className="form-group" style={{ margin: 0 }}>
                   <label className="label">Job Description</label>
                   <textarea
                     className="input"
@@ -1413,7 +1062,7 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                   />
                 </div>
 
-                <div className="form-group">
+                <div className="form-group" style={{ margin: 0 }}>
                   <label className="label">Key Responsibilities (One per line)</label>
                   <textarea
                     className="input"
@@ -1424,7 +1073,7 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                   />
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 10 }}>
+                <div className="modal-actions">
                   <button
                     type="button"
                     className="btn outline"
@@ -1444,34 +1093,21 @@ export default function AdminDashboard({ initialTab = 'all' }) {
 
         {/* Cover Note Modal */}
         {selectedNote && (
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(15, 23, 42, 0.65)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1000,
-              padding: 16
-            }}
-          >
-            <div
-              className="card card-pad"
-              style={{ width: '100%', maxWidth: 500, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)' }}
-            >
-              <h3 className="card-title" style={{ marginBottom: 12 }}>
-                Candidate Cover Note
-              </h3>
-              <p style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>{selectedNote.title}</p>
+          <div className="modal-bg">
+            <div className="modal" role="dialog" aria-modal="true" aria-label="Candidate Cover Note">
+              <div className="modal-head">
+                <h3>Candidate Cover Note</h3>
+                <button className="icon-btn" onClick={() => setSelectedNote(null)} aria-label="Close">
+                  <X size={18} />
+                </button>
+              </div>
+              <p className="muted text-xs" style={{ margin: 0 }}>{selectedNote.title}</p>
               <div
+                className="text-sm"
                 style={{
-                  background: '#f8fafc',
+                  background: 'var(--surface-2)',
                   padding: 14,
-                  borderRadius: 8,
-                  border: '1px solid #e2e8f0',
-                  fontSize: 13,
-                  color: '#334155',
+                  borderRadius: 'var(--radius-sm)',
                   lineHeight: 1.6,
                   whiteSpace: 'pre-wrap',
                   maxHeight: 280,
@@ -1480,7 +1116,7 @@ export default function AdminDashboard({ initialTab = 'all' }) {
               >
                 {selectedNote.note}
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+              <div className="modal-actions">
                 <button className="btn" onClick={() => setSelectedNote(null)}>
                   Close
                 </button>

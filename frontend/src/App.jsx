@@ -23,31 +23,22 @@ import PlaceholderAdmin from './pages/PlaceholderAdmin';
 import Settings from './pages/Settings';
 import ForgotPassword from './pages/ForgotPassword';
 import ErrorBoundary from './components/ErrorBoundary';
+import { applyTheme, getSavedTheme } from './utils/theme';
 import './App.css';
+import './styles/design-system.css'; // Modern UI layer (loaded after App.css so it can refine it)
 
 export default function App() {
   useEffect(() => {
     // Initialize Theme globally
     try {
-      const savedTheme = JSON.parse(localStorage.getItem('careerIQ_theme') || '"light"');
+      // Dark is the default theme; a user's saved choice is applied after login (Layout.jsx)
+      applyTheme(getSavedTheme());
       const root = document.documentElement;
-      if (savedTheme === 'dark') {
-        root.setAttribute('data-theme', 'dark');
-      } else if (savedTheme === 'system') {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-      } else {
-        root.setAttribute('data-theme', 'light');
-      }
 
-      // Initialize Compact Mode globally
-      const savedCompact = JSON.parse(localStorage.getItem('careerIQ_compactMode') || 'false');
-      root.setAttribute('data-compact', savedCompact ? 'true' : 'false');
-      if (savedCompact) {
-        root.classList.add('compact-mode');
-      } else {
-        root.classList.remove('compact-mode');
-      }
+      // Compact mode was removed from Settings: make sure it is always off
+      root.setAttribute('data-compact', 'false');
+      root.classList.remove('compact-mode');
+      localStorage.removeItem('careerIQ_compactMode');
     } catch {}
   }, []);
   return (

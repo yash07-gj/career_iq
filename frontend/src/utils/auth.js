@@ -2,6 +2,8 @@
 // CareerIQ Auth Helper — Manages logged-in user session in localStorage
 // =============================================================================
 
+import { resetTheme } from './theme';
+
 const USER_KEY = 'careeriq_user';
 const TOKEN_KEY = 'careeriq_token';
 
@@ -48,6 +50,7 @@ export const auth = {
     } finally {
       localStorage.removeItem(USER_KEY);
       localStorage.removeItem(TOKEN_KEY);
+      resetTheme(); // next person starts with the default (dark) theme
     }
   },
 

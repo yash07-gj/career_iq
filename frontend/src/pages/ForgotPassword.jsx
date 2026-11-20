@@ -11,8 +11,17 @@ import {
   EyeOff,
   KeyRound,
   Mail,
+  Target, Award, TrendingUp
 } from 'lucide-react';
 import api from '../services/api';
+import '../styles/public.css';
+
+const RECOVERY_POINTS = [
+  'Direct and secure password recovery',
+  'Enterprise-grade bcrypt password hashing',
+  'Real-time MySQL database credential update',
+  'Instant account restoration without delay',
+];
 
 export default function ForgotPassword() {
   const nav = useNavigate();
@@ -70,134 +79,110 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="auth">
-      <div className="auth-card">
-        {/* Left Side Info Panel */}
-        <div className="auth-side">
-          <div
-            className="logo-icon-box"
-            style={{ width: 48, height: 48, marginBottom: 24, background: 'rgba(255,255,255,0.2)' }}
-          >
-            <GraduationCap size={28} />
-          </div>
-          <h1>Account Recovery</h1>
-          <p>Reset your password to regain access to your CareerIQ career intelligence profile.</p>
-
-          <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {[
-              'Direct and secure password recovery',
-              'Enterprise-grade bcrypt password hashing',
-              'Real-time MySQL database credential update',
-              'Instant account restoration without delay',
-            ].map((text) => (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }} key={text}>
-                <CheckCircle2 size={16} color="#6ee7b7" />
-                <span>{text}</span>
+    <div className="au">
+      {/* Left: dark animated panel */}
+      <aside className="au-side">
+        <div className="lp-orb one" />
+        <div className="lp-orb two" />
+        <div className="lp-grid-bg" />
+        <div className="au-side-in">
+          <Link to="/" className="lp-logo">
+            <span className="lp-logo-mark"><GraduationCap size={20} strokeWidth={2.5} /></span>
+            <span>Career<b>IQ</b></span>
+          </Link>
+          <div className="au-side-body">
+            <h1>Account Recovery</h1>
+            <p>Reset your password to regain access to your CareerIQ career intelligence profile.</p>
+            <div className="au-checks">
+              {RECOVERY_POINTS.map((x) => (
+                <div className="au-check" key={x}>
+                  <CheckCircle2 size={17} />
+                  <span>{x}</span>
+                </div>
+              ))}
+            </div>
+            <div className="au-cards" aria-hidden="true">
+              <div className="au-card c1 lp-glass">
+                <span className="ic"><Target size={18} /></span>
+                <div><small>Career Readiness</small><strong>78%</strong></div>
               </div>
-            ))}
+              <div className="au-card c2 good lp-glass">
+                <span className="ic"><Award size={18} /></span>
+                <div><small>Top Career Match</small><strong>Data Analyst · 89%</strong></div>
+              </div>
+              <div className="au-card c3 violet lp-glass">
+                <span className="ic"><TrendingUp size={18} /></span>
+                <div><small>Market Demand</small><strong>+28% High Growth</strong></div>
+              </div>
+            </div>
           </div>
         </div>
+      </aside>
 
-        {/* Right Side Form Panel */}
-        <div className="auth-form" style={{ maxWidth: 460 }}>
-          <div className="auth-logo">
-            <div className="logo-icon-box" style={{ width: 34, height: 34 }}>
-              <KeyRound size={20} />
+      {/* Right: form */}
+      <main className="au-main">
+          <form className="au-form" onSubmit={handleSubmit}>
+            <Link to="/" className="au-brand">
+              <span className="lp-logo-mark"><KeyRound size={18} strokeWidth={2.5} /></span>
+              <span>Career<b>IQ</b></span>
+            </Link>
+
+            <div className="au-title">
+              <h2>Change Password</h2>
+              <p>Enter your registered email and choose a new password</p>
             </div>
-            <strong>CareerIQ</strong>
-          </div>
 
-          <h2>Change Password</h2>
-          <p>Enter your registered email and choose a new password</p>
+            {error && (
+              <div className="notice bad" role="alert">
+                <AlertCircle size={16} />
+                <span className="notice-main">{error}</span>
+              </div>
+            )}
 
-          {error && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '10px 14px',
-                background: '#fee2e2',
-                color: '#991b1b',
-                borderRadius: 8,
-                fontSize: 13,
-                marginBottom: 16,
-              }}
-            >
-              <AlertCircle size={16} style={{ flexShrink: 0 }} />
-              <span>{error}</span>
-            </div>
-          )}
+            {success && (
+              <div className="notice good" role="status">
+                <CheckCircle2 size={16} />
+                <span className="notice-main">{success} Redirecting to login...</span>
+              </div>
+            )}
 
-          {success && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '12px 14px',
-                background: '#ecfdf5',
-                border: '1px solid #a7f3d0',
-                color: '#065f46',
-                borderRadius: 8,
-                fontSize: 13,
-                marginBottom: 16,
-              }}
-            >
-              <CheckCircle2 size={16} style={{ flexShrink: 0, color: '#10b981' }} />
-              <span>{success} Redirecting to login...</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit}>
             {/* Email field */}
-            <div className="form-group" style={{ marginBottom: 14 }}>
-              <label className="label">Registered Email Address</label>
-              <div style={{ position: 'relative' }}>
+            <div className="form-group">
+              <label className="label" htmlFor="fp-email">Registered Email Address</label>
+              <div className="input-icon">
+                <Mail size={16} />
                 <input
+                  id="fp-email"
                   className="input"
                   type="email"
                   placeholder="e.g. yash@gmail.com"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  style={{ paddingLeft: '36px', width: '100%' }}
-                />
-                <Mail
-                  size={16}
-                  color="#94a3b8"
-                  style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
                 />
               </div>
             </div>
 
             {/* New Password */}
-            <div className="form-group" style={{ marginBottom: 14 }}>
-              <label className="label">New Password</label>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <div className="form-group">
+              <label className="label" htmlFor="fp-new">New Password</label>
+              <div className="input-icon">
                 <input
+                  id="fp-new"
                   className="input"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="At least 6 characters"
                   required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  style={{ paddingRight: '42px', width: '100%' }}
                 />
                 {newPassword.length > 0 && (
                   <button
                     type="button"
+                    className="input-action"
                     onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: '12px',
-                      background: 'transparent',
-                      border: 'none',
-                      padding: '4px',
-                      cursor: 'pointer',
-                      color: '#64748b',
-                    }}
                     title={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -206,32 +191,25 @@ export default function ForgotPassword() {
             </div>
 
             {/* Confirm New Password */}
-            <div className="form-group" style={{ marginBottom: 20 }}>
-              <label className="label">Confirm New Password</label>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <div className="form-group">
+              <label className="label" htmlFor="fp-confirm">Confirm New Password</label>
+              <div className="input-icon">
                 <input
+                  id="fp-confirm"
                   className="input"
                   type={showConfirm ? 'text' : 'password'}
                   placeholder="Re-enter new password"
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  style={{ paddingRight: '42px', width: '100%' }}
                 />
                 {confirmPassword.length > 0 && (
                   <button
                     type="button"
+                    className="input-action"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    style={{
-                      position: 'absolute',
-                      right: '12px',
-                      background: 'transparent',
-                      border: 'none',
-                      padding: '4px',
-                      cursor: 'pointer',
-                      color: '#64748b',
-                    }}
                     title={showConfirm ? 'Hide password' : 'Show password'}
+                    aria-label={showConfirm ? 'Hide password' : 'Show password'}
                   >
                     {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -240,12 +218,7 @@ export default function ForgotPassword() {
             </div>
 
             {/* Submit button */}
-            <button
-              type="submit"
-              className="btn"
-              disabled={loading || !!success}
-              style={{ width: '100%', padding: '12px', fontSize: 14 }}
-            >
+            <button type="submit" className="lp-btn primary" disabled={loading || !!success}>
               {loading ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
@@ -253,7 +226,7 @@ export default function ForgotPassword() {
                 </>
               ) : success ? (
                 <>
-                  <CheckCircle2 size={16} color="#ffffff" />
+                  <CheckCircle2 size={16} />
                   <span>Password Reset Completed!</span>
                 </>
               ) : (
@@ -263,25 +236,15 @@ export default function ForgotPassword() {
                 </>
               )}
             </button>
-          </form>
 
-          <p style={{ textAlign: 'center', marginTop: 22, fontSize: 13, color: 'var(--text-muted)' }}>
-            Remembered your password?{' '}
-            <Link
-              to="/login"
-              style={{
-                color: 'var(--blue)',
-                fontWeight: 700,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-              }}
-            >
-              <ArrowLeft size={13} /> Back to Login
-            </Link>
-          </p>
-        </div>
-      </div>
+            <p className="au-foot">
+              Remembered your password?{' '}
+              <Link to="/login" className="link-btn">
+                <ArrowLeft size={13} /> Back to Login
+              </Link>
+            </p>
+          </form>
+      </main>
     </div>
   );
 }

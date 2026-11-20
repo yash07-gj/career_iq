@@ -12,22 +12,17 @@ import {
   TrendingUp,
   BrainCircuit,
   GitBranch,
-  ArrowRight,
   ShieldCheck,
   Award,
   ExternalLink,
-  GraduationCap,
   X,
   Upload,
-  User,
-  Mail,
-  Phone,
-  FileText,
   Send,
   Loader2,
   Clock
 } from 'lucide-react';
 import { Layout, Page } from '../components/Layout';
+import { toneFor } from '../utils/career';
 // removed mockJobs
 import auth from '../utils/auth';
 import api from '../services/api';
@@ -156,8 +151,11 @@ export default function JobDetails() {
     return (
       <Layout>
         <Page title="Job Match Details" subtitle="Loading matching model breakdown...">
-          <div style={{ padding: '40px 0', textAlign: 'center', color: '#64748b' }}>
-            Loading job details...
+          <div className="card card-pad stack">
+            <div className="skeleton" style={{ height: 22, width: '45%' }} />
+            <div className="skeleton" style={{ height: 14, width: '70%' }} />
+            <div className="skeleton" style={{ height: 14, width: '60%' }} />
+            <p className="muted text-sm" style={{ margin: 0 }}>Loading job details...</p>
           </div>
         </Page>
       </Layout>
@@ -185,86 +183,55 @@ export default function JobDetails() {
   const matchedSkills = (rawMatchedSkills || []).filter((s) => !missingSet.has(s.toLowerCase().trim()));
   const missingSkills = rawMissingSkills || [];
 
+  const fmtDate = (d) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  const matchTone = toneFor(match);
+  const overdue = job.due_date && new Date(job.due_date) < new Date();
+
+  const scoreRows = [
+    { label: 'Technical Skill Fit', value: breakdown?.skillScore || 85, bar: '', note: null },
+    { label: 'Education Requirement', value: breakdown?.educationScore || 95, bar: 'green', note: educationMatch || 'Matches MCA / Computer Science Degree' },
+    { label: 'Experience Level Fit', value: breakdown?.experienceScore || 75, bar: 'orange', note: experienceMatch || 'Fits Fresher / Graduate requirements' },
+  ];
+
   return (
     <Layout>
-      <div style={{ padding: '24px 36px 48px', maxWidth: 1400, margin: '0 auto' }}>
+      <section className="page">
         {/* BACK BUTTON */}
-        <Link
-          to="/job-matching"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            fontSize: 13,
-            fontWeight: 700,
-            color: 'var(--blue, #2563eb)',
-            textDecoration: 'none',
-            marginBottom: 20,
-            padding: '6px 12px',
-            background: 'var(--bg-card, #ffffff)',
-            borderRadius: 8,
-            border: '1px solid var(--line, #e2e8f0)',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-            transition: 'background 0.15s ease'
-          }}
-        >
-          <ArrowLeft size={16} />
-          <span>Back to Job Matching</span>
-        </Link>
+        <div>
+          <Link to="/job-matching" className="btn outline small">
+            <ArrowLeft size={16} />
+            <span>Back to Job Matching</span>
+          </Link>
+        </div>
 
         {/* HERO CARD */}
-        <div
-          className="card card-pad"
-          style={{
-            marginBottom: 24,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            flexWrap: 'wrap',
-            gap: 20
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <span className="pill blue" style={{ fontSize: 12 }}>
-                AI Match Score Verified
-              </span>
-              <span className="pill green" style={{ fontSize: 12 }}>
-                Active Hiring
-              </span>
+        <div className="card card-pad row-between" style={{ alignItems: 'flex-start', gap: 20 }}>
+          <div className="stack" style={{ gap: 10, flex: '1 1 320px' }}>
+            <div className="row-gap">
+              <span className="pill info">AI Match Score Verified</span>
+              <span className="pill good">Active Hiring</span>
             </div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--navy, #0f172a)', margin: '0 0 10px' }}>
-              {title}
-            </h1>
-            <div
-              style={{
-                display: 'flex',
-                gap: 16,
-                fontSize: 14,
-                color: 'var(--text-muted, #475569)',
-                flexWrap: 'wrap',
-                marginBottom: 12
-              }}
-            >
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700, color: 'var(--navy, #0f172a)' }}>
-                <Building2 size={16} color="var(--blue, #2563eb)" />
+            <h1 style={{ margin: 0, fontSize: 'clamp(22px, 2.8vw, 28px)' }}>{title}</h1>
+            <div className="row-gap text-sm muted" style={{ gap: 14 }}>
+              <span className="row-gap" style={{ gap: 6, fontWeight: 700, color: 'var(--ink)' }}>
+                <Building2 size={16} color="var(--accent)" />
                 {company}
               </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <MapPin size={15} color="#94a3b8" />
+              <span className="row-gap" style={{ gap: 6 }}>
+                <MapPin size={15} />
                 {location}
               </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <Briefcase size={15} color="#94a3b8" />
+              <span className="row-gap" style={{ gap: 6 }}>
+                <Briefcase size={15} />
                 {type}
               </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <Calendar size={15} color="#94a3b8" />
+              <span className="row-gap" style={{ gap: 6 }}>
+                <Calendar size={15} />
                 {experience}
               </span>
               {salary && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600, color: '#047857' }}>
-                  <DollarSign size={15} color="#10b981" />
+                <span className="row-gap text-good" style={{ gap: 6, fontWeight: 600 }}>
+                  <DollarSign size={15} />
                   {salary}
                 </span>
               )}
@@ -272,80 +239,29 @@ export default function JobDetails() {
 
             {/* DATES: AVAILABLE FROM & APPLICATION DUE DATE */}
             {(job.posted_date || job.due_date) && (
-              <div
-                style={{
-                  display: 'flex',
-                  gap: 16,
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  padding: '8px 14px',
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: 8,
-                  fontSize: 13,
-                  marginTop: 6
-                }}
-              >
+              <div className="row-gap text-sm" style={{ gap: 12 }}>
                 {job.posted_date && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#475569' }}>
-                    <Calendar size={14} color="#2563eb" />
-                    <span>Available From: <strong style={{ color: '#0f172a' }}>{new Date(job.posted_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</strong></span>
+                  <span className="pill neutral">
+                    <Calendar size={14} />
+                    Available From: {fmtDate(job.posted_date)}
                   </span>
                 )}
                 {job.due_date && (
-                  <span style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    color: new Date(job.due_date) < new Date() ? '#b91c1c' : '#b45309',
-                    fontWeight: 600
-                  }}>
+                  <span className={`pill ${overdue ? 'bad' : 'warn'}`}>
                     <Clock size={14} />
-                    <span>Apply Due Date: {new Date(job.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    Apply Due Date: {fmtDate(job.due_date)}
                   </span>
                 )}
               </div>
             )}
           </div>
 
-          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12 }}>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '10px 20px',
-                borderRadius: 12,
-                background: match >= 80 ? '#ecfdf5' : match >= 70 ? '#eff6ff' : '#fffbeb',
-                border: `1px solid ${match >= 80 ? '#a7f3d0' : match >= 70 ? '#bfdbfe' : '#fde68a'}`
-              }}
-            >
-              <Award size={22} color={match >= 80 ? '#10b981' : match >= 70 ? '#2563eb' : '#f59e0b'} />
-              <span
-                style={{
-                  fontSize: 22,
-                  fontWeight: 800,
-                  color: match >= 80 ? '#047857' : match >= 70 ? '#1d4ed8' : '#b45309'
-                }}
-              >
-                {match}% Match
-              </span>
-            </div>
-
-            <button
-              type="button"
-              className="btn"
-              onClick={handleOpenApplyModal}
-              disabled={applied}
-              style={{
-                padding: '10px 24px',
-                fontSize: 14,
-                fontWeight: 700,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8
-              }}
-            >
+          <div className="stack" style={{ alignItems: 'flex-end', gap: 12 }}>
+            <span className={`pill ${matchTone}`} style={{ fontSize: 20, fontWeight: 800, padding: '8px 16px', fontFamily: 'var(--font-display)' }}>
+              <Award size={20} />
+              {match}% Match
+            </span>
+            <button type="button" className="btn" onClick={handleOpenApplyModal} disabled={applied}>
               {applied ? (
                 <>
                   <CheckCircle2 size={16} />
@@ -362,101 +278,79 @@ export default function JobDetails() {
         </div>
 
         {/* MATCH SUMMARY BANNER */}
-        <div
-          className="card card-pad"
-          style={{
-            marginBottom: 24,
-            background: 'linear-gradient(135deg, rgba(37,99,235,0.04) 0%, rgba(37,99,235,0.08) 100%)',
-            border: '1px solid var(--blue-border, #dbeafe)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-            <div
-              style={{
-                width: 60,
-                height: 60,
-                borderRadius: 14,
-                background: '#2563eb',
-                color: '#ffffff',
-                display: 'grid',
-                placeItems: 'center',
-                fontSize: 20,
-                fontWeight: 800,
-                flexShrink: 0
-              }}
-            >
-              {match}%
-            </div>
-            <div style={{ flex: 1 }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--navy, #0f172a)' }}>
-                Strong Alignment with your Extracted Profile
-              </h3>
-              <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted, #64748b)', lineHeight: 1.5 }}>
-                Your resume exhibits strong mastery of{' '}
-                <strong>{matchedSkills ? matchedSkills.slice(0, 3).join(', ') : 'key skills'}</strong>. You
-                fulfill <strong>{breakdown?.skillScore || 85}%</strong> of the direct technical skills
-                required for this role.
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <Link to="/gap-analysis" className="btn outline small" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <TrendingUp size={13} />
-                <span>Analyze Gap</span>
-              </Link>
-            </div>
+        <div className="notice info">
+          <span
+            className="num"
+            style={{
+              width: 56, height: 56, borderRadius: 14, flexShrink: 0,
+              background: 'var(--accent)', color: 'var(--on-accent)',
+              display: 'grid', placeItems: 'center',
+              fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18
+            }}
+          >
+            {match}%
+          </span>
+          <div className="notice-main">
+            <strong style={{ fontFamily: 'var(--font-display)' }}>Strong Alignment with your Extracted Profile</strong>
+            <p className="muted text-sm" style={{ margin: '2px 0 0' }}>
+              Your resume exhibits strong mastery of{' '}
+              <strong>{matchedSkills ? matchedSkills.slice(0, 3).join(', ') : 'key skills'}</strong>. You
+              fulfill <strong>{breakdown?.skillScore || 85}%</strong> of the direct technical skills
+              required for this role.
+            </p>
           </div>
+          <Link to="/gap-analysis" className="btn outline small">
+            <TrendingUp size={13} />
+            <span>Analyze Gap</span>
+          </Link>
         </div>
 
         {/* MAIN 2-COLUMN GRID */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: 24, marginBottom: 24 }}>
+        <div className="ui-grid split">
           {/* LEFT: JOB DESCRIPTION & SKILLS */}
-          <div>
-            {/* Description */}
-            <div className="card card-pad" style={{ marginBottom: 24 }}>
-              <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Briefcase size={18} color="var(--blue, #2563eb)" />
-                <span>Job Overview & Description</span>
-              </h3>
-              <p style={{ fontSize: 14, color: 'var(--text-muted, #475569)', lineHeight: 1.7, margin: 0 }}>
+          <div className="stack" style={{ gap: 16 }}>
+            <div className="card card-pad">
+              <div className="card-head">
+                <h3 className="card-title row-gap">
+                  <Briefcase size={18} color="var(--accent)" />
+                  <span>Job Overview & Description</span>
+                </h3>
+              </div>
+              <p className="muted" style={{ fontSize: 14, lineHeight: 1.7, margin: 0 }}>
                 {description}
               </p>
             </div>
 
-            {/* Matched Skills Matrix */}
-            <div className="card card-pad" style={{ marginBottom: 24 }}>
-              <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <ShieldCheck size={18} color="#10b981" />
-                <span>Skills Alignment Matrix</span>
-              </h3>
+            <div className="card card-pad">
+              <div className="card-head">
+                <h3 className="card-title row-gap">
+                  <ShieldCheck size={18} color="var(--good)" />
+                  <span>Skills Alignment Matrix</span>
+                </h3>
+              </div>
 
-              {/* Matched */}
-              <div style={{ marginBottom: 18 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#047857', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div className="stack" style={{ gap: 8, marginBottom: 16 }}>
+                <span className="row-gap text-sm text-good" style={{ gap: 6, fontWeight: 700 }}>
                   <CheckCircle2 size={15} />
-                  <span>Your Matched Skills ({matchedSkills ? matchedSkills.length : 0})</span>
-                </div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  Your Matched Skills ({matchedSkills ? matchedSkills.length : 0})
+                </span>
+                <div className="chips">
                   {matchedSkills &&
                     matchedSkills.map((s) => (
-                      <span key={s} className="pill green" style={{ padding: '6px 12px', fontSize: 12, fontWeight: 600 }}>
-                        {s} ✓
-                      </span>
+                      <span key={s} className="pill good">{s} ✓</span>
                     ))}
                 </div>
               </div>
 
-              {/* Missing */}
               {missingSkills && missingSkills.length > 0 && (
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#b45309', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div className="stack" style={{ gap: 8 }}>
+                  <span className="row-gap text-sm text-bad" style={{ gap: 6, fontWeight: 700 }}>
                     <AlertCircle size={15} />
-                    <span>Skills to Learn / Missing ({missingSkills.length})</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    Skills to Learn / Missing ({missingSkills.length})
+                  </span>
+                  <div className="chips">
                     {missingSkills.map((s) => (
-                      <span key={s} className="pill orange" style={{ padding: '6px 12px', fontSize: 12, fontWeight: 600 }}>
-                        {s}
-                      </span>
+                      <span key={s} className="pill bad">{s}</span>
                     ))}
                   </div>
                 </div>
@@ -464,105 +358,52 @@ export default function JobDetails() {
             </div>
           </div>
 
-          {/* RIGHT: MATCH BREAKDOWN CARDS */}
-          <div>
-            <div className="card card-pad" style={{ marginBottom: 24 }}>
-              <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <BrainCircuit size={18} color="var(--blue, #2563eb)" />
+          {/* RIGHT: MATCH BREAKDOWN */}
+          <div className="card card-pad" style={{ alignSelf: 'start' }}>
+            <div className="card-head">
+              <h3 className="card-title row-gap">
+                <BrainCircuit size={18} color="var(--accent)" />
                 <span>Match Score Breakdown</span>
               </h3>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
-                    <span>Technical Skill Fit</span>
-                    <span style={{ color: 'var(--blue, #2563eb)' }}>{breakdown?.skillScore || 85}%</span>
+            </div>
+            <div className="stack" style={{ gap: 16 }}>
+              {scoreRows.map((r) => (
+                <div key={r.label}>
+                  <div className="row-between text-sm" style={{ fontWeight: 600, marginBottom: 6 }}>
+                    <span>{r.label}</span>
+                    <span className="num">{r.value}%</span>
                   </div>
                   <div className="bar-bg">
-                    <div className="bar blue" style={{ width: `${breakdown?.skillScore || 85}%` }} />
+                    <div className={`bar ${r.bar}`} style={{ width: `${r.value}%` }} />
                   </div>
+                  {r.note && <div className="muted text-xs" style={{ marginTop: 4 }}>{r.note}</div>}
                 </div>
-
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
-                    <span>Education Requirement</span>
-                    <span style={{ color: '#10b981' }}>{breakdown?.educationScore || 95}%</span>
-                  </div>
-                  <div className="bar-bg">
-                    <div className="bar green" style={{ width: `${breakdown?.educationScore || 95}%` }} />
-                  </div>
-                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
-                    {educationMatch || 'Matches MCA / Computer Science Degree'}
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
-                    <span>Experience Level Fit</span>
-                    <span style={{ color: '#f59e0b' }}>{breakdown?.experienceScore || 75}%</span>
-                  </div>
-                  <div className="bar-bg">
-                    <div className="bar orange" style={{ width: `${breakdown?.experienceScore || 75}%` }} />
-                  </div>
-                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
-                    {experienceMatch || 'Fits Fresher / Graduate requirements'}
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
 
         {/* RESPONSIBILITIES CARD */}
-        <div className="card card-pad" style={{ marginBottom: 24 }}>
-          <h3 className="card-title">Roles & Responsibilities</h3>
-          <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: 'var(--text-muted, #475569)', lineHeight: 1.7 }}>
+        <div className="card card-pad">
+          <div className="card-head">
+            <h3 className="card-title">Roles & Responsibilities</h3>
+          </div>
+          <ul className="muted" style={{ margin: 0, paddingLeft: 20, fontSize: 14, lineHeight: 1.7 }}>
             {responsibilities &&
               responsibilities.map((r, i) => (
-                <li key={i} style={{ marginBottom: 6 }}>
-                  {r}
-                </li>
+                <li key={i} style={{ marginBottom: 6 }}>{r}</li>
               ))}
           </ul>
         </div>
 
         {/* BOTTOM ACTION BAR */}
-        <div
-          className="card card-pad"
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 16,
-            background: 'linear-gradient(135deg, rgba(37,99,235,0.05) 0%, rgba(37,99,235,0.02) 100%)',
-            border: '1px solid var(--blue-border, #bfdbfe)'
-          }}
-        >
+        <div className="next-step">
           <div>
-            <h4 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--navy, #0f172a)' }}>
-              Ready to take the next step with {company}?
-            </h4>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted, #64748b)' }}>
-              Submit your candidate application or check your skill roadmap to prepare.
-            </p>
+            <strong>Ready to take the next step with {company}?</strong>
+            <p>Submit your candidate application or check your skill roadmap to prepare.</p>
           </div>
-
-          <div style={{ display: 'flex', gap: 12 }}>
-            <button
-              type="button"
-              className="btn"
-              onClick={handleOpenApplyModal}
-              disabled={applied}
-              style={{
-                padding: '10px 22px',
-                fontSize: 13,
-                fontWeight: 700,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8
-              }}
-            >
+          <div className="row-gap">
+            <button type="button" className="btn" onClick={handleOpenApplyModal} disabled={applied}>
               {applied ? (
                 <>
                   <CheckCircle2 size={16} />
@@ -575,328 +416,197 @@ export default function JobDetails() {
                 </>
               )}
             </button>
-
-            <Link
-              to="/gap-analysis"
-              className="btn outline"
-              style={{
-                padding: '10px 18px',
-                fontSize: 13,
-                fontWeight: 600,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6
-              }}
-            >
+            <Link to="/gap-analysis" className="btn outline">
               <TrendingUp size={14} />
               <span>Skill Gap</span>
             </Link>
-
-            <Link
-              to="/roadmap"
-              className="btn outline"
-              style={{
-                padding: '10px 18px',
-                fontSize: 13,
-                fontWeight: 600,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6
-              }}
-            >
+            <Link to="/roadmap" className="btn outline">
               <GitBranch size={14} />
               <span>Roadmap</span>
             </Link>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* ========================================================
           CANDIDATE JOB APPLICATION MODAL FORM
       ======================================================== */}
       {showApplyModal && (
-        <div
-          onClick={() => setShowApplyModal(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 9999,
-            background: 'rgba(15,23,42,0.6)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 20
-          }}
-        >
-          <div
+        <div className="modal-bg" onClick={() => setShowApplyModal(false)}>
+          <form
+            className="modal"
+            style={{ width: 'min(580px, 100%)' }}
             onClick={(e) => e.stopPropagation()}
-            style={{
-              background: 'var(--bg-card, #ffffff)',
-              border: '1px solid var(--line, #e2e8f0)',
-              borderRadius: 16,
-              width: '100%',
-              maxWidth: 580,
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)',
-              overflow: 'hidden',
-              maxHeight: '90vh',
-              display: 'flex',
-              flexDirection: 'column'
-            }}
+            onSubmit={handleSubmitApplication}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="apply-modal-title"
           >
-            {/* Header */}
-            <div
-              style={{
-                padding: '18px 24px',
-                borderBottom: '1px solid var(--line, #e2e8f0)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                background: 'linear-gradient(135deg, rgba(37,99,235,0.04) 0%, rgba(37,99,235,0.08) 100%)'
-              }}
-            >
+            <div className="modal-head" style={{ alignItems: 'flex-start' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: 'var(--navy, #0f172a)' }}>
-                  Apply for {title}
-                </h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 3 }}>
-                  <span style={{ fontSize: 12, color: 'var(--text-muted, #64748b)' }}>
-                    at {company} · {location}
-                  </span>
+                <h3 id="apply-modal-title">Apply for {title}</h3>
+                <div className="row-gap" style={{ marginTop: 4 }}>
+                  <span className="muted text-xs">at {company} · {location}</span>
                   {job.due_date && (
-                    <span style={{ 
-                      fontSize: 11, 
-                      color: '#b45309', 
-                      background: '#fffbeb', 
-                      padding: '2px 8px', 
-                      borderRadius: 6,
-                      border: '1px solid #fde68a',
-                      fontWeight: 600,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4
-                    }}>
-                      <Clock size={11} /> Due Date: {new Date(job.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    <span className="pill warn">
+                      <Clock size={11} /> Due Date: {fmtDate(job.due_date)}
                     </span>
                   )}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowApplyModal(false)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#64748b',
-                  padding: 4
-                }}
-              >
+              <button type="button" className="icon-btn" onClick={() => setShowApplyModal(false)} aria-label="Close">
                 <X size={20} />
               </button>
             </div>
 
-            {/* Scrollable Form Body */}
-            <form onSubmit={handleSubmitApplication} style={{ padding: 24, overflowY: 'auto' }}>
-              {submitError && (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '10px 14px',
-                    background: '#fee2e2',
-                    color: '#991b1b',
-                    borderRadius: 8,
-                    fontSize: 13,
-                    marginBottom: 16
-                  }}
-                >
-                  <AlertCircle size={16} />
-                  <span>{submitError}</span>
-                </div>
-              )}
-
-              {submitSuccess && (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '12px 14px',
-                    background: '#ecfdf5',
-                    border: '1px solid #a7f3d0',
-                    color: '#065f46',
-                    borderRadius: 8,
-                    fontSize: 13,
-                    marginBottom: 16,
-                    fontWeight: 700
-                  }}
-                >
-                  <CheckCircle2 size={18} color="#10b981" />
-                  <span>Application submitted successfully to MySQL database!</span>
-                </div>
-              )}
-
-              {/* Full Name & Email Row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="label" style={{ fontSize: 12, marginBottom: 4 }}>Full Name</label>
-                  <input
-                    className="input"
-                    type="text"
-                    required
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Candidate name"
-                    style={{ width: '100%', fontSize: 13 }}
-                  />
-                </div>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="label" style={{ fontSize: 12, marginBottom: 4 }}>Email Address</label>
-                  <input
-                    className="input"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Candidate email"
-                    style={{ width: '100%', fontSize: 13 }}
-                  />
-                </div>
+            {submitError && (
+              <div className="notice bad">
+                <AlertCircle size={16} />
+                <span className="notice-main">{submitError}</span>
               </div>
+            )}
 
-              {/* Phone & Experience Level */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="label" style={{ fontSize: 12, marginBottom: 4 }}>Phone Number</label>
-                  <input
-                    className="input"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+91 9876543210"
-                    style={{ width: '100%', fontSize: 13 }}
-                  />
-                </div>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="label" style={{ fontSize: 12, marginBottom: 4 }}>Experience Level</label>
-                  <select
-                    className="select"
-                    value={experienceLevel}
-                    onChange={(e) => setExperienceLevel(e.target.value)}
-                    style={{ width: '100%', fontSize: 13 }}
-                  >
-                    <option value="Fresher / 0-1 years">Fresher / 0-1 years</option>
-                    <option value="1-3 years">1-3 years</option>
-                    <option value="3-5 years">3-5 years</option>
-                    <option value="5+ years">5+ years</option>
-                  </select>
-                </div>
+            {submitSuccess && (
+              <div className="notice good">
+                <CheckCircle2 size={18} />
+                <strong className="notice-main">Application submitted successfully to MySQL database!</strong>
               </div>
+            )}
 
-              {/* Portfolio / LinkedIn URL */}
-              <div className="form-group" style={{ marginBottom: 14 }}>
-                <label className="label" style={{ fontSize: 12, marginBottom: 4 }}>Portfolio or GitHub URL</label>
+            {/* Full Name & Email Row */}
+            <div className="form-row">
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="label" htmlFor="app-full-name">Full Name</label>
                 <input
+                  id="app-full-name"
                   className="input"
-                  type="url"
-                  value={portfolioUrl}
-                  onChange={(e) => setPortfolioUrl(e.target.value)}
-                  placeholder="https://github.com/your-username"
-                  style={{ width: '100%', fontSize: 13 }}
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Candidate name"
                 />
               </div>
-
-              {/* Resume File Upload */}
-              <div className="form-group" style={{ marginBottom: 14 }}>
-                <label className="label" style={{ fontSize: 12, marginBottom: 4 }}>
-                  Attach Resume (PDF or DOCX){' '}
-                  <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>— Optional</span>
-                </label>
-                <div
-                  style={{
-                    border: '1.5px dashed var(--line, #cbd5e1)',
-                    borderRadius: 10,
-                    padding: '14px',
-                    textAlign: 'center',
-                    background: 'rgba(37,99,235,0.02)',
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => document.getElementById('app-resume-file').click()}
-                >
-                  <input
-                    type="file"
-                    id="app-resume-file"
-                    style={{ display: 'none' }}
-                    accept=".pdf,.docx,.doc"
-                    onChange={(e) => setResumeFile(e.target.files[0] || null)}
-                  />
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    <Upload size={18} color="var(--blue, #2563eb)" />
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--navy, #0f172a)' }}>
-                      {resumeFile ? resumeFile.name : 'Click to select custom resume file'}
-                    </span>
-                  </div>
-                  {resumeFile && (
-                    <div style={{ fontSize: 11, color: '#10b981', marginTop: 4 }}>
-                      File ready to upload: {(resumeFile.size / 1024).toFixed(1)} KB
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Cover Note */}
-              <div className="form-group" style={{ marginBottom: 20 }}>
-                <label className="label" style={{ fontSize: 12, marginBottom: 4 }}>Cover Note / Why this role?</label>
-                <textarea
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="label" htmlFor="app-email">Email Address</label>
+                <input
+                  id="app-email"
                   className="input"
-                  rows={3}
-                  value={coverNote}
-                  onChange={(e) => setCoverNote(e.target.value)}
-                  placeholder="Tell the employer why you are a great match for this role..."
-                  style={{ width: '100%', resize: 'vertical', fontSize: 13, height: 'auto', padding: 10 }}
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Candidate email"
                 />
               </div>
+            </div>
 
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  className="btn outline"
-                  onClick={() => setShowApplyModal(false)}
-                  style={{ padding: '10px 18px', fontSize: 13 }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn"
-                  disabled={submitting || submitSuccess}
-                  style={{
-                    padding: '10px 24px',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 8
-                  }}
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      <span>Submitting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send size={15} />
-                      <span>Submit Application</span>
-                    </>
-                  )}
-                </button>
+            {/* Phone & Experience Level */}
+            <div className="form-row">
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="label" htmlFor="app-phone">Phone Number</label>
+                <input
+                  id="app-phone"
+                  className="input"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+91 9876543210"
+                />
               </div>
-            </form>
-          </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="label" htmlFor="app-exp">Experience Level</label>
+                <select
+                  id="app-exp"
+                  className="select"
+                  value={experienceLevel}
+                  onChange={(e) => setExperienceLevel(e.target.value)}
+                >
+                  <option value="Fresher / 0-1 years">Fresher / 0-1 years</option>
+                  <option value="1-3 years">1-3 years</option>
+                  <option value="3-5 years">3-5 years</option>
+                  <option value="5+ years">5+ years</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Portfolio / LinkedIn URL */}
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="label" htmlFor="app-portfolio">Portfolio or GitHub URL</label>
+              <input
+                id="app-portfolio"
+                className="input"
+                type="url"
+                value={portfolioUrl}
+                onChange={(e) => setPortfolioUrl(e.target.value)}
+                placeholder="https://github.com/your-username"
+              />
+            </div>
+
+            {/* Resume File Upload */}
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="label">
+                Attach Resume (PDF or DOCX){' '}
+                <span className="muted" style={{ fontWeight: 400 }}>— Optional</span>
+              </label>
+              <div
+                className="upload"
+                style={{ padding: 14, gap: 4 }}
+                onClick={() => document.getElementById('app-resume-file').click()}
+              >
+                <input
+                  type="file"
+                  id="app-resume-file"
+                  style={{ display: 'none' }}
+                  accept=".pdf,.docx,.doc"
+                  onChange={(e) => setResumeFile(e.target.files[0] || null)}
+                />
+                <span className="row-gap text-sm" style={{ fontWeight: 600, justifyContent: 'center' }}>
+                  <Upload size={18} />
+                  {resumeFile ? resumeFile.name : 'Click to select custom resume file'}
+                </span>
+                {resumeFile && (
+                  <span className="text-good text-xs">
+                    File ready to upload: {(resumeFile.size / 1024).toFixed(1)} KB
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Cover Note */}
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="label" htmlFor="app-cover">Cover Note / Why this role?</label>
+              <textarea
+                id="app-cover"
+                className="input"
+                rows={3}
+                value={coverNote}
+                onChange={(e) => setCoverNote(e.target.value)}
+                placeholder="Tell the employer why you are a great match for this role..."
+                style={{ resize: 'vertical' }}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="modal-actions">
+              <button type="button" className="btn outline" onClick={() => setShowApplyModal(false)}>
+                Cancel
+              </button>
+              <button type="submit" className="btn" disabled={submitting || submitSuccess}>
+                {submitting ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>Submitting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send size={15} />
+                    <span>Submit Application</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </Layout>

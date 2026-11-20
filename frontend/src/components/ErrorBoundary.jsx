@@ -25,106 +25,57 @@ export default class ErrorBoundary extends React.Component {
         <div
           style={{
             minHeight: '100vh',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px',
-            background: '#f8fafc',
-            fontFamily: 'system-ui, -apple-system, sans-serif'
+            display: 'grid',
+            placeItems: 'center',
+            padding: 24,
+            background: 'var(--bg)',
           }}
         >
-          <div
-            style={{
-              maxWidth: '520px',
-              width: '100%',
-              background: '#ffffff',
-              borderRadius: '16px',
-              padding: '32px',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
-              textAlign: 'center'
-            }}
-          >
+          <div className="card card-pad" style={{ maxWidth: 520, width: '100%', textAlign: 'center', padding: 32 }}>
             <div
               style={{
-                width: '56px',
-                height: '56px',
+                width: 56,
+                height: 56,
                 borderRadius: '50%',
-                background: '#fee2e2',
-                color: '#ef4444',
+                background: 'var(--bad-soft)',
+                color: 'var(--bad)',
                 display: 'grid',
                 placeItems: 'center',
-                margin: '0 auto 16px'
+                margin: '0 auto 16px',
               }}
             >
               <AlertCircle size={30} />
             </div>
 
-            <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: '0 0 8px' }}>
-              Something went wrong
-            </h2>
+            <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 8px' }}>Something went wrong</h2>
 
-            <p style={{ fontSize: '14px', color: '#64748b', margin: '0 0 20px', lineHeight: 1.5 }}>
+            <p className="muted text-sm" style={{ margin: '0 0 20px' }}>
               The application encountered a rendering issue. Reloading the page or returning home usually resolves it.
             </p>
 
             {this.state.error?.message && (
               <div
+                className="text-xs muted"
                 style={{
-                  background: '#f1f5f9',
+                  background: 'var(--surface-2)',
                   padding: '10px 14px',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  color: '#475569',
+                  borderRadius: 8,
                   textAlign: 'left',
-                  marginBottom: '20px',
-                  fontFamily: 'monospace',
-                  overflowX: 'auto'
+                  marginBottom: 20,
+                  fontFamily: 'ui-monospace, Consolas, monospace',
+                  overflowX: 'auto',
                 }}
               >
                 {this.state.error.message}
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <button
-                type="button"
-                onClick={this.handleReload}
-                style={{
-                  padding: '10px 18px',
-                  borderRadius: '8px',
-                  background: '#2563eb',
-                  color: '#ffffff',
-                  border: 'none',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
+            <div className="row-gap" style={{ justifyContent: 'center' }}>
+              <button type="button" className="btn" onClick={this.handleReload}>
                 <RefreshCw size={14} />
                 <span>Reload Page</span>
               </button>
-
-              <a
-                href="/"
-                style={{
-                  padding: '10px 18px',
-                  borderRadius: '8px',
-                  background: '#f1f5f9',
-                  color: '#334155',
-                  border: '1px solid #cbd5e1',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
+              <a href="/" className="btn outline">
                 <Home size={14} />
                 <span>Go to Home</span>
               </a>
