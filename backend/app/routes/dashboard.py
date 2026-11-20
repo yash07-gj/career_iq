@@ -87,9 +87,10 @@ def get_dashboard_data(user_id: int, db: Session = Depends(get_db)):
     overall_readiness = float(readiness.overall_score) if readiness else 0.0
 
     # Fetch candidate's acquired skills
-    cand_skills = db.query(CandidateSkill).filter(CandidateSkill.profile_id == profile_id).all()
-    cand_skill_map = {cs.skill_id: cs.proficiency_level for cs in cand_skills}
-    total_skills = len(cand_skills)
+    cand_skills = db.query(CandidateSkill, Skill).join(
+        Skill, CandidateSkill.skill_id == Skill.skill_id
+    ).filter(CandidateSkill.profile_id == profile_id).all()
+    cand_skill_map = {cs.Skill.skill_id: (cs.CandidateSkill.proficiency_level, cs.Skill.skill_name) for cs in cand_skills}
 
     # Calculate missing skills for the top career match role (exact same as Skill Gap Analysis)
     role_skills = db.query(CareerRoleSkill, Skill).join(
@@ -97,18 +98,32 @@ def get_dashboard_data(user_id: int, db: Session = Depends(get_db)):
     ).filter(CareerRoleSkill.career_role_id == top_role_id).all()
 
     missing_skill_names = []
+    missing_skill_names_lower = set()
     for rs, sk in role_skills:
-        cand_level = cand_skill_map.get(rs.skill_id, 0)
+        cand_level, _ = cand_skill_map.get(rs.skill_id, (0, sk.skill_name))
         if cand_level < rs.required_level:
             missing_skill_names.append(sk.skill_name)
+            missing_skill_names_lower.add(sk.skill_name.lower())
 
     missing_skills_count = len(missing_skill_names)
+
+    # Calculate verified acquired skills (exact same as Skill Gap Analysis)
+    matched_names = []
+    seen_matched = set()
+    for cs in cand_skills:
+        s_name = cs.Skill.skill_name
+        s_name_lower = s_name.lower()
+        if s_name_lower not in missing_skill_names_lower and s_name_lower not in seen_matched:
+            matched_names.append(s_name)
+            seen_matched.add(s_name_lower)
+
+    matched_skills_count = len(matched_names)
 
     metrics = MetricOverview(
         career_readiness=overall_readiness,
         top_career_match=top_role_name,
         top_match_percentage=top_match_pct,
-        total_skills=total_skills,
+        total_skills=matched_skills_count,
         missing_skills=missing_skills_count
     )
 
@@ -117,6 +132,7 @@ def get_dashboard_data(user_id: int, db: Session = Depends(get_db)):
         recommendations=rec_responses,
         market_skills=market_skills,
         missing_skills_list=missing_skill_names,
+        matched_skills_list=matched_names,
         user_name=user.full_name,
         has_resume=True,
         resume_filename=latest_resume.file_name if latest_resume else "resume.pdf"

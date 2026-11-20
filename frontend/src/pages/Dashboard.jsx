@@ -22,6 +22,7 @@ export default function Dashboard() {
     recommendations: [],
     market_skills: mockMarketSkills,
     missing_skills_list: [],
+    matched_skills_list: [],
     user_name: currentUser?.full_name || 'Candidate',
     has_resume: false,
     resume_filename: null,
@@ -65,14 +66,22 @@ export default function Dashboard() {
 
         let missingSkills = res?.missing_skills_list || [];
         let missingCount = res?.metrics?.missing_skills ?? 0;
+        let matchedSkills = res?.matched_skills_list || [];
+        let matchedCount = res?.metrics?.total_skills ?? 0;
 
-        // Fetch exact target role gaps from gap-analysis to ensure 100% synchronization
+        // Fetch exact target role skills and gaps from gap-analysis to ensure 100% synchronization
         const topRoleId = res?.recommendations?.[0]?.career_role_id || 1;
         try {
           const gapRes = await api.getGapAnalysis(topRoleId, currentUser.user_id);
-          if (gapRes && Array.isArray(gapRes.missing_skills)) {
-            missingSkills = gapRes.missing_skills.map((m) => (typeof m === 'string' ? m : m.name));
-            missingCount = missingSkills.length;
+          if (gapRes) {
+            if (Array.isArray(gapRes.missing_skills)) {
+              missingSkills = gapRes.missing_skills.map((m) => (typeof m === 'string' ? m : m.name));
+              missingCount = missingSkills.length;
+            }
+            if (Array.isArray(gapRes.matched_skills)) {
+              matchedSkills = gapRes.matched_skills.map((m) => (typeof m === 'string' ? m : m.name || m));
+              matchedCount = matchedSkills.length;
+            }
           }
         } catch (e) {
           console.warn('Gap analysis sync fallback:', e);
@@ -83,9 +92,11 @@ export default function Dashboard() {
             ...res,
             metrics: {
               ...res.metrics,
+              total_skills: matchedCount,
               missing_skills: missingCount,
             },
             missing_skills_list: missingSkills,
+            matched_skills_list: matchedSkills,
             user_name: currentUser.full_name || res.user_name,
           });
         }
@@ -111,6 +122,7 @@ export default function Dashboard() {
   const recommendations = data.recommendations || [];
   const marketSkills = data.market_skills || mockMarketSkills;
   const missingSkillsList = data.missing_skills_list || [];
+  const matchedSkillsList = data.matched_skills_list || [];
   const hasResume = Boolean(data.has_resume);
 
   const nextSkill = missingSkillsList[0];
@@ -305,8 +317,12 @@ export default function Dashboard() {
           <StatTile
             label="Total Skills Found"
             value={`${metrics.total_skills}`}
-            sub={hasResume ? 'Extracted from your resume' : '0 skills detected'}
-            to="/resume"
+            sub={
+              hasResume
+                ? (matchedSkillsList.length > 0 ? matchedSkillsList.slice(0, 3).join(', ') : 'Verified acquired skills')
+                : '0 skills detected'
+            }
+            to="/gap-analysis"
           />
           <StatTile
             label="Missing Skills"
