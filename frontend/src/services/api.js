@@ -99,8 +99,9 @@ export const api = {
   getCareerRoles: () => fetchApi('/career-roles'),
 
   // Jobs
-  getJobs: () => fetchApi('/jobs'),
-  getJobById: (jobId) => fetchApi(`/jobs/${jobId}`),
+  // With userId the backend adds the real match % for that user's resume
+  getJobs: (userId) => fetchApi(`/jobs${userId ? `?user_id=${userId}` : ''}`),
+  getJobById: (jobId, userId) => fetchApi(`/jobs/${jobId}${userId ? `?user_id=${userId}` : ''}`),
   createJob: (data) =>
     fetchApi('/jobs', {
       method: 'POST',
@@ -136,6 +137,8 @@ export const api = {
   // Analysis & Recommendations
   getRecommendations: (userId) =>
     fetchApi(`/analysis/recommendations${userId ? `?user_id=${userId}` : ''}`),
+  getJobMatches: (userId, limit = 6) =>
+    fetchApi(`/analysis/job-matches?limit=${limit}${userId ? `&user_id=${userId}` : ''}`),
   getGapAnalysis: (roleId = 1, userId) =>
     fetchApi(`/analysis/gap-analysis?role_id=${roleId}${userId ? `&user_id=${userId}` : ''}`),
   runAnalysis: (profileId = 1) => fetchApi(`/analysis/run/${profileId}`, { method: 'POST' }),
@@ -219,12 +222,15 @@ export const api = {
     fetchApi(`/roadmap/step/${stepId}/status?status=${status}`, { method: 'PUT' }),
 
   // What-If Simulation
-  simulate: (targetRoleId, selectedSkillIds) =>
+  getSimulationOptions: (userId, roleId) =>
+    fetchApi(`/simulation/options?user_id=${userId || ''}${roleId ? `&role_id=${roleId}` : ''}`),
+  simulate: (targetRoleId, selectedSkillIds, userId) =>
     fetchApi('/simulation', {
       method: 'POST',
       body: JSON.stringify({
         target_role_id: targetRoleId,
         selected_skill_ids: selectedSkillIds,
+        user_id: userId,
       }),
     }),
 

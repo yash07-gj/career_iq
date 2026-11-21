@@ -6,6 +6,8 @@ from app.models import (
     ReadinessScore, SkillGap, Skill, AnalysisRun, Resume
 )
 from app.schemas import DashboardResponse, MetricOverview, CareerRecommendationResponse
+from app.services.matching_engine import ensure_current_analysis, latest_resume_role_name, skill_coverage
+from app.services.insights import build_recommendations, build_job_matches
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
@@ -27,7 +29,7 @@ def get_dashboard_data(user_id: int, db: Session = Depends(get_db)):
     profile_id = profile.profile_id
 
     # 2. Check if user has uploaded a resume or run an analysis
-    latest_run = db.query(AnalysisRun).filter(AnalysisRun.profile_id == profile_id).order_by(AnalysisRun.analysis_id.desc()).first()
+    latest_run = ensure_current_analysis(profile, db)
     latest_resume = db.query(Resume).filter(Resume.profile_id == profile_id).order_by(Resume.resume_id.desc()).first()
 
     # Skill demand distribution (always available for industry market reference)
@@ -60,31 +62,13 @@ def get_dashboard_data(user_id: int, db: Session = Depends(get_db)):
     # 3. User HAS uploaded a resume and has analysis data
     analysis_id = latest_run.analysis_id
 
-    # Fetch user's calculated recommendations
-    recs = db.query(CareerRecommendation, CareerRole).join(
-        CareerRole, CareerRecommendation.career_role_id == CareerRole.career_role_id
-    ).filter(CareerRecommendation.analysis_id == analysis_id).order_by(CareerRecommendation.recommendation_rank.asc()).all()
-
-    rec_responses = [
-        CareerRecommendationResponse(
-            career_recommendation_id=r.CareerRecommendation.career_recommendation_id,
-            career_role_id=r.CareerRole.career_role_id,
-            role=r.CareerRole.role_name,
-            desc=r.CareerRole.description,
-            match=float(r.CareerRecommendation.match_percentage),
-            rank=r.CareerRecommendation.recommendation_rank,
-            summary_explanation=r.CareerRecommendation.summary_explanation
-        )
-        for r in recs
-    ]
+    # Recommendations ranked by the job title on the resume + skills
+    resume_role = latest_resume_role_name(profile_id, db)
+    rec_responses = build_recommendations(analysis_id, resume_role, db)
 
     top_role_id = rec_responses[0].career_role_id if rec_responses else 1
     top_role_name = rec_responses[0].role if rec_responses else "Pending Assessment"
     top_match_pct = rec_responses[0].match if rec_responses else 0.0
-
-    # Fetch user's readiness score
-    readiness = db.query(ReadinessScore).filter(ReadinessScore.analysis_id == analysis_id).first()
-    overall_readiness = float(readiness.overall_score) if readiness else 0.0
 
     # Fetch candidate's acquired skills
     cand_skills = db.query(CandidateSkill, Skill).join(
@@ -97,6 +81,8 @@ def get_dashboard_data(user_id: int, db: Session = Depends(get_db)):
         Skill, CareerRoleSkill.skill_id == Skill.skill_id
     ).filter(CareerRoleSkill.career_role_id == top_role_id).all()
 
+    # Missing skills (not in the resume at all) first, then weak ones, most important first
+    role_skills.sort(key=lambda r: (cand_skill_map.get(r[0].skill_id, (0, ""))[0] > 0, -float(r[0].importance_weight)))
     missing_skill_names = []
     missing_skill_names_lower = set()
     for rs, sk in role_skills:
@@ -106,6 +92,13 @@ def get_dashboard_data(user_id: int, db: Session = Depends(get_db)):
             missing_skill_names_lower.add(sk.skill_name.lower())
 
     missing_skills_count = len(missing_skill_names)
+
+    # Career readiness for the top (resume) role from the candidate's current skills,
+    # calculated exactly like the Skill Gap page so both pages show the same number
+    overall_readiness = round(skill_coverage(
+        [rs for rs, _sk in role_skills],
+        {sid: lvl for sid, (lvl, _n) in cand_skill_map.items()},
+    ), 1)
 
     # Calculate verified acquired skills (exact same as Skill Gap Analysis)
     matched_names = []
@@ -133,6 +126,8 @@ def get_dashboard_data(user_id: int, db: Session = Depends(get_db)):
         market_skills=market_skills,
         missing_skills_list=missing_skill_names,
         matched_skills_list=matched_names,
+        job_matches=build_job_matches(analysis_id, resume_role, db, limit=4),
+        resume_role=resume_role,
         user_name=user.full_name,
         has_resume=True,
         resume_filename=latest_resume.file_name if latest_resume else "resume.pdf"

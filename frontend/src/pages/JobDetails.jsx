@@ -54,7 +54,8 @@ export default function JobDetails() {
       setLoading(true);
       try {
         const numericId = parseInt(jobId, 10) || 1;
-        const data = await api.getJobById(numericId);
+        const data = await api.getJobById(numericId, currentUser?.user_id);
+        const personal = data && data.skill_score != null; // real scores for this user's resume
         if (data) {
           // Normalize fields for UI display
           setJob({
@@ -65,18 +66,18 @@ export default function JobDetails() {
             type: data.job_type || 'Full-time',
             experience: data.experience_requirement || '0 - 1 Years',
             salary: data.salary_range || 'Competitive',
-            match: data.match || 85,
+            match: personal ? Math.round(data.match) : data.match || 85,
             description: data.description,
             responsibilities: data.responsibilities
               ? data.responsibilities.split('\n').filter(Boolean)
               : ['Execute analytics tasks', 'Collaborate with cross-functional teams'],
-            matchedSkills: data.skills || ['Python', 'SQL', 'Data Analytics'],
-            missingSkills: ['Cloud Warehousing', 'Advanced Machine Learning'],
+            matchedSkills: personal ? data.matched_skills : data.skills || [],
+            missingSkills: personal ? data.missing_skills : [],
             educationMatch: 'MCA / Computer Science or Quantitative degree (Matched)',
             experienceMatch: `${data.experience_requirement || '0-1 Years'} (Matched)`,
             posted_date: data.posted_date,
             due_date: data.due_date,
-            breakdown: { skillScore: 88, educationScore: 95, experienceScore: 80 }
+            breakdown: { skillScore: personal ? Math.round(data.skill_score) : 85, educationScore: 95, experienceScore: 80 }
           });
         }
 
@@ -188,7 +189,7 @@ export default function JobDetails() {
   const overdue = job.due_date && new Date(job.due_date) < new Date();
 
   const scoreRows = [
-    { label: 'Technical Skill Fit', value: breakdown?.skillScore || 85, bar: '', note: null },
+    { label: 'Technical Skill Fit', value: breakdown?.skillScore ?? 85, bar: '', note: null },
     { label: 'Education Requirement', value: breakdown?.educationScore || 95, bar: 'green', note: educationMatch || 'Matches MCA / Computer Science Degree' },
     { label: 'Experience Level Fit', value: breakdown?.experienceScore || 75, bar: 'orange', note: experienceMatch || 'Fits Fresher / Graduate requirements' },
   ];
@@ -295,7 +296,7 @@ export default function JobDetails() {
             <p className="muted text-sm" style={{ margin: '2px 0 0' }}>
               Your resume exhibits strong mastery of{' '}
               <strong>{matchedSkills ? matchedSkills.slice(0, 3).join(', ') : 'key skills'}</strong>. You
-              fulfill <strong>{breakdown?.skillScore || 85}%</strong> of the direct technical skills
+              fulfill <strong>{breakdown?.skillScore ?? 85}%</strong> of the direct technical skills
               required for this role.
             </p>
           </div>

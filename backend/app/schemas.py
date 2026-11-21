@@ -153,8 +153,14 @@ class JobResponse(BaseModel):
     posted_date: Optional[str] = None
     due_date: Optional[str] = None
     skills: List[str] = []
-    match: Optional[int] = 85
+    match: Optional[float] = 85
     is_demo_data: int = 0
+    # Filled when a user_id is given (based on the user's uploaded resume)
+    fit: Optional[str] = None           # "resume" | "related" | None
+    skill_score: Optional[float] = None
+    matched_skills: List[str] = []
+    missing_skills: List[str] = []
+    resume_role: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -168,6 +174,20 @@ class CareerRecommendationResponse(BaseModel):
     match: float
     rank: int
     summary_explanation: Optional[str] = None
+    fit: Optional[str] = None  # "resume" = job title on the resume, "related" = same career family
+
+class JobMatchItem(BaseModel):
+    job_id: int
+    job_title: str
+    company_name: str
+    location: Optional[str] = None
+    work_mode: Optional[str] = None
+    job_type: Optional[str] = None
+    salary_range: Optional[str] = None
+    role_name: Optional[str] = None
+    match: float
+    rank: int
+    fit: Optional[str] = None
 
 class MetricOverview(BaseModel):
     career_readiness: float
@@ -182,6 +202,8 @@ class DashboardResponse(BaseModel):
     market_skills: List[dict]
     missing_skills_list: List[str] = []
     matched_skills_list: List[str] = []
+    job_matches: List[JobMatchItem] = []
+    resume_role: Optional[str] = None
     user_name: str
     has_resume: bool = False
     resume_filename: Optional[str] = None
@@ -196,6 +218,7 @@ class ResumeUploadResponse(BaseModel):
     top_career_match: str
     top_match_percentage: float
     analysis_id: int
+    resume_role: Optional[str] = None
     candidate_name: Optional[str] = None
     candidate_email: Optional[str] = None
     education: Optional[str] = None
@@ -244,6 +267,7 @@ class RoadmapResponse(BaseModel):
 class SimulationRequest(BaseModel):
     target_role_id: int
     selected_skill_ids: List[int]
+    user_id: Optional[int] = None
 
 class SimulationResponse(BaseModel):
     target_role: str

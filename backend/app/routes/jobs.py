@@ -8,21 +8,23 @@ from datetime import datetime
 from app.database import get_db
 from app.models import Job, CareerRole, JobApplication, User, CandidateProfile, JobSkill, Skill
 from app.schemas import JobResponse, JobCreateOrUpdate, JobApplicationCreate, JobApplicationResponse
+from app.services.matching_engine import user_job_scores
 
 router = APIRouter(prefix="/api/jobs", tags=["Jobs"])
 
 APPLICATION_UPLOADS_DIR = "uploads/applications"
 os.makedirs(APPLICATION_UPLOADS_DIR, exist_ok=True)
 
-def format_job_response(job: Job, role: CareerRole, db: Session) -> JobResponse:
+def format_job_response(job: Job, role: CareerRole, db: Session, score: Optional[dict] = None,
+                        resume_role: Optional[str] = None) -> JobResponse:
     # Fetch skill names for this job
     skills = db.query(Skill.skill_name).join(
         JobSkill, JobSkill.skill_id == Skill.skill_id
     ).filter(JobSkill.job_id == job.job_id).all()
     skill_names = [s[0] for s in skills]
 
-    # Calculate match baseline (or default 85-92%)
-    match_score = 88 if "Intern" in job.job_title else 84
+    # Real match for the user's resume when available, else a neutral baseline (admin views)
+    match_score = score["match"] if score else (88 if "Intern" in job.job_title else 84)
 
     return JobResponse(
         job_id=job.job_id,
@@ -41,27 +43,35 @@ def format_job_response(job: Job, role: CareerRole, db: Session) -> JobResponse:
         due_date=str(job.due_date) if job.due_date else None,
         skills=skill_names,
         match=match_score,
-        is_demo_data=job.is_demo_data
+        is_demo_data=job.is_demo_data,
+        fit=score["fit"] if score else None,
+        skill_score=score["skill_pct"] if score else None,
+        matched_skills=score["matched"] if score else [],
+        missing_skills=score["missing"] if score else [],
+        resume_role=resume_role,
     )
 
 @router.get("", response_model=List[JobResponse])
-def get_curated_jobs(db: Session = Depends(get_db)):
+def get_curated_jobs(user_id: Optional[int] = None, db: Session = Depends(get_db)):
+    """All jobs. With user_id: real match % for the user's resume, resume-related jobs first."""
     results = db.query(Job, CareerRole).join(
         CareerRole, Job.career_role_id == CareerRole.career_role_id
     ).order_by(Job.job_id.asc()).all()
 
-    jobs_out = []
-    for job, role in results:
-        jobs_out.append(format_job_response(job, role, db))
+    resume_role, scores = user_job_scores(user_id, db) if user_id else (None, {})
+    jobs_out = [format_job_response(job, role, db, scores.get(job.job_id), resume_role) for job, role in results]
+    if scores:
+        jobs_out.sort(key=lambda j: (j.fit != "resume", j.fit is None, -(j.match or 0)))
     return jobs_out
 
 @router.get("/{job_id}", response_model=JobResponse)
-def get_job_by_id(job_id: int, db: Session = Depends(get_db)):
+def get_job_by_id(job_id: int, user_id: Optional[int] = None, db: Session = Depends(get_db)):
     job = db.query(Job).filter(Job.job_id == job_id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     role = db.query(CareerRole).filter(CareerRole.career_role_id == job.career_role_id).first()
-    return format_job_response(job, role, db)
+    resume_role, scores = user_job_scores(user_id, db) if user_id else (None, {})
+    return format_job_response(job, role, db, scores.get(job.job_id), resume_role)
 
 @router.post("", response_model=JobResponse)
 def create_job(payload: JobCreateOrUpdate, db: Session = Depends(get_db)):

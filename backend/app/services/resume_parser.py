@@ -14,6 +14,7 @@ from app.models import (
     Education, Experience, CandidatePreference, CareerRole
 )
 from app.services.matching_engine import evaluate_candidate_profile
+from app.services.career_catalog import detect_role_name
 from app.config import UPLOAD_DIR
 
 
@@ -210,15 +211,11 @@ def extract_experience_detail(text: str) -> Dict[str, str]:
 
 
 def detect_resume_role(text: str, db: Session):
-    """Finds a known career role named in the resume header (first lines), e.g. 'Entry-Level Data Analyst'."""
-    header = " ".join(_clean_lines(text)[:6]).lower()
-    best = None
-    for role in db.query(CareerRole).filter(CareerRole.active_status == 1).all():
-        name = (role.role_name or "").lower()
-        if name and re.search(r"\b" + re.escape(name) + r"\b", header):
-            if best is None or len(name) > len(best.role_name):
-                best = role
-    return best
+    """Career role named by the resume title / content, e.g. 'Android Developer' (see career_catalog)."""
+    name = detect_role_name(text)
+    if not name:
+        return None
+    return db.query(CareerRole).filter(CareerRole.role_name == name, CareerRole.active_status == 1).first()
 
 
 def save_profile_details_from_resume(profile: CandidateProfile, raw_text: str, info: Dict[str, str], db: Session) -> Dict[str, str]:
@@ -286,10 +283,8 @@ def process_resume_upload(
     info = extract_basic_info(raw_text)
     matched_skills = extract_skills_from_text(raw_text, db)
 
-    # If no specific skills detected, assign core foundational skills
-    if not matched_skills:
-        default_skills = db.query(Skill).filter(Skill.skill_name.in_(["Python", "SQL", "Excel", "Communication"])).all()
-        matched_skills = default_skills
+    # Only skills actually written in the resume are used (no made-up default skills)
+    resume_role = detect_resume_role(raw_text, db)
 
     # 5. Record Resume in database
     resume = Resume(
@@ -332,37 +327,43 @@ def process_resume_upload(
     profile_details = save_profile_details_from_resume(profile, raw_text, info, db)
 
     # 7. Execute AI Evaluation / Matching Engine for this profile
-    analysis_id = evaluate_candidate_profile(profile_id=profile.profile_id, db=db)
+    analysis_id = evaluate_candidate_profile(
+        profile_id=profile.profile_id, db=db,
+        resume_role_name=resume_role.role_name if resume_role else "",
+    )
 
     # 8. Query newly generated scores and top recommendations
     from app.models import AnalysisRun, CareerRecommendation, CareerRole, ReadinessScore
-    readiness = db.query(ReadinessScore).filter(ReadinessScore.analysis_id == analysis_id).first()
     top_rec = db.query(CareerRecommendation, CareerRole).join(
         CareerRole, CareerRecommendation.career_role_id == CareerRole.career_role_id
     ).filter(CareerRecommendation.analysis_id == analysis_id).order_by(CareerRecommendation.recommendation_rank.asc()).first()
+    # Readiness rows are stored per role: use the one for the top role
+    readiness = None
+    if top_rec:
+        readiness = db.query(ReadinessScore).filter(
+            ReadinessScore.analysis_id == analysis_id,
+            ReadinessScore.career_role_id == top_rec.CareerRole.career_role_id,
+        ).first()
 
-    # 8b. Target role: the role named in the resume header, else the top recommendation.
-    #     Only filled when the candidate has not chosen a target role yet.
+    # 8b. Target role follows the newly uploaded resume: the role named on the resume,
+    #     else the top recommendation. The candidate can still change it on the Profile page.
     pref = db.query(CandidatePreference).filter(CandidatePreference.profile_id == profile.profile_id).first()
     if not pref:
         pref = CandidatePreference(profile_id=profile.profile_id)
         db.add(pref)
-    has_custom_role = False
-    if profile.settings_json:
+    new_target = resume_role or (top_rec.CareerRole if top_rec else None)
+    if new_target:
+        pref.target_role_id = new_target.career_role_id
         try:
-            has_custom_role = bool(json.loads(profile.settings_json).get("custom_target_role"))
+            settings = json.loads(profile.settings_json) if profile.settings_json else {}
         except Exception:
-            has_custom_role = False
-    if not pref.target_role_id and not has_custom_role:
-        resume_role = detect_resume_role(raw_text, db)
-        if resume_role:
-            pref.target_role_id = resume_role.career_role_id
-        elif top_rec:
-            pref.target_role_id = top_rec.CareerRole.career_role_id
+            settings = {}
+        if settings.pop("custom_target_role", None) is not None:
+            profile.settings_json = json.dumps(settings)
 
-    readiness_score = float(readiness.overall_score) if readiness else 75.0
-    top_role_name = top_rec.CareerRole.role_name if top_rec else "Software Engineer"
-    top_match_pct = float(top_rec.CareerRecommendation.match_percentage) if top_rec else 80.0
+    readiness_score = float(readiness.overall_score) if readiness else 0.0
+    top_role_name = top_rec.CareerRole.role_name if top_rec else "No matching role"
+    top_match_pct = float(top_rec.CareerRecommendation.match_percentage) if top_rec else 0.0
 
     db.commit()
 
@@ -376,6 +377,7 @@ def process_resume_upload(
         "top_career_match": top_role_name,
         "top_match_percentage": top_match_pct,
         "analysis_id": analysis_id,
+        "resume_role": resume_role.role_name if resume_role else None,
         "candidate_name": user.full_name,
         "candidate_email": info["email"] or user.email,
         "education": profile_details["education"],
