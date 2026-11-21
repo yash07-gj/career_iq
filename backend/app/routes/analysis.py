@@ -6,8 +6,11 @@ from app.models import (
     AnalysisRun, CareerRecommendation, CareerRole, CareerRoleSkill, SkillGap, Skill,
     CandidateProfile, CandidateSkill, ReadinessScore, User
 )
-from app.schemas import GapAnalysisResponse, SkillGapItem, CareerRecommendationResponse
-from app.services.matching_engine import evaluate_candidate_profile
+from app.schemas import GapAnalysisResponse, SkillGapItem, CareerRecommendationResponse, JobMatchItem
+from app.services.matching_engine import (
+    evaluate_candidate_profile, ensure_current_analysis, latest_resume_role_name, skill_coverage
+)
+from app.services.insights import build_recommendations, build_job_matches
 
 router = APIRouter(prefix="/api/analysis", tags=["Analysis & Recommendations"])
 
@@ -16,39 +19,38 @@ def trigger_analysis(profile_id: int, db: Session = Depends(get_db)):
     analysis_id = evaluate_candidate_profile(profile_id=profile_id, db=db)
     return {"message": "Analysis evaluated successfully", "analysis_id": analysis_id}
 
-@router.get("/recommendations", response_model=List[CareerRecommendationResponse])
-def get_recommendations(user_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
-    analysis_id = None
+def _user_analysis(user_id: Optional[int], db: Session):
+    """(analysis_id, resume role name) for the user's latest analysis, or (None, None) if no resume yet."""
     if user_id:
         profile = db.query(CandidateProfile).filter(CandidateProfile.user_id == user_id).first()
-        if profile:
-            latest_run = db.query(AnalysisRun).filter(AnalysisRun.profile_id == profile.profile_id).order_by(AnalysisRun.analysis_id.desc()).first()
-            if latest_run:
-                analysis_id = latest_run.analysis_id
-            else:
-                # User has not uploaded a resume yet
-                return []
+        if not profile:
+            return None, None
+        run = ensure_current_analysis(profile, db)
+        if not run:
+            return None, None
+        return run.analysis_id, latest_resume_role_name(profile.profile_id, db)
+    run = db.query(AnalysisRun).order_by(AnalysisRun.analysis_id.desc()).first()
+    if not run:
+        return None, None
+    return run.analysis_id, latest_resume_role_name(run.profile_id, db)
 
+
+@router.get("/recommendations", response_model=List[CareerRecommendationResponse])
+def get_recommendations(user_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
+    """Career roles ranked by the job title on the latest resume + skill coverage."""
+    analysis_id, resume_role = _user_analysis(user_id, db)
     if not analysis_id:
-        latest_run = db.query(AnalysisRun).order_by(AnalysisRun.analysis_id.desc()).first()
-        analysis_id = latest_run.analysis_id if latest_run else 1
+        return []  # no resume uploaded yet
+    return build_recommendations(analysis_id, resume_role, db)
 
-    recs = db.query(CareerRecommendation, CareerRole).join(
-        CareerRole, CareerRecommendation.career_role_id == CareerRole.career_role_id
-    ).filter(CareerRecommendation.analysis_id == analysis_id).order_by(CareerRecommendation.recommendation_rank.asc()).all()
 
-    return [
-        CareerRecommendationResponse(
-            career_recommendation_id=r.CareerRecommendation.career_recommendation_id,
-            career_role_id=r.CareerRole.career_role_id,
-            role=r.CareerRole.role_name,
-            desc=r.CareerRole.description,
-            match=float(r.CareerRecommendation.match_percentage),
-            rank=r.CareerRecommendation.recommendation_rank,
-            summary_explanation=r.CareerRecommendation.summary_explanation
-        )
-        for r in recs
-    ]
+@router.get("/job-matches", response_model=List[JobMatchItem])
+def get_job_matches(user_id: Optional[int] = Query(None), limit: int = Query(6, ge=1, le=50), db: Session = Depends(get_db)):
+    """Positions related to the job title on the latest resume, best match first."""
+    analysis_id, resume_role = _user_analysis(user_id, db)
+    if not analysis_id:
+        return []
+    return build_job_matches(analysis_id, resume_role, db, limit=limit)
 
 @router.get("/gap-analysis", response_model=GapAnalysisResponse)
 def get_gap_analysis(role_id: int = 1, user_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
@@ -126,9 +128,10 @@ def get_gap_analysis(role_id: int = 1, user_id: Optional[int] = Query(None), db:
             )
             missing_skill_names_lower.add(sk.skill_name.lower())
 
-    # Sort gaps: High priority first, then Medium, then Low
+    # Sort gaps: skills completely missing from the resume first, then weak ones;
+    # within each group High priority first, then Medium, then Low
     priority_order = {"High": 0, "Medium": 1, "Low": 2}
-    gap_items.sort(key=lambda x: (priority_order.get(x.priority, 3), -x.priority_score))
+    gap_items.sort(key=lambda x: (x.status != "missing", priority_order.get(x.priority, 3), -x.priority_score))
 
     # STRICT GUARANTEE: Any skill mentioned in Missing / Skill Deficiencies
     # must NEVER be mentioned in Verified Acquired Skills!
@@ -142,18 +145,11 @@ def get_gap_analysis(role_id: int = 1, user_id: Optional[int] = Query(None), db:
             seen_matched.add(s_name_lower)
 
     # Readiness score calculation
-    readiness_score = 0.0
-    if role_skills:
-        total_weight = sum(float(rs.importance_weight) for rs, _ in role_skills)
-        earned_weight = 0.0
-        for rs, _ in role_skills:
-            req_level = rs.required_level
-            cand_level, _ = cand_skill_map.get(rs.skill_id, (0, ""))
-            if cand_level >= req_level:
-                earned_weight += float(rs.importance_weight)
-            elif cand_level > 0:
-                earned_weight += float(rs.importance_weight) * (cand_level / req_level)
-        readiness_score = round((earned_weight / total_weight) * 100, 1) if total_weight > 0 else 0.0
+    # (same formula as the Dashboard's Career Readiness)
+    readiness_score = round(skill_coverage(
+        [rs for rs, _ in role_skills],
+        {sid: lvl for sid, (lvl, _n) in cand_skill_map.items()},
+    ), 1)
 
     return GapAnalysisResponse(
         target_role=role.role_name if role else "Data Analyst",

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Award, ShieldAlert, ArrowRight, TrendingUp, UploadCloud, FileText, CheckCircle2, Sparkles, Trash2, RefreshCw, X } from 'lucide-react';
+import { Briefcase, ShieldAlert, ArrowRight, TrendingUp, UploadCloud, FileText, CheckCircle2, Sparkles, Trash2, RefreshCw, X } from 'lucide-react';
 import { mockMarketSkills } from '../mockData/careerData';
 import { Layout, Page } from '../components/Layout';
 import { Gauge, StatTile, EmptyState } from '../components/ui';
@@ -119,18 +119,25 @@ export default function Dashboard() {
     total_skills: 0,
     missing_skills: 0,
   };
-  const recommendations = data.recommendations || [];
   const marketSkills = data.market_skills || mockMarketSkills;
   const missingSkillsList = data.missing_skills_list || [];
   const matchedSkillsList = data.matched_skills_list || [];
   const hasResume = Boolean(data.has_resume);
 
+  const jobMatches = data.job_matches || [];
+  const resumeRole = data.resume_role;
+  const targetRole = resumeRole || metrics.top_career_match;
+
+  // Missing skills come from the gap analysis of the resume's role, most important first
   const nextSkill = missingSkillsList[0];
   const liveTip =
     hasResume && missingSkillsList.length > 0
-      ? `Master top missing skills for ${metrics.top_career_match} (${missingSkillsList.join(', ')}) in your roadmap to boost role readiness!`
+      ? `${nextSkill} is the most important skill your resume is missing for ${targetRole}. ` +
+        (missingSkillsList.length > 1
+          ? `Also work on ${missingSkillsList.slice(1, 4).join(', ')} to raise your readiness.`
+          : 'Add it to raise your readiness.')
       : hasResume
-      ? 'All core prerequisites met for your top career role!'
+      ? `Your resume covers all core skills for ${targetRole}!`
       : 'Upload your resume to receive custom AI tips and tailored skill gaps.';
 
   const readinessColor =
@@ -215,7 +222,11 @@ export default function Dashboard() {
         {/* FOCUS: READINESS GAUGE + NEXT BEST STEP, AND TOP MATCHES */}
         <div className="ui-grid split">
           <div className="card card-pad focus-card">
-            <Gauge value={metrics.career_readiness} label="Career readiness" color={readinessColor} />
+            <Gauge
+              value={metrics.career_readiness}
+              label={hasResume ? `Ready for ${targetRole}` : 'Career readiness'}
+              color={readinessColor}
+            />
             <div className="stack" style={{ gap: 10 }}>
               <span className="pill info" style={{ alignSelf: 'flex-start' }}>
                 <Sparkles size={13} /> Your next best step
@@ -257,42 +268,55 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* RECOMMENDED CAREERS */}
+          {/* TOP CAREER MATCHES: positions related to the job title on the resume */}
           <div className="card card-pad">
             <div className="card-head">
-              <h3 className="card-title">Top Career Matches</h3>
-              {recommendations.length > 0 && (
+              <div>
+                <h3 className="card-title">Top Career Matches</h3>
+                {hasResume && resumeRole && (
+                  <span className="muted text-xs">Positions related to your resume: {resumeRole}</span>
+                )}
+              </div>
+              {jobMatches.length > 0 && (
                 <Link to="/recommendations" className="link-btn">
                   View Details <ArrowRight size={13} />
                 </Link>
               )}
             </div>
 
-            {recommendations.length === 0 ? (
+            {jobMatches.length === 0 ? (
               <EmptyState
                 icon={FileText}
-                title="No Career Recommendations Yet"
-                text="Upload your resume to discover your personalized AI career recommendations and role rankings."
+                title={hasResume ? 'No Matching Positions Yet' : 'No Career Matches Yet'}
+                text={
+                  hasResume
+                    ? 'No open positions match your resume right now. Check back after the next job sync.'
+                    : 'Upload your resume to see positions that match your resume job title and skills.'
+                }
                 action={
-                  <Link to="/resume" className="btn small">
-                    Upload Resume
-                  </Link>
+                  !hasResume && (
+                    <Link to="/resume" className="btn small">
+                      Upload Resume
+                    </Link>
+                  )
                 }
               />
             ) : (
-              recommendations.slice(0, 4).map((c, i) => (
-                <div className="list-row" key={c.career_recommendation_id || c.id || i}>
+              jobMatches.map((j) => (
+                <Link to={`/job-details/${j.job_id}`} className="list-row" key={j.job_id} style={{ color: 'inherit' }}>
                   <div className="list-icon">
-                    <Award size={18} />
+                    <Briefcase size={18} />
                   </div>
                   <div className="list-main">
-                    <strong>{c.role}</strong>
-                    <span>{c.desc || c.summary_explanation}</span>
+                    <strong>{j.job_title}</strong>
+                    <span>
+                      {[j.company_name, j.location, j.job_type].filter(Boolean).join(' · ')}
+                    </span>
                   </div>
                   <div className="list-end">
-                    <span className="match-num" style={{ color: `var(--${toneFor(c.match)})` }}>{c.match}%</span>
+                    <span className="match-num" style={{ color: `var(--${toneFor(j.match)})` }}>{Math.round(j.match)}%</span>
                   </div>
-                </div>
+                </Link>
               ))
             )}
           </div>

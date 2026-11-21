@@ -1,13 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Briefcase, Eye, Building2, RefreshCw, Laptop, Calendar, Clock } from 'lucide-react';
+import { Search, MapPin, Briefcase, Eye, Building2, RefreshCw, Laptop, Calendar, Clock, FileSearch } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Layout, Page } from '../components/Layout';
 import { JourneyBar, EmptyState } from '../components/ui';
 import { toneFor } from '../utils/career';
 import api from '../services/api';
+import auth from '../utils/auth';
+
+const FIT_PILL = {
+  resume: { cls: 'good', text: 'Matches your resume' },
+  related: { cls: 'info', text: 'Related to your resume' },
+};
 
 export default function JobMatching() {
+  const currentUser = auth.getUser();
   const [jobs, setJobs] = useState([]);
+  // Show only jobs related to the uploaded resume (on by default when a resume exists)
+  const [relatedOnly, setRelatedOnly] = useState(true);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
 
@@ -22,7 +31,7 @@ export default function JobMatching() {
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const data = await api.getJobs();
+      const data = await api.getJobs(currentUser?.user_id);
       if (Array.isArray(data)) {
         setJobs(data);
       }
@@ -44,13 +53,21 @@ export default function JobMatching() {
     setSelectedType('All');
     setRemoteOnly(false);
     setSelectedInterests([]);
+    setRelatedOnly(false);
   };
+
+  // Job title found in the uploaded resume (sent by the backend with each job)
+  const resumeRole = jobs.find((j) => j.resume_role)?.resume_role || null;
+  const hasResumeScores = jobs.some((j) => j.skill_score != null);
 
   const filteredJobs = jobs.filter((j) => {
     const jobTitle = (j.job_title || '').toLowerCase();
     const company = (j.company_name || '').toLowerCase();
     const skills = (j.skills || []).map((s) => s.toLowerCase());
     const query = q.toLowerCase();
+
+    // 0. Only jobs related to the resume's job title
+    if (relatedOnly && resumeRole && !j.fit) return false;
 
     const matchesSearch =
       jobTitle.includes(query) ||
@@ -154,6 +171,37 @@ export default function JobMatching() {
       >
         <JourneyBar current="jobs" />
 
+        {hasResumeScores ? (
+          <div className="notice info">
+            <FileSearch size={20} />
+            <div className="notice-main text-sm">
+              {resumeRole ? (
+                <>Jobs are ranked for your resume: <strong>{resumeRole}</strong>. The match % uses your resume job title and skills.</>
+              ) : (
+                <>Jobs are ranked by the skills found in your resume.</>
+              )}
+            </div>
+            {resumeRole && (
+              <div className="seg" role="group" aria-label="Resume filter">
+                <button type="button" className={relatedOnly ? 'on' : ''} onClick={() => setRelatedOnly(true)}>
+                  Related to my resume
+                </button>
+                <button type="button" className={relatedOnly ? '' : 'on'} onClick={() => setRelatedOnly(false)}>
+                  All jobs
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          !loading && currentUser?.user_id && (
+            <div className="notice info">
+              <FileSearch size={20} />
+              <div className="notice-main text-sm">Upload your resume to see jobs related to your resume and your real match %.</div>
+              <Link to="/resume" className="btn small">Upload Resume</Link>
+            </div>
+          )
+        )}
+
         <div className="card card-pad">
           {/* SEARCH & FILTERS HEADER */}
           <div className="ui-grid job-filters" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10, marginBottom: 14 }}>
@@ -249,7 +297,7 @@ export default function JobMatching() {
             />
           ) : (
             filteredJobs.map((j) => {
-              const matchVal = j.match || 85;
+              const matchVal = Math.round(j.match ?? 0);
               const overdue = j.due_date && new Date(j.due_date) < new Date();
               return (
                 <div className="list-row" key={j.job_id} style={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
@@ -267,6 +315,7 @@ export default function JobMatching() {
                           {j.work_mode}
                         </span>
                       )}
+                      {FIT_PILL[j.fit] && <span className={`pill ${FIT_PILL[j.fit].cls}`}>{FIT_PILL[j.fit].text}</span>}
                     </div>
                     <span style={{ display: 'block', marginTop: 2 }}>
                       <b style={{ color: 'var(--ink)' }}>{j.company_name}</b> ·{' '}

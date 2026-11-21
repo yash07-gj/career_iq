@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 import asyncio
 from app.database import SessionLocal
 from app.services.job_sync_service import sync_daily_jobs
+from app.services.career_catalog import seed_career_catalog
 from app.routes import auth, dashboard, skills, jobs, analysis, roadmap, simulation, resume, profile, admin
 
 app = FastAPI(
@@ -72,6 +73,21 @@ async def daily_job_sync_scheduler():
         # Run automatically every 24 hours (86,400 seconds)
         await asyncio.sleep(86400)
 
+def run_catalog_seed():
+    """Adds any missing career roles, skills, jobs and learning links (safe to run every start)."""
+    db = SessionLocal()
+    try:
+        added = seed_career_catalog(db)
+        if any(added.values()):
+            print(f"[CareerIQ] Career catalog updated: {added}")
+    except Exception as err:
+        db.rollback()
+        print(f"[CareerIQ] Career catalog seed error: {err}")
+    finally:
+        db.close()
+
+
 @app.on_event("startup")
 async def startup_event():
+    await asyncio.to_thread(run_catalog_seed)
     asyncio.create_task(daily_job_sync_scheduler())

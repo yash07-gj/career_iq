@@ -1,0 +1,226 @@
+// =============================================================================
+// CareerIQ — Static job market data for the Market Intelligence page.
+// The numbers are fixed reference figures (not live). The page picks the set
+// that matches the career family of the user's uploaded resume.
+// =============================================================================
+
+// Career role (as named by the backend) -> market family
+export const ROLE_FAMILY = {
+  'Data Analyst': 'data',
+  'Business Analyst': 'data',
+  'BI Analyst': 'data',
+  'Junior Data Scientist': 'data',
+  'Machine Learning Engineer': 'data',
+  'Data Engineer': 'data',
+  'Android Developer': 'mobile',
+  'iOS Developer': 'mobile',
+  'Flutter Developer': 'mobile',
+  'Frontend Developer': 'web',
+  'Backend Developer': 'web',
+  'Full Stack Developer': 'web',
+  'Java Developer': 'software',
+  'Python Developer': 'software',
+  'Software Engineer': 'software',
+  'DevOps Engineer': 'infra',
+  'Cloud Engineer': 'infra',
+  'Cybersecurity Analyst': 'security',
+  'UI/UX Designer': 'design',
+  'QA / Software Tester': 'qa',
+};
+
+export const MARKET_DATA = {
+  general: {
+    label: 'Technology',
+    skills: [
+      { name: 'Python', demand: 92 },
+      { name: 'SQL', demand: 86 },
+      { name: 'JavaScript', demand: 84 },
+      { name: 'Cloud (AWS / Azure)', demand: 76 },
+      { name: 'Git', demand: 72 },
+      { name: 'Java', demand: 68 },
+      { name: 'Data Visualization', demand: 55 },
+      { name: 'Communication', demand: 50 },
+    ],
+    roles: [
+      { name: 'Software Engineer', note: 'Steady hiring across product and service companies', growth: 16 },
+      { name: 'Data Analyst', note: 'Every team now wants data-driven decisions', growth: 15 },
+      { name: 'Full Stack Developer', note: 'Startups prefer engineers who can ship end to end', growth: 14 },
+      { name: 'Cloud Engineer', note: 'Companies keep moving workloads to the cloud', growth: 13 },
+      { name: 'Android Developer', note: 'Mobile-first products drive app hiring', growth: 11 },
+    ],
+    insight: 'Python, SQL and Git are common baseline skills across most tech roles.',
+  },
+  data: {
+    label: 'Data & Analytics',
+    skills: [
+      { name: 'Python', demand: 95 },
+      { name: 'SQL', demand: 88 },
+      { name: 'Power BI', demand: 78 },
+      { name: 'Machine Learning', demand: 75 },
+      { name: 'AWS', demand: 62 },
+      { name: 'Tableau', demand: 55 },
+      { name: 'Excel', demand: 50 },
+      { name: 'Data Visualization', demand: 50 },
+    ],
+    roles: [
+      { name: 'Data Analyst', note: 'Growing demand across data teams', growth: 18 },
+      { name: 'Data Engineer', note: 'Pipelines and warehouses power every analytics team', growth: 17 },
+      { name: 'Junior Data Scientist', note: 'Predictive models move into everyday products', growth: 15 },
+      { name: 'BI Analyst', note: 'Dashboards are now a standard business tool', growth: 13 },
+      { name: 'Machine Learning Engineer', note: 'AI features need engineers to deploy models', growth: 12 },
+    ],
+    insight: 'Python, SQL and Power BI are common baseline skills.',
+  },
+  mobile: {
+    label: 'Mobile App Development',
+    skills: [
+      { name: 'Kotlin', demand: 90 },
+      { name: 'Android SDK', demand: 86 },
+      { name: 'Jetpack Compose', demand: 78 },
+      { name: 'REST APIs', demand: 76 },
+      { name: 'Flutter', demand: 70 },
+      { name: 'Firebase', demand: 64 },
+      { name: 'Swift / SwiftUI', demand: 58 },
+      { name: 'MVVM Architecture', demand: 55 },
+    ],
+    roles: [
+      { name: 'Android Developer', note: 'India is Android-first, so app teams keep growing', growth: 17 },
+      { name: 'Flutter Developer', note: 'One codebase for Android and iOS saves startups time', growth: 16 },
+      { name: 'iOS Developer', note: 'Premium apps and fintech need native iOS skills', growth: 12 },
+      { name: 'Mobile QA Engineer', note: 'More apps means more device and release testing', growth: 10 },
+      { name: 'Full Stack Developer', note: 'Mobile developers often grow into backend work', growth: 9 },
+    ],
+    insight: 'Kotlin with Jetpack Compose is now the standard for new Android apps.',
+  },
+  web: {
+    label: 'Web Development',
+    skills: [
+      { name: 'JavaScript', demand: 94 },
+      { name: 'React', demand: 88 },
+      { name: 'Node.js', demand: 80 },
+      { name: 'HTML & CSS', demand: 78 },
+      { name: 'TypeScript', demand: 72 },
+      { name: 'REST APIs', demand: 70 },
+      { name: 'MongoDB', demand: 58 },
+      { name: 'SQL', demand: 55 },
+    ],
+    roles: [
+      { name: 'Full Stack Developer', note: 'Startups prefer engineers who can ship end to end', growth: 18 },
+      { name: 'Frontend Developer', note: 'Rich web apps need strong React developers', growth: 15 },
+      { name: 'Backend Developer', note: 'APIs power web, mobile and partner integrations', growth: 14 },
+      { name: 'UI/UX Designer', note: 'Good design is now a product requirement', growth: 11 },
+      { name: 'DevOps Engineer', note: 'Web teams need fast, automated deployments', growth: 10 },
+    ],
+    insight: 'JavaScript and React are baseline; TypeScript is fast becoming expected.',
+  },
+  software: {
+    label: 'Software Engineering',
+    skills: [
+      { name: 'Data Structures & Algorithms', demand: 92 },
+      { name: 'Java', demand: 86 },
+      { name: 'Python', demand: 84 },
+      { name: 'OOP', demand: 80 },
+      { name: 'SQL', demand: 74 },
+      { name: 'Spring Boot', demand: 66 },
+      { name: 'Git', demand: 64 },
+      { name: 'System Design Basics', demand: 52 },
+    ],
+    roles: [
+      { name: 'Software Engineer', note: 'Steady hiring across product and service companies', growth: 16 },
+      { name: 'Java Developer', note: 'Banks and enterprises run on Java microservices', growth: 14 },
+      { name: 'Python Developer', note: 'Automation and AI tooling push Python demand', growth: 14 },
+      { name: 'Backend Developer', note: 'APIs power every modern product', growth: 12 },
+      { name: 'Cloud Engineer', note: 'Engineers who know the cloud are preferred', growth: 10 },
+    ],
+    insight: 'Strong DSA and OOP fundamentals decide most fresher interviews.',
+  },
+  infra: {
+    label: 'Cloud & DevOps',
+    skills: [
+      { name: 'AWS', demand: 92 },
+      { name: 'Docker', demand: 86 },
+      { name: 'Linux', demand: 84 },
+      { name: 'Kubernetes', demand: 78 },
+      { name: 'CI/CD', demand: 76 },
+      { name: 'Terraform', demand: 64 },
+      { name: 'Azure', demand: 60 },
+      { name: 'Shell Scripting', demand: 55 },
+    ],
+    roles: [
+      { name: 'DevOps Engineer', note: 'Every team wants faster, automated releases', growth: 18 },
+      { name: 'Cloud Engineer', note: 'Companies keep moving workloads to the cloud', growth: 17 },
+      { name: 'Site Reliability Engineer', note: 'Uptime and monitoring are business critical', growth: 13 },
+      { name: 'Cybersecurity Analyst', note: 'Cloud growth brings new security needs', growth: 12 },
+      { name: 'Data Engineer', note: 'Data platforms run on cloud infrastructure', growth: 10 },
+    ],
+    insight: 'AWS with Docker and Linux is the most requested cloud skill set.',
+  },
+  security: {
+    label: 'Cybersecurity',
+    skills: [
+      { name: 'Network Security', demand: 90 },
+      { name: 'Networking', demand: 84 },
+      { name: 'Linux', demand: 80 },
+      { name: 'SIEM (Splunk)', demand: 72 },
+      { name: 'Ethical Hacking', demand: 70 },
+      { name: 'OWASP / Web Security', demand: 66 },
+      { name: 'Cloud Security', demand: 60 },
+      { name: 'Python', demand: 52 },
+    ],
+    roles: [
+      { name: 'SOC Analyst', note: '24x7 monitoring teams are expanding', growth: 18 },
+      { name: 'Cybersecurity Analyst', note: 'Data protection rules push security hiring', growth: 17 },
+      { name: 'Penetration Tester', note: 'Companies test defences before attackers do', growth: 13 },
+      { name: 'Cloud Security Engineer', note: 'Cloud adoption creates new attack surfaces', growth: 12 },
+      { name: 'DevOps Engineer', note: 'Security is moving into the build pipeline', growth: 9 },
+    ],
+    insight: 'Networking and Linux fundamentals are the entry ticket to security roles.',
+  },
+  design: {
+    label: 'UI/UX Design',
+    skills: [
+      { name: 'Figma', demand: 94 },
+      { name: 'Wireframing & Prototyping', demand: 86 },
+      { name: 'User Research', demand: 76 },
+      { name: 'Design Systems', demand: 68 },
+      { name: 'Responsive Design', demand: 64 },
+      { name: 'Usability Testing', demand: 60 },
+      { name: 'HTML & CSS', demand: 48 },
+      { name: 'Communication', demand: 58 },
+    ],
+    roles: [
+      { name: 'UI/UX Designer', note: 'Good design is now a product requirement', growth: 16 },
+      { name: 'Product Designer', note: 'Designers who think about business goals stand out', growth: 15 },
+      { name: 'UX Researcher', note: 'Teams want evidence before building features', growth: 11 },
+      { name: 'Frontend Developer', note: 'Designers who code can move into frontend', growth: 10 },
+      { name: 'Interaction Designer', note: 'Micro-interactions make apps feel polished', growth: 8 },
+    ],
+    insight: 'A strong Figma portfolio with real case studies matters more than certificates.',
+  },
+  qa: {
+    label: 'Software Testing & QA',
+    skills: [
+      { name: 'Manual Testing', demand: 86 },
+      { name: 'Selenium', demand: 82 },
+      { name: 'API Testing (Postman)', demand: 76 },
+      { name: 'Java', demand: 70 },
+      { name: 'SQL', demand: 64 },
+      { name: 'JUnit / TestNG', demand: 60 },
+      { name: 'CI/CD', demand: 52 },
+      { name: 'Agile / Jira', demand: 58 },
+    ],
+    roles: [
+      { name: 'Automation Test Engineer', note: 'Teams automate tests to release faster', growth: 17 },
+      { name: 'QA / Software Tester', note: 'Every release still needs quality checks', growth: 12 },
+      { name: 'SDET', note: 'Testers who code are in high demand', growth: 15 },
+      { name: 'Mobile QA Engineer', note: 'App testing across many devices keeps growing', growth: 10 },
+      { name: 'DevOps Engineer', note: 'QA engineers often move into release automation', growth: 8 },
+    ],
+    insight: 'Moving from manual to automation testing (Selenium + Java) gives the biggest jump.',
+  },
+};
+
+/** Market data for a career role name; general tech data when the role is unknown. */
+export function marketDataFor(roleName) {
+  return MARKET_DATA[ROLE_FAMILY[roleName]] || MARKET_DATA.general;
+}

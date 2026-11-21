@@ -4,6 +4,8 @@ from typing import Optional
 from app.database import get_db
 from app.models import LearningRoadmap, RoadmapStep, Skill, LearningResource, CareerRole, CandidateProfile, AnalysisRun
 from app.schemas import RoadmapResponse, RoadmapStepResponse
+from app.services.matching_engine import ensure_current_analysis
+from urllib.parse import quote_plus
 
 router = APIRouter(prefix="/api/roadmap", tags=["Learning Roadmap"])
 
@@ -13,7 +15,7 @@ def get_current_roadmap(user_id: Optional[int] = Query(None), db: Session = Depe
     if user_id:
         profile = db.query(CandidateProfile).filter(CandidateProfile.user_id == user_id).first()
         if profile:
-            latest_run = db.query(AnalysisRun).filter(AnalysisRun.profile_id == profile.profile_id).order_by(AnalysisRun.analysis_id.desc()).first()
+            latest_run = ensure_current_analysis(profile, db)
             if latest_run:
                 roadmap = db.query(LearningRoadmap).filter(LearningRoadmap.analysis_id == latest_run.analysis_id).first()
             else:
@@ -53,8 +55,8 @@ def get_current_roadmap(user_id: Optional[int] = Query(None), db: Session = Depe
                 roadmap_step_id=step.roadmap_step_id,
                 step_number=step.step_number,
                 skill_name=skill.skill_name,
-                resource_title=res.title if res else "Official Documentation & Tutorials",
-                resource_url=res.url if res else "https://learn.microsoft.com",
+                resource_title=res.title if res else f"{skill.skill_name} tutorials & documentation",
+                resource_url=res.url if res else f"https://www.google.com/search?q={quote_plus('learn ' + skill.skill_name + ' tutorial')}",
                 resource_type=res.resource_type if res else "course",
                 provider=res.provider if res else "Curated",
                 expected_days=step.expected_days or 7,
