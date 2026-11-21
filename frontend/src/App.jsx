@@ -17,7 +17,6 @@ import Simulation from './pages/Simulation';
 import MarketIntelligence from './pages/MarketIntelligence';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminManagement from './pages/AdminManagement';
-import AdminJobs from './pages/AdminJobs';
 import AdminApplications from './pages/AdminApplications';
 import PlaceholderAdmin from './pages/PlaceholderAdmin';
 import Settings from './pages/Settings';
@@ -68,7 +67,7 @@ export default function App() {
         <Route path="/market-intelligence" element={<MarketIntelligence />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<AdminManagement />} />
-        <Route path="/admin/jobs" element={<AdminJobs />} />
+        <Route path="/admin/jobs" element={<Navigate to="/admin" replace />} />
         <Route path="/admin/applications" element={<AdminApplications />} />
         <Route path="/admin/skills" element={<Navigate to="/admin" replace />} />
         <Route path="/admin/resources" element={<Navigate to="/admin" replace />} />

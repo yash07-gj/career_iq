@@ -48,34 +48,11 @@ export default function AdminDashboard({ initialTab = 'all' }) {
   // Filters & Search
   const [userSearch, setUserSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
-  const [jobSearch, setJobSearch] = useState('');
-  const [jobTypeFilter, setJobTypeFilter] = useState('all');
   const [appSearch, setAppSearch] = useState('');
   const [appStatusFilter, setAppStatusFilter] = useState('all');
 
   // Selected Cover Note Modal
   const [selectedNote, setSelectedNote] = useState(null);
-
-  // Add/Edit Job Modal State
-  const [showJobModal, setShowJobModal] = useState(false);
-  const [editingJob, setEditingJob] = useState(null);
-  const [submittingJob, setSubmittingJob] = useState(false);
-  const [careerRoles, setCareerRoles] = useState([]);
-  const [jobFeedback, setJobFeedback] = useState({ error: '', success: '' });
-
-  // Job Form fields
-  const [jobTitle, setJobTitle] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const [careerRoleId, setCareerRoleId] = useState(1);
-  const [location, setLocation] = useState('Bangalore, India');
-  const [workMode, setWorkMode] = useState('Hybrid');
-  const [jobType, setJobType] = useState('Full-time');
-  const [experienceReq, setExperienceReq] = useState('0 - 1 Years');
-  const [salaryRange, setSalaryRange] = useState('');
-  const [description, setDescription] = useState('');
-  const [responsibilities, setResponsibilities] = useState('');
-  const [postedDate, setPostedDate] = useState('');
-  const [dueDate, setDueDate] = useState('');
 
   // Fetch all admin data
   const fetchData = async (showSpinner = false) => {
@@ -177,97 +154,6 @@ export default function AdminDashboard({ initialTab = 'all' }) {
     }
   };
 
-  // Job Actions
-  const handleOpenJobModal = (job = null) => {
-    setJobFeedback({ error: '', success: '' });
-    if (job) {
-      setEditingJob(job);
-      setJobTitle(job.job_title);
-      setCompanyName(job.company_name);
-      setCareerRoleId(job.career_role_id || 1);
-      setLocation(job.location || 'Bangalore, India');
-      setWorkMode(job.work_mode || 'Hybrid');
-      setJobType(job.job_type || 'Full-time');
-      setExperienceReq(job.experience_requirement || '0 - 1 Years');
-      setSalaryRange(job.salary_range || '');
-      setDescription(job.description || '');
-      setResponsibilities(
-        Array.isArray(job.responsibilities)
-          ? job.responsibilities.join('\n')
-          : job.responsibilities || ''
-      );
-      setPostedDate(job.posted_date || new Date().toISOString().split('T')[0]);
-      setDueDate(job.due_date || '');
-    } else {
-      setEditingJob(null);
-      setJobTitle('');
-      setCompanyName('');
-      setCareerRoleId(1);
-      setLocation('Bangalore, India');
-      setWorkMode('Hybrid');
-      setJobType('Full-time');
-      setExperienceReq('0 - 1 Years');
-      setSalaryRange('');
-      setDescription('');
-      setResponsibilities('');
-      setPostedDate(new Date().toISOString().split('T')[0]);
-      setDueDate('');
-    }
-    setShowJobModal(true);
-  };
-
-  const handleSaveJob = async (e) => {
-    e.preventDefault();
-    setSubmittingJob(true);
-    setJobFeedback({ error: '', success: '' });
-
-    const payload = {
-      career_role_id: parseInt(careerRoleId, 10),
-      job_title: jobTitle.trim(),
-      company_name: companyName.trim(),
-      location: location.trim(),
-      work_mode: workMode,
-      job_type: jobType,
-      experience_requirement: experienceReq.trim(),
-      salary_range: salaryRange.trim(),
-      description: description.trim(),
-      responsibilities: responsibilities.trim(),
-      posted_date: postedDate || null,
-      due_date: dueDate || null
-    };
-
-    try {
-      if (editingJob) {
-        const updated = await api.updateJob(editingJob.job_id, payload);
-        setJobs((prev) => prev.map((j) => (j.job_id === editingJob.job_id ? updated : j)));
-        setJobFeedback({ error: '', success: 'Job updated successfully!' });
-      } else {
-        const created = await api.createJob(payload);
-        setJobs((prev) => [created, ...prev]);
-        setStats((prev) => ({ ...prev, total_jobs: prev.total_jobs + 1 }));
-        setJobFeedback({ error: '', success: 'New job opportunity published to database!' });
-      }
-      setTimeout(() => {
-        setShowJobModal(false);
-      }, 1000);
-    } catch (err) {
-      setJobFeedback({ error: err.message || 'Failed to save job.', success: '' });
-    } finally {
-      setSubmittingJob(false);
-    }
-  };
-
-  const handleDeleteJob = async (jobId, title) => {
-    if (!window.confirm(`Delete "${title}" (Job #${jobId}) from database?`)) return;
-    try {
-      await api.deleteJob(jobId);
-      setJobs((prev) => prev.filter((j) => j.job_id !== jobId));
-      setStats((prev) => ({ ...prev, total_jobs: Math.max(0, prev.total_jobs - 1) }));
-    } catch (err) {
-      alert(err.message || 'Failed to delete job.');
-    }
-  };
-
   // Application Actions
   const handleApplicationStatus = async (appId, newStatus) => {
     try {
@@ -300,20 +186,6 @@ export default function AdminDashboard({ initialTab = 'all' }) {
     return matchesSearch && matchesRole;
   });
 
-  // Filtered Jobs
-  const filteredJobs = jobs.filter((j) => {
-    const matchesSearch =
-      (j.job_title || '').toLowerCase().includes(jobSearch.toLowerCase()) ||
-      (j.company_name || '').toLowerCase().includes(jobSearch.toLowerCase()) ||
-      (j.location || '').toLowerCase().includes(jobSearch.toLowerCase());
-    const matchesType =
-      jobTypeFilter === 'all' ||
-      (jobTypeFilter === 'internship'
-        ? (j.job_type || '').toLowerCase().includes('intern')
-        : !(j.job_type || '').toLowerCase().includes('intern'));
-    return matchesSearch && matchesType;
-  });
-
   // Filtered Applications
   const filteredApplications = applications.filter((app) => {
     const term = appSearch.toLowerCase();
@@ -344,25 +216,12 @@ export default function AdminDashboard({ initialTab = 'all' }) {
     <Layout admin>
       <Page
         title="Admin Control Center"
-        subtitle="Manage platform users, available jobs & internships, and candidate job applications in MySQL"
+        subtitle="Manage platform users and candidate job applications in MySQL"
         action={
           <div className="row-gap">
-            <button
-              className="btn outline"
-              onClick={handleSyncDailyJobs}
-              disabled={syncingDaily}
-              title="Automatically refresh available dates and extend application deadlines"
-            >
-              <RefreshCw size={14} className={syncingDaily ? 'spin' : ''} />
-              <span>{syncingDaily ? 'Syncing Daily...' : '⚡ Daily Job Sync'}</span>
-            </button>
             <button className="btn outline" onClick={handleRefresh} disabled={refreshing}>
               <RefreshCw size={14} className={refreshing ? 'spin' : ''} />
               <span>{refreshing ? 'Syncing...' : 'Sync Database'}</span>
-            </button>
-            <button className="btn" onClick={() => handleOpenJobModal()}>
-              <Plus size={15} />
-              <span>Post New Job</span>
             </button>
           </div>
         }
@@ -375,13 +234,12 @@ export default function AdminDashboard({ initialTab = 'all' }) {
         )}
 
         {/* STATS OVERVIEW CARDS */}
-        <div className="ui-grid cols-4">
+        <div id="admin-overview" className="ui-grid cols-3">
           <StatTile
             label="Total Registered Users"
             value={stats.total_users}
             sub={<span className="text-good" style={{ fontWeight: 600 }}>✓ {stats.active_users} Active Accounts</span>}
           />
-          <StatTile label="Available Opportunities" value={stats.total_jobs} sub="Corporate Jobs & Internships" />
           <StatTile label="Candidate Resumes" value={stats.total_resumes} sub="Processed for AI matching" />
           <StatTile
             label="Candidate Applications"
@@ -404,10 +262,6 @@ export default function AdminDashboard({ initialTab = 'all' }) {
               <Users size={14} />
               <span>Users Table ({users.length})</span>
             </button>
-            <button className={activeTab === 'jobs' ? 'on' : ''} onClick={() => setActiveTab('jobs')}>
-              <Briefcase size={14} />
-              <span>Available Jobs ({jobs.length})</span>
-            </button>
           </div>
         </div>
 
@@ -415,7 +269,7 @@ export default function AdminDashboard({ initialTab = 'all' }) {
         {/* JOB APPLICATIONS TABLE SECTION                                 */}
         {/* ============================================================== */}
         {(activeTab === 'all' || activeTab === 'applications') && (
-          <div className="card card-pad">
+          <div id="admin-applications" className="card card-pad" style={{ scrollMarginTop: 90 }}>
             <div className="card-head">
               <div>
                 <h3 className="card-title row-gap">
@@ -616,7 +470,7 @@ export default function AdminDashboard({ initialTab = 'all' }) {
         {/* USERS TABLE SECTION                                            */}
         {/* ============================================================== */}
         {(activeTab === 'all' || activeTab === 'users') && (
-          <div className="card card-pad">
+          <div id="admin-users" className="card card-pad" style={{ scrollMarginTop: 90 }}>
             <div className="card-head">
               <div>
                 <h3 className="card-title row-gap">
@@ -748,346 +602,6 @@ export default function AdminDashboard({ initialTab = 'all' }) {
                 </table>
               </div>
             )}
-          </div>
-        )}
-
-        {/* ============================================================== */}
-        {/* JOBS SECTION (All Available Jobs Mentioned)                     */}
-        {/* ============================================================== */}
-        {(activeTab === 'all' || activeTab === 'jobs') && (
-          <div className="card card-pad">
-            <div className="card-head">
-              <div>
-                <h3 className="card-title row-gap">
-                  <Briefcase size={18} style={{ color: 'var(--good)' }} />
-                  <span>Available Corporate Jobs & Internships ({filteredJobs.length})</span>
-                </h3>
-                <p className="card-sub">
-                  All real corporate openings in MySQL <code>jobs</code> table available for MCA candidates
-                </p>
-              </div>
-
-              {/* Job search & filter */}
-              <div className="row-gap">
-                <div className="input-icon" style={{ width: 240, maxWidth: '100%' }}>
-                  <Search size={15} />
-                  <input
-                    type="text"
-                    className="input"
-                    placeholder="Search by company, role or city..."
-                    value={jobSearch}
-                    onChange={(e) => setJobSearch(e.target.value)}
-                  />
-                </div>
-
-                <select
-                  className="select"
-                  value={jobTypeFilter}
-                  onChange={(e) => setJobTypeFilter(e.target.value)}
-                  style={{ width: 'auto' }}
-                >
-                  <option value="all">All Types</option>
-                  <option value="full-time">Full-time Only</option>
-                  <option value="internship">Internships Only</option>
-                </select>
-
-                <button className="btn small" onClick={() => handleOpenJobModal()}>
-                  <Plus size={14} /> Add Job
-                </button>
-              </div>
-            </div>
-
-            {loading ? (
-              <div className="empty-state">
-                <RefreshCw size={22} className="spin" />
-                <p>Loading jobs from database...</p>
-              </div>
-            ) : filteredJobs.length === 0 ? (
-              <EmptyState icon={Briefcase} title="No jobs match the current filter." />
-            ) : (
-              <div>
-                {filteredJobs.map((job) => {
-                  const isInternship = (job.job_type || '').toLowerCase().includes('intern');
-                  const overdue = job.due_date && new Date(job.due_date) < new Date();
-                  return (
-                    <div key={job.job_id} className="list-row" style={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                      <div className="list-icon">
-                        <Briefcase size={18} />
-                      </div>
-
-                      {/* Left: Job Meta */}
-                      <div className="list-main stack" style={{ gap: 6, flex: '1 1 300px' }}>
-                        <div className="row-gap" style={{ gap: 6 }}>
-                          <span className={`pill ${isInternship ? 'warn' : 'info'}`}>{job.job_type || 'Full-time'}</span>
-                          <span className="pill good">{job.role_name || 'Tech'}</span>
-                          <span className="muted text-xs num">ID: #{job.job_id}</span>
-                        </div>
-
-                        <strong style={{ fontSize: 15.5 }}>{job.job_title}</strong>
-
-                        <div className="row-gap text-sm muted" style={{ gap: 14, fontSize: 13 }}>
-                          <span className="row-gap" style={{ gap: 5, fontWeight: 600, fontSize: 13 }}>
-                            <Building2 size={14} /> {job.company_name}
-                          </span>
-                          <span className="row-gap" style={{ gap: 5, fontSize: 13 }}>
-                            <MapPin size={14} /> {job.location || 'India'} ({job.work_mode || 'Hybrid'})
-                          </span>
-                          {job.salary_range && (
-                            <span className="text-good" style={{ fontWeight: 700, fontSize: 13 }}>💰 {job.salary_range}</span>
-                          )}
-                          <span style={{ fontSize: 13 }}>⏳ {job.experience_requirement || 'Fresher'}</span>
-                        </div>
-
-                        {/* Dates row: Available From & Due Date */}
-                        {(job.posted_date || job.due_date) && (
-                          <div className="row-gap" style={{ gap: 10 }}>
-                            {job.posted_date && (
-                              <span className="row-gap muted text-xs" style={{ gap: 4, fontSize: 12.5 }}>
-                                <Calendar size={13} style={{ color: 'var(--accent)' }} />
-                                <span>
-                                  Available: <strong style={{ color: 'var(--ink)' }}>{formatDate(job.posted_date)}</strong>
-                                </span>
-                              </span>
-                            )}
-                            {job.due_date && (
-                              <span className={`pill ${overdue ? 'bad' : 'warn'}`}>
-                                <Clock size={12} />
-                                <span>Due Date: {formatDate(job.due_date)}</span>
-                              </span>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Skills preview */}
-                        {job.skills && job.skills.length > 0 && (
-                          <div className="chips" style={{ gap: 6 }}>
-                            {job.skills.slice(0, 5).map((s) => (
-                              <span key={s} className="pill neutral">{s}</span>
-                            ))}
-                            {job.skills.length > 5 && (
-                              <span className="muted text-xs">+{job.skills.length - 5} more</span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Right: Actions */}
-                      <div className="list-end">
-                        <Link to={`/job-details/${job.job_id}`} className="btn outline small" title="View Live Listing">
-                          <ExternalLink size={13} />
-                          <span>View</span>
-                        </Link>
-                        <button className="btn outline small" onClick={() => handleOpenJobModal(job)} title="Edit Job">
-                          <Edit3 size={13} />
-                          <span>Edit</span>
-                        </button>
-                        <button
-                          className="btn outline small danger"
-                          onClick={() => handleDeleteJob(job.job_id, job.job_title)}
-                          title="Delete Job"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ============================================================== */}
-        {/* ADD / EDIT JOB MODAL                                           */}
-        {/* ============================================================== */}
-        {showJobModal && (
-          <div className="modal-bg">
-            <div className="modal wide" role="dialog" aria-modal="true">
-              <div className="modal-head">
-                <h3>{editingJob ? `Edit Job #${editingJob.job_id}` : 'Post New Job / Internship'}</h3>
-                <button className="icon-btn" onClick={() => setShowJobModal(false)} aria-label="Close">
-                  <X size={20} />
-                </button>
-              </div>
-
-              {jobFeedback.error && (
-                <div className="notice bad">
-                  <AlertCircle size={16} />
-                  <span className="notice-main">{jobFeedback.error}</span>
-                </div>
-              )}
-              {jobFeedback.success && (
-                <div className="notice good">
-                  <CheckCircle2 size={16} />
-                  <span className="notice-main">{jobFeedback.success}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleSaveJob} className="stack">
-                <div className="form-row">
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label">Job Title *</label>
-                    <input
-                      className="input"
-                      type="text"
-                      placeholder="e.g. Associate Data Scientist"
-                      required
-                      value={jobTitle}
-                      onChange={(e) => setJobTitle(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label">Company Name *</label>
-                    <input
-                      className="input"
-                      type="text"
-                      placeholder="e.g. Google, Microsoft, Amazon"
-                      required
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="ui-grid cols-3" style={{ gap: 14 }}>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label">Target Career Role</label>
-                    <select
-                      className="select"
-                      value={careerRoleId}
-                      onChange={(e) => setCareerRoleId(e.target.value)}
-                    >
-                      {careerRoles.map((r) => (
-                        <option key={r.career_role_id} value={r.career_role_id}>
-                          {r.role_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label">Job Type</label>
-                    <select
-                      className="select"
-                      value={jobType}
-                      onChange={(e) => setJobType(e.target.value)}
-                    >
-                      <option value="Full-time">Full-time</option>
-                      <option value="Internship">Internship</option>
-                      <option value="Part-time">Part-time</option>
-                      <option value="Contract">Contract</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label">Work Mode</label>
-                    <select
-                      className="select"
-                      value={workMode}
-                      onChange={(e) => setWorkMode(e.target.value)}
-                    >
-                      <option value="Hybrid">Hybrid</option>
-                      <option value="Remote">Remote</option>
-                      <option value="Onsite">Onsite</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label">Location</label>
-                    <input
-                      className="input"
-                      type="text"
-                      placeholder="e.g. Bangalore, India"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label">Salary / Stipend</label>
-                    <input
-                      className="input"
-                      type="text"
-                      placeholder="e.g. ₹12.0 - ₹18.0 LPA or ₹50k/mo"
-                      value={salaryRange}
-                      onChange={(e) => setSalaryRange(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label">Available / Opening Date</label>
-                    <input
-                      className="input"
-                      type="date"
-                      value={postedDate}
-                      onChange={(e) => setPostedDate(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="label">Application Due Date (Deadline)</label>
-                    <input
-                      className="input"
-                      type="date"
-                      value={dueDate}
-                      onChange={(e) => setDueDate(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="label">Experience Requirement</label>
-                  <input
-                    className="input"
-                    type="text"
-                    placeholder="e.g. 0 - 1 Years or Fresher"
-                    value={experienceReq}
-                    onChange={(e) => setExperienceReq(e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="label">Job Description</label>
-                  <textarea
-                    className="input"
-                    rows={3}
-                    placeholder="Brief description of the opportunity and company mission..."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="label">Key Responsibilities (One per line)</label>
-                  <textarea
-                    className="input"
-                    rows={3}
-                    placeholder="Analyze datasets using SQL&#10;Build interactive dashboards in Power BI&#10;Collaborate with software engineers"
-                    value={responsibilities}
-                    onChange={(e) => setResponsibilities(e.target.value)}
-                  />
-                </div>
-
-                <div className="modal-actions">
-                  <button
-                    type="button"
-                    className="btn outline"
-                    onClick={() => setShowJobModal(false)}
-                    disabled={submittingJob}
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn" disabled={submittingJob}>
-                    {submittingJob ? 'Saving to Database...' : editingJob ? 'Update Job' : 'Publish Job'}
-                  </button>
-                </div>
-              </form>
-            </div>
           </div>
         )}
 
